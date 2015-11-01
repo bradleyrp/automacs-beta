@@ -1,5 +1,5 @@
 
-<img src="https://github.com/bradleyrp/simuluxe/raw/master/" width="140px"/>
+<img src="https://github.com/bradleyrp/automacs/raw/master/amx/docs/source/microfactory-logo-small.png"/>
 
 AUTOMACS /// AMX
 ================
