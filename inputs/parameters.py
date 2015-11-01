@@ -1,0 +1,203 @@
+#!/usr/bin/python -B
+
+"""
+MDP parameters lookups for AUTOMACS
+this file should contain a nested dictionary called `mdpdefs`
+this dictionary is effectively a tree which takes paths that assemble parameters
+with a minimum amount of description commonly employed in the procedures codes
+these codes will request new MDP files which are written according to settings below
+more documentation is coming soon
+"""
+
+mdpdefs = {
+	#---MDP settings group for atomistic CHARMM simulations
+	'aamd':{
+		#---defaults for redundant options (use None if only one)
+		'defaults':{
+			'potential':'verlet',
+			'continue':'continue',
+			'couple':None,
+			'integrate':None,
+			'constrain':None,
+			'output':None,
+			},
+		#---standard options
+		'potential':{
+			'original':{
+				},
+			'verlet':{
+				'cutoff-scheme':'verlet',
+				'nstlist':20,
+				'ns_type':'grid',
+				'coulombtype':'PME',
+				'pme_order':4,
+				'fourierspacing':0.1125,
+				'rcoulomb':0.9,
+				'rlist':0.9,
+				'rvdw':0.9,
+				'pbc':'xyz',
+				'dispcorr':'EnerPres',
+				},
+			},
+		'couple':{
+			'tcoupl':'V-rescale',
+			'tc_grps':'Protein Non-Protein',
+			'tau_t':'0.1 0.1',
+			'ref_t':'300 300',
+			'pcoupl':'Parrinello-Rahman',
+			'pcoupltype':'isotropic',
+			'tau_p':2.0,
+			'ref_p':1.0,
+			'compressibility':'4.5e-5',
+			},
+		'constrain':{
+			'constraints':'h-bonds',
+			'constraint_algorithm':'lincs',
+			},
+		'continue':{
+			'continue':{'continuation':'yes'},
+			'start':{'continuation':'no'},
+			},
+		'output':{
+			'nstxout':5000,
+			'nstvout':5000,
+			'nstlog':1000,
+			'nstenergy':1000,
+			'nstxtcout':1000,		
+			},
+		'integrate':{
+			'integrator':'md',
+			'tinit':0,
+			'dt':0.002,
+			'nsteps':500000,
+			'nstcomm':100,
+			'nstcalcenergy':100,
+			'comm-grps':'Protein non-Protein',
+			},
+		#---override for minimization
+		'minimize':{
+			'integrate':{
+				'integrator':'steep',
+				'nsteps':50000,
+				'nstcomm':0,
+				'emtol':10.0,
+				'emstep':0.01,
+				},
+			'couple':{},
+			'constrain':{'constraints':'none'},
+			},
+		#---override for NVT protein and solvent
+		'nvt-protein':{
+			'continue':'start',
+			'output':{
+				'nstxout':1000,
+				'nstvout':1000,
+				'nstlog':100,
+				'nstenergy':100,
+				'nstxtcout':500,		
+				},		
+			'couple':{
+				'tcoupl':'V-rescale',
+				'tau_t':'0.1 0.1',
+				'tc_grps':'Protein Non-Protein',
+				'ref_t':'300 300',
+				'pcoupl':'no',
+				},	
+			'constrain':{
+				'constraints':'all-bonds',
+				'constraint_algorithm':'lincs',
+				},
+			'integrate':{
+				'integrator':'md',
+				'tinit':0,
+				'dt':0.001,
+				'nsteps':100000,
+				'nstcomm':100,
+				'nstcalcenergy':100,
+				'comm-grps':'Protein non-Protein',
+				},
+			},
+		#---override for NVT protein and solvent
+		'nvt-protein-short':{
+			'continue':'start',
+			'output':{
+				'nstxout':1000,
+				'nstvout':1000,
+				'nstlog':100,
+				'nstenergy':100,
+				'nstxtcout':500,		
+				},		
+			'couple':{
+				'tcoupl':'V-rescale',
+				'tc_grps':'Protein Non-Protein',
+				'tau_t':'0.1 0.1',
+				'ref_t':'300 300',
+				'pcoupl':'no',
+				},	
+			'constrain':{
+				'constraints':'h-bonds',
+				'constraint_algorithm':'lincs',
+				},
+			'integrate':{
+				'integrator':'md',
+				'tinit':0,
+				'dt':0.0001,
+				'nsteps':100000,
+				'nstcomm':100,
+				'nstcalcenergy':100,
+				'comm-grps':'Protein non-Protein',
+				},
+			},		
+		#---override for NPT protein and solvent
+		'npt-protein':{
+			'continue':'start',
+			'output':{
+				'nstxout':1000,
+				'nstvout':1000,
+				'nstlog':100,
+				'nstenergy':100,
+				'nstxtcout':500,		
+				},		
+			'couple':{
+				'tcoupl':'V-rescale',
+				'tc_grps':'Protein Non-Protein',
+				'tau_t':'0.1 0.1',
+				'ref_t':'300 300',
+				'pcoupl':'Berendsen',
+				'pcoupltype':'isotropic',
+				'tau_p':1.0,
+				'ref_p':1.0,
+				'compressibility':'4.5e-5',
+				},	
+			'constrain':{
+				'constraints':'all-bonds',
+				'constraint_algorithm':'lincs',
+				},
+			'integrate':{
+				'integrator':'md',
+				'tinit':0,
+				'dt':0.001,
+				'nsteps':10000,
+				'nstcomm':100,
+				'nstcalcenergy':100,
+				'comm-grps':'Protein non-Protein',
+				},
+			},
+		#---pull code
+		'pull':{
+			'pull':{
+				'pull':'umbrella',
+				'pull_ngroups':'2',
+				'pull_ncoords':'1',
+				'pull_group1_name':'pullbase',
+				'pull_group2_name':'pulltip',
+				'pull_coord1_type':'umbrella',
+				'pull_coord1_groups':'1 2',
+				'pull-dim':'N Y N',
+				'pull_coord1_rate':'0.01',
+				'pull_coord1_k':'1000',
+				'pull_start':'yes',
+				},
+			},
+		},
+	}
