@@ -8,7 +8,7 @@
 Concept
 =======
 
-Automacs is a set of python codes which prepares molecular simulations using common tools, namely `GROMACS <http://www.gromacs.org/>`_ and `CHARMM <http://www.charmm.org/>`_. The purpose of this project is to ensure that simulations are prepared according to a standard method which also bundles simulation data with careful documentation. Automacs (hopefully) makes it possible to generate large simulation datasets with a minimum of description and so-called "manual" labor which invites mistakes and wastes time. Automacs codes are meant to be cloned once for each simulation rather than installed in a central location. This means that each simulation has a copy of the code used to create it.
+**AUTOMACS** is a set of python codes which prepares molecular simulations using common tools, namely `GROMACS <http://www.gromacs.org/>`_ and `CHARMM <http://www.charmm.org/>`_. The purpose of this project is to ensure that simulations are prepared according to a standard method which also bundles simulation data with careful documentation. Automacs (hopefully) makes it possible to generate large simulation datasets with a minimum of description and so-called "manual" labor which invites mistakes and wastes time. Automacs codes are meant to be cloned once for each simulation rather than installed in a central location. This means that each simulation has a copy of the code used to create it.
 
 Atomistic protein simulations
 =============================

@@ -63,7 +63,8 @@ def clean(sure=False):
 	for root,dirnames,filenames in os.walk('./'): break
 	remove_dirs = [i for i in dirnames if re.match('^s[0-9]+-\w+',i)]
 	if os.path.isdir('amx/docs/build'): remove_dirs.append('amx/docs/build')
-	remove_files = [i for i in filenames if re.match('^script-s[0-9]+',i) or re.match('^([\w-]+)\.py$',i)]
+	remove_files = [i for i in filenames if i != 'config.py' and 
+		(re.match('^script-s[0-9]+',i) or re.match('^([\w-]+)\.py$',i))]
 	print '[STATUS] preparing to remove directories:'
 	for fn in remove_dirs: print '[STATUS] >> %s'%fn
 	print '[STATUS] preparing to remove files:'

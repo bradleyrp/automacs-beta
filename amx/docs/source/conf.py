@@ -112,17 +112,19 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
-
 # -- Options for HTML output ----------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-html_theme = 'haiku'
-
 #---added via: pip install sphinx-better-theme
-from better import better_theme_path
-html_theme_path = [better_theme_path]
-html_theme = 'better'
+try:
+  from better import better_theme_path
+  html_theme_path = [better_theme_path]
+  html_theme = 'better'
+except:
+  print '[WARNING] docs look better with sphinx-better-theme installed via pip'
+  # The theme to use for HTML and HTML Help pages.  See the documentation for
+  # a list of builtin themes.
+  html_theme = 'haiku'
+  html_theme_options = {'full_logo':True}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

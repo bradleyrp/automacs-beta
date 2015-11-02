@@ -142,10 +142,8 @@ def init(setting_string):
 	#---for convenience we automatically substitute a lone PDB file in inputs
 	#---! note that this is protein-atomistic specific and may need to be conditional
 	if wordspace['start_structure'] == 'inputs/STRUCTURE.pdb': 
-		print "DERP"
 		pdbs = glob.glob('inputs/*.pdb')
 		if len(pdbs)==1: 
 			wordspace['start_structure'] = pdbs[0]
 			wordspace['system_name'] = re.findall('^inputs/(\w+)\.pdb$',pdbs[0])[0]
 		else: report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
-

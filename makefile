@@ -18,7 +18,7 @@ checkfile=.pipeline_up_to_date
 
 #---filter and evaluate
 RUN_ARGS_UNFILTER := $(wordlist 1,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-RUN_ARGS := $(filter-out banner docs help,$(RUN_ARGS_UNFILTER))
+RUN_ARGS := $(filter-out banner docs help scrub,$(RUN_ARGS_UNFILTER))
 $(eval $(RUN_ARGS):;@:)
 
 #---valid function names from the python script
@@ -44,16 +44,17 @@ ifeq (,$(findstring push,${RUN_ARGS}))
 	more amx/readme.md
 endif
 
+#---clean before push
+scrub:
+	@echo -e "[STATUS] cleaning: "
+	rm -f ./amx/docs/build || true
+	rm -rf ./config.py || true
+	python amx/controller.py clean sure
+
 #---wrap git push
-push: clean
-	rm -f ./amx/docs/build
+push: scrub
 	bash ./amx/base/push.sh ${RUN_ARGS}
 	@if [ false ]; then { echo "[STATUS] done"; exit 0; } else true; fi
-
-#---clean before push
-clean:
-	@echo -n "[STATUS] cleaning: "
-	python amx/controller.py clean sure
 
 #---redirect docs to a custom script
 docs:

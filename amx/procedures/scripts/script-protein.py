@@ -8,7 +8,7 @@ start structure:     inputs/STRUCTURE.pdb
 system name:         SYSTEM
 protein water gap:   3.0
 water:               tip3p
-force field:         charmm36
+force field:         charmm27
 water buffer:        1.2
 solvent:             spc216
 ionic strength:      0.150
@@ -20,6 +20,7 @@ import amx
 amx.init(settings)
 amx.start(amx.wordspace['step'])
 amx.write_mdp()
+amx.dircopy('inputs/*.ff',amx.wordspace['step'])
 amx.filecopy(amx.wordspace['start_structure'],amx.wordspace['step']+'protein-start.pdb')
 amx.gmx('pdb2gmx',base='vacuum',structure='protein-start.pdb',gro='vacuum-alone',
 	log='pdb2gmx',water=amx.wordspace['water'],ff=amx.wordspace['force_field'])

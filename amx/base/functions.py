@@ -162,6 +162,16 @@ def filemove(src,dest):
 
 	shutil.move(src,dest)
 
+@narrate
+def dircopy(src,dest):
+
+	"""
+	Copy any directories that match the glob in src.
+	"""
+
+	for folder in [d for d in glob.glob(src) if os.path.isdir(d)]:
+		shutil.copytree(d,dest+'/'+os.path.basename(d))
+
 def resume(init_settings=''):
 
 	"""
@@ -233,7 +243,7 @@ def continuation():
 	"""
 	Execute the continuation script.
 	"""
-	import pdb;pdb.set_trace()
+
 	write_continue_script()
 	bash('./'+wordspace['continuation_script'])
 	

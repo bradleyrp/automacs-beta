@@ -40,7 +40,9 @@ gmx5paths = {
 
 #---load configuration
 config_raw = {}
-if os.path.isfile('./config.py'): execfile('./config.py',config_raw)
+#---look upwards if making docs so no tracebacks
+prefix = '../../../' if re.match('.+\/docs\/build$',os.getcwd()) else ''
+if os.path.isfile(prefix+'./config.py'): execfile(prefix+'./config.py',config_raw)
 else: execfile(os.environ['HOME']+'/.automacs.py',config_raw)
 machine_configuration = config_raw['machine_configuration']
 
