@@ -45,10 +45,15 @@ ifeq (,$(findstring push,${RUN_ARGS}))
 endif
 
 #---wrap git push
-push:
+push: clean
 	rm -f ./amx/docs/build
 	bash ./amx/base/push.sh ${RUN_ARGS}
 	@if [ false ]; then { echo "[STATUS] done"; exit 0; } else true; fi
+
+#---clean before push
+clean:
+	@echo -n "[STATUS] cleaning: "
+	python amx/controller.py clean sure
 
 #---redirect docs to a custom script
 docs:
