@@ -3,7 +3,7 @@
 import sys,os,re,shutil,glob,inspect,subprocess,datetime,time
 from base.config import bootstrap_configuration
 
-#---FUNCTIONS
+#---CONFIGURE
 #-------------------------------------------------------------------------------------------------------------
 
 def config(local=False):
@@ -14,6 +14,7 @@ def config(local=False):
 
 	config_file = os.environ['HOME']+'/.automacs.py'
 	config_file_local = './config.py'
+	if os.path.isfile(config_file_local): local = True
 	if local and not os.path.isfile(config_file_local): 
 		print '[STATUS] cannot find configuration at %s'%config_file_local
 		bootstrap_configuration(local=True)
@@ -24,8 +25,13 @@ def config(local=False):
 		print '[STATUS] reading configuration from %s'%(config_file_local if local else config_file)
 		print '[STATUS] edit the file manually to change settings'
 
-config()
-from base.gromacs import *
+#---configure unless cleaning or configuring
+if 'clean' not in sys.argv and 'config' not in sys.argv:
+	config()
+	from base.gromacs import *
+
+#---FUNCTIONS
+#-------------------------------------------------------------------------------------------------------------
 
 def program(script,flag=False):
 
@@ -33,7 +39,6 @@ def program(script,flag=False):
 	Prepare a script for a particular AUTOMACS program.
 	"""
 
-	config()
 	#---multiple naming schemes
 	lookups = {'protein':'script-protein'}
 	os.umask(002)
@@ -55,7 +60,6 @@ def clean(sure=False):
 	Erases everything to reset the project.
 	"""
 
-	config()
 	for root,dirnames,filenames in os.walk('./'): break
 	remove_dirs = [i for i in dirnames if re.match('^s[0-9]+-\w+',i)]
 	if os.path.isdir('amx/docs/build'): remove_dirs.append('amx/docs/build')
