@@ -31,6 +31,7 @@ def gmx_run(cmd,log,skip=False,inpipe=None):
 		with open(wordspace['bash_log'],'a') as fp: fp.write(cmd+' &> log-'+log+'\n')
 	else: raise Exception('missing log from wordspace')
 	output = open(wordspace['step']+'log-'+log,'w')
+	os.chmod(wordspace['step']+'log-'+log,0o664)
 	if inpipe == None:
 		proc = subprocess.Popen(cmd,cwd=wordspace['step'],shell=True,stdout=output,stderr=output)
 		proc.communicate()

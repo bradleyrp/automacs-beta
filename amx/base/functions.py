@@ -133,6 +133,7 @@ def start(name):
 	step_name = 's%02d-%s'%(last_step+1,name)
 	if os.path.exists(step_name): raise Exception('step directory %s already exists'%step_name)
 	os.mkdir(step_name)
+	os.chmod(step_name,0o2775)
 	#---register the step directory in the namespace
 	wordspace['step'] = os.path.join(step_name,'')
 	wordspace['watch_file'] = 'script-'+step_name+'.log'

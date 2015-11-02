@@ -198,6 +198,7 @@ def trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None):
 	with open(wordspace['step']+'script-vmd-trim.tcl','w') as fp:
 		for line in vmdtrim: fp.write(line+'\n')
 	vmdlog = open(wordspace['step']+'log-script-vmd-trim','w')
+	os.environ['VMDNOCUDA'] = "1"	
 	p = subprocess.Popen('vmd -dispdev text -e script-vmd-trim.tcl',
 		stdout=vmdlog,stderr=vmdlog,cwd=wordspace['step'],shell=True)
 	p.communicate()
