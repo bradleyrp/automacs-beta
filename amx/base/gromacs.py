@@ -96,7 +96,7 @@ if 'nprocs' in config and config['nprocs'] != None: gmxpaths['mdrun'] += ' -nt %
 #---if mdrun is a key in config we override it and then perform uppercase substitutions from config
 if 'mdrun' in config: 
 	gmxpaths['mdrun'] = config['mdrun']
-	for key,val in config.items(): head = re.sub(key.upper(),str(val),head)
+	for key,val in config.items(): gmxpaths['mdrun'] = re.sub(key.upper(),str(val),gmxpaths['mdrun'])
 #---even if mdrun is customized in config we treat the gpu flag separately
 if 'gpu_flag' in config: gmxpaths['mdrun'] += ' -nb %s'%config['gpu_flag']	
 
