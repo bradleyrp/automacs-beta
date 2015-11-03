@@ -203,7 +203,7 @@ def trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None):
 		stdout=vmdlog,stderr=vmdlog,cwd=wordspace['step'],shell=True)
 	p.communicate()
 	with open(wordspace['bash_log'],'a') as fp:
-		fp.write('vmd -dispdev text -e script-vmd-trim.tcl &> log-script-vmd-trim\n')
+		fp.write(gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl &> log-script-vmd-trim\n')
 	#---! need to add VMD script to the BASH script here
 	gmx_run(gmxpaths['editconf']+' -f solvate-vmd.pdb -o solvate.gro -resnr 1',
 		log='editconf-convert-vmd')

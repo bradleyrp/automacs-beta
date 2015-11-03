@@ -22,6 +22,7 @@ gmx4paths = {
 	'make_ndx':'make_ndx',
 	'genion':'genion',
 	'trjconv':'trjconv',
+	'vmd':'vmd',
 	}
 
 gmx5paths = {
@@ -33,6 +34,7 @@ gmx5paths = {
 	'make_ndx':'make_ndx',
 	'genion':'gmx genion',
 	'trjconv':'gmx trjconv',
+	'vmd':'vmd',
 	}
 	
 #---SETTINGS
@@ -93,10 +95,10 @@ if gmx_series == 5: gmxpaths = dict(gmx5paths)
 config = machine_configuration
 if suffix != '': gmxpaths = dict([(key,val+suffix) for key,val in gmxpaths.items()])
 if 'nprocs' in config and config['nprocs'] != None: gmxpaths['mdrun'] += ' -nt %d'%config['nprocs']
-#---if mdrun is a key in config we override it and then perform uppercase substitutions from config
-if 'mdrun' in config: 
-	gmxpaths['mdrun'] = config['mdrun']
-	for key,val in config.items(): gmxpaths['mdrun'] = re.sub(key.upper(),str(val),gmxpaths['mdrun'])
+#---if any utilities are keys in config we override it and then perform uppercase substitutions from config
+for [key for key in gmxpaths if key in config]:
+	gmxpaths[key] = config[key]
+	for key,val in config.items(): gmxpaths[key] = re.sub(key.upper(),str(val),gmxpaths['key'])
 #---even if mdrun is customized in config we treat the gpu flag separately
 if 'gpu_flag' in config: gmxpaths['mdrun'] += ' -nb %s'%config['gpu_flag']	
 
