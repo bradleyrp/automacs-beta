@@ -194,7 +194,7 @@ def resume(init_settings=''):
 	
 	#---override original settings if available, using code from gmxwrap.init
 	if init_settings != '':
-		settings = yamlparse(setting_string)
+		settings = yamlparse(init_settings)
 		for key,val in settings.items(): 
 			if key not in ['step']:
 				wordspace[re.sub(' ','_',key) if key not in ['start_structure'] else key] = val
