@@ -91,9 +91,9 @@ if gmx_series == 5: gmxpaths = dict(gmx5paths)
 
 #---modify gmxpaths according to hardware configuration
 config = machine_configuration
+if suffix != '': gmxpaths = dict([(key,val+suffix) for key,val in gmxpaths.items()])
 if 'nprocs' in config and config['nprocs'] != None: gmxpaths['mdrun'] += ' -nt %d'%config['nprocs']
 if 'gpu_flag' in config: gmxpaths['mdrun'] += ' -nb %s'%config['gpu_flag']
-
 del config,this_machine,gmx5paths,gmx4paths,config_raw,module_path
 del check_gmx,gmx_series,hostnames
-if suffix != '': gmxpaths = dict([(key,val+suffix) for key,val in gmxpaths.items()])
+
