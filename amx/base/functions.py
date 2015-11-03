@@ -3,7 +3,8 @@
 from amx import wordspace
 from amx.base.gmxwrap import report,bash
 from amx.base.journal import *
-import os,shutil,re,subprocess,glob,json,yaml
+from amx.base.tools import *
+import os,shutil,re,subprocess,glob,json
 
 #---LANGUAGE FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
@@ -172,7 +173,7 @@ def dircopy(src,dest):
 
 	for folder in [d for d in glob.glob(src) if os.path.isdir(d)]:
 		shutil.copytree(d,dest+'/'+os.path.basename(d))
-
+		
 def resume(init_settings=''):
 
 	"""
@@ -193,7 +194,7 @@ def resume(init_settings=''):
 	
 	#---override original settings if available, using code from gmxwrap.init
 	if init_settings != '':
-		settings = yaml.load(init_settings)
+		settings = yamlparse(setting_string)
 		for key,val in settings.items(): 
 			if key not in ['step']:
 				wordspace[re.sub(' ','_',key) if key not in ['start_structure'] else key] = val

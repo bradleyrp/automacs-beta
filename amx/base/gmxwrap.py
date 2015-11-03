@@ -3,9 +3,8 @@
 from amx import wordspace
 from amx.base.gromacs import *
 from amx.base.journal import *
+from amx.base.tools import *
 import os,shutil,re,subprocess,json,glob
-try: import yaml
-except: print '[WARNING] yaml is missing'
 
 #---FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
@@ -138,7 +137,7 @@ def init(setting_string):
 	"""
 
 	os.umask(002)
-	settings = yaml.load(setting_string)
+	settings = yamlparse(setting_string)
 	for key,val in settings.items(): wordspace[re.sub(' ','_',key)] = val
 	#---for convenience we automatically substitute a lone PDB file in inputs
 	#---! note that this is protein-atomistic specific and may need to be conditional

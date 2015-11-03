@@ -13,9 +13,9 @@ of each simulation. This software is maintained on the
 Requires
 --------
 
-	1. Python version 2.7 or higher.
-	2. The PyYaml package for interpreting settings.
-	4. Sphinx python documentation generator (documentation).
+	1. Python version 2.7 or higher
+	2. GROMACS (any version)
+	3. Sphinx to generate python HTML documentation
 	
 Installation
 ------------

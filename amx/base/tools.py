@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import inspect
+import inspect,re
 
 def asciitree(obj,depth=0,wide=2,last=[],recursed=False):
 
@@ -56,3 +56,22 @@ def asciitree(obj,depth=0,wide=2,last=[],recursed=False):
 			else: print 'unhandled tree object'
 	else: print 'unhandled tree object'
 	if not recursed: print '\n'
+	
+def yamlparse(string):
+
+	"""
+	A function which reads the settings files in yaml format.
+	"""
+	
+	unpacked = {}
+	regex = '^\s*([^:]+)\s*:\s*(.+)'
+	for s in string.split('\n'):
+		if re.match(regex,s):
+			key,val = re.findall(regex,s)[0]
+			if re.match('^(T|t)rue$',val): unpacked[key] = True
+			elif re.match('^(F|f)alse$',val): unpacked[key] = False
+			elif re.match('^[0-9]+$',val): unpacked[key] = int(val)
+			elif re.match('^[0-9]*\.[0-9]*$',val): unpacked[key] = float(val)
+			else: unpacked[key] = val
+	return unpacked
+
