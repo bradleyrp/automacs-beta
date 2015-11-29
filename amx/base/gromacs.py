@@ -96,13 +96,15 @@ config = machine_configuration
 if suffix != '': gmxpaths = dict([(key,val+suffix) for key,val in gmxpaths.items()])
 if 'nprocs' in config and config['nprocs'] != None: gmxpaths['mdrun'] += ' -nt %d'%config['nprocs']
 #---if any utilities are keys in config we override it and then perform uppercase substitutions from config
-for name in [key for key in gmxpaths if key in config]:
-	gmxpaths[name] = config[name]
-	for key,val in config.items(): gmxpaths[name] = re.sub(key.upper(),str(val),gmxpaths[name])
+utility_keys = [key for key in gmxpaths if key in config]
+if any(utility_keys):
+	for name in utility_keys:
+		gmxpaths[name] = config[name]
+		for key,val in config.items(): gmxpaths[name] = re.sub(key.upper(),str(val),gmxpaths[name])
+	del name
 #---even if mdrun is customized in config we treat the gpu flag separately
 if 'gpu_flag' in config: gmxpaths['mdrun'] += ' -nb %s'%config['gpu_flag']	
 
 #---clean up the namespace
 del config,this_machine,gmx5paths,gmx4paths,config_raw,module_path
-del check_gmx,gmx_series,hostnames,name
-
+del check_gmx,gmx_series,hostnames,utility_keys
