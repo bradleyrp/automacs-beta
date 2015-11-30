@@ -175,7 +175,7 @@ def cluster():
 			name = re.findall('^script-([\w-]+)\.py$',script)[0]
 			with open('cluster-%s.sh'%name,'w') as fp:
 				fp.write(header+'\n')
-				fp.write('python script-%s.py\n'%name)
+				fp.write('python script-%s.py &> log-%s\n'%(name,name))
 			print '[STATUS] wrote cluster-%s.sh'%name
 		#---note that we do not log this operation because it only changes the BASH scripts
 
