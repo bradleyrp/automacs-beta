@@ -40,7 +40,7 @@ def program(script,flag=False):
 	"""
 
 	#---multiple naming schemes
-	lookups = {'protein':'script-protein'}
+	lookups = {'protein':'script-protein','cgmd-bilayer':'script-cgmd-bilayer'}
 	os.umask(002)
 
 	if script not in lookups: raise Exception('[ERROR] invalid program, select from %s'%str(lookups.keys()))

@@ -141,9 +141,10 @@ def init(setting_string):
 	for key,val in settings.items(): wordspace[re.sub(' ','_',key)] = val
 	#---for convenience we automatically substitute a lone PDB file in inputs
 	#---! note that this is protein-atomistic specific and may need to be conditional
-	if wordspace['start_structure'] == 'inputs/STRUCTURE.pdb': 
+	if 'start_structure' in wordspace and wordspace['start_structure'] == 'inputs/STRUCTURE.pdb': 
 		pdbs = glob.glob('inputs/*.pdb')
 		if len(pdbs)==1: 
 			wordspace['start_structure'] = pdbs[0]
 			wordspace['system_name'] = re.findall('^inputs/(\w+)\.pdb$',pdbs[0])[0]
 		else: report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
+

@@ -33,8 +33,8 @@ $(checkfile): $(scripts) banner
 ifeq (,$(findstring push,${RUN_ARGS}))
 	@echo -n "[STATUS] touching: "
 	touch $(checkfile)
-	@echo -n "[STATUS] calling controller: "
-	python amx/controller.py ${RUN_ARGS} ${MAKEFLAGS} && echo "[STATUS] done" || { echo "[STATUS] fail"; }
+	@echo "[STATUS] calling controller: python amx/controller.py ${RUN_ARGS} ${MAKEFLAGS}"
+	@python amx/controller.py ${RUN_ARGS} ${MAKEFLAGS} && echo "[STATUS] done" || { echo "[STATUS] fail"; }
 endif
 
 #---print the readme

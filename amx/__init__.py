@@ -14,12 +14,18 @@ try:
 	try: 
 		procedure = [re.findall('^procedure:\s*([\w,]+)',l)[0] 
 			for l in original_script_lines if re.match('^procedure:\s*([\w,]+)',l)]
-		if len(procedure)!=1: raise Exception('[ERROR] procedures = %s'%str(procedures))
+		if len(procedure)!=1 and len(list(set(procedure)))>1:
+			raise Exception('[ERROR] procedure = %s'%str(procedure))
 		else: procedure = procedure[0]
 	except: raise Exception('[ERROR] could not find "procedure: <name>" in the script')
 	if procedure == 'aamd,protein':
 		#---imports: atomistic protein in water
 		from procedures.protein_atomistic import *
+		wordspace['command_library'] = interpret_command(command_library)
+		wordspace['mdp_specs'] = mdp_specs
+	elif procedure == 'cgmd,bilayer':
+		#---imports: coarse-grained bilayer in water
+		from procedures.cgmd_bilayer import *
 		wordspace['command_library'] = interpret_command(command_library)
 		wordspace['mdp_specs'] = mdp_specs
 	else: raise Exception('[ERROR] unclear procedure %s'%procedure)
