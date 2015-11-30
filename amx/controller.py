@@ -64,7 +64,8 @@ def clean(sure=False):
 	remove_dirs = [i for i in dirnames if re.match('^s[0-9]+-\w+',i)]
 	if os.path.isdir('amx/docs/build'): remove_dirs.append('amx/docs/build')
 	remove_files = [i for i in filenames if i != 'config.py' and 
-		(re.match('^script-s[0-9]+',i) or re.match('^([\w-]+)\.py$',i))]
+		(re.match('^script-s[0-9]+',i) or re.match('^([\w-]+)\.py$',i) 
+		or re.match('^(cluster|gmxjob)',i))]
 	print '[STATUS] preparing to remove directories:'
 	for fn in remove_dirs: print '[STATUS] >> %s'%fn
 	print '[STATUS] preparing to remove files:'
@@ -171,7 +172,7 @@ def cluster():
 		if len(pyscripts)>0: 
 			with open('cluster-header.sh','r') as fp: header = fp.read()
 		for script in pyscripts:
-			name = re.findall('^script-(\w+)\.py$',script)[0]
+			name = re.findall('^script-([\w-]+)\.py$',script)[0]
 			with open('cluster-%s.sh'%name,'w') as fp:
 				fp.write(header+'\n')
 				fp.write('python script-%s.py\n'%name)

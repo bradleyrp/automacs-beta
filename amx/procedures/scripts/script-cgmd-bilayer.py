@@ -15,7 +15,7 @@ height:             8
 width:              10
 binsize:            0.9
 monolayer_offset:   1.5
-lipid:              structs/DOPC.gro
+lipid:              DOPC.gro
 """
 
 presets['buckle'] = """
