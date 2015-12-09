@@ -187,6 +187,8 @@ def makeface(*arglist):
 	Standard interface to makefile.
 	"""
 
+	#---stray characters
+	arglist = tuple(i for i in arglist if i not in ['w','--'])
 	#---unpack arguments
 	if arglist == []: 
 		raise Exception('[ERROR] no arguments to controller')
