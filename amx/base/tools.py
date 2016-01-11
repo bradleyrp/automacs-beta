@@ -74,4 +74,3 @@ def yamlparse(string):
 			elif re.match('^[0-9]*\.[0-9]*$',val): unpacked[key] = float(val)
 			else: unpacked[key] = val
 	return unpacked
-

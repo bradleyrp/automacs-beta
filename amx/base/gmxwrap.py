@@ -107,7 +107,7 @@ def bash(command,log=None,cwd=None):
 	
 	cwd = wordspace['step'] if cwd == None else cwd
 	if log == None: 
-		subprocess.call(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		subprocess.call(command,cwd=cwd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	else:
 		output = open(cwd+log,'w')
 		proc = subprocess.Popen(command,cwd=cwd,shell=True,stdout=output,stderr=output)
@@ -146,5 +146,7 @@ def init(setting_string):
 		if len(pdbs)==1: 
 			wordspace['start_structure'] = pdbs[0]
 			wordspace['system_name'] = re.findall('^inputs/(\w+)\.pdb$',pdbs[0])[0]
-		else: report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
+		else: 
+			if 'watch_file' not in wordspace: wordspace['watch_file'] = 'ERROR.log'
+			report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
 

@@ -67,8 +67,10 @@ def makemesh(pts,vec,growsize=0.2,curvilinear_neighbors=10,
 	nmol = len(pts)
 	pts = pts
 	vec = vec
-	if debug: st = time.time()
-	if debug: print "[STATUS] start makemesh %0.2f"%(time.time()-st)
+	if debug: 
+		import time
+		st = time.time()
+		print "[STATUS] start makemesh %0.2f"%(time.time()-st)
 	ptsb,ptsb_inds = beyonder(pts,vec,growsize=growsize,growsize_nm=growsize_nm,return_ids=True)
 	if debug: print "[STATUS] project curvilinear="+str(curvilinear)+" %0.2f"%(time.time()-st);st=time.time()
 	#---if curvilinear then use the isomap otherwise project onto the xy plane

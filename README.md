@@ -1,5 +1,5 @@
 
-<img src="https://github.com/bradleyrp/automacs/raw/master/amx/docs/source/microfactory-logo-small.png"/>
+<img src="https://github.com/bradleyrp/automacs/raw/master/amx/docs/source/logo.png" width="100" height="100"/>
 
 AUTOMACS /// AMX
 ================

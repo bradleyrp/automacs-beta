@@ -136,6 +136,9 @@ def start(name):
 	os.mkdir(step_name)
 	os.chmod(step_name,0o2775)
 	#---register the step directory in the namespace
+	if stepdirs != []: 
+		wordspace['last'] = os.path.join(
+			next(i for i in stepdirs if int(re.findall('^s([0-9]+)-',i)[0])==last_step),'')
 	wordspace['step'] = os.path.join(step_name,'')
 	wordspace['watch_file'] = 'script-'+step_name+'.log'
 	wordspace['bash_log'] = 'script-'+step_name+'.sh'

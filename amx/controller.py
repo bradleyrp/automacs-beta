@@ -2,6 +2,7 @@
 
 import sys,os,re,shutil,glob,inspect,subprocess,datetime,time
 from base.config import bootstrap_configuration
+from base.metatools import script_settings_replace
 
 #---CONFIGURE
 #-------------------------------------------------------------------------------------------------------------
@@ -40,7 +41,11 @@ def program(script,flag=False):
 	"""
 
 	#---multiple naming schemes
-	lookups = {'protein':'script-protein','cgmd-bilayer':'script-cgmd-bilayer'}
+	lookups = {
+		'protein':'script-protein',
+		'cgmd-bilayer':'script-cgmd-bilayer',
+		'cgmd-protein':'script-cgmd-protein',
+		}
 	os.umask(002)
 
 	if script not in lookups: raise Exception('[ERROR] invalid program, select from %s'%str(lookups.keys()))
@@ -179,6 +184,16 @@ def cluster():
 			print '[STATUS] wrote cluster-%s.sh'%name
 		#---note that we do not log this operation because it only changes the BASH scripts
 
+def metarun(script):
+
+	"""
+	Run a series of commands via a meta script in the inputs folder.
+	May be deprecated due to execution problems and "moving to directory" weirdness.
+	"""
+
+	call = lambda x: os.system(x)
+	execfile(script)
+
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
 
@@ -188,6 +203,8 @@ def makeface(*arglist):
 	Standard interface to makefile.
 	"""
 
+	#---stray characters
+	arglist = tuple(i for i in arglist if i not in ['w','--'])
 	#---unpack arguments
 	if arglist == []: 
 		raise Exception('[ERROR] no arguments to controller')
@@ -195,8 +212,8 @@ def makeface(*arglist):
 	arglist = list(arglist)
 	funcname = arglist.pop(0)
 	for arg in arglist:
-		if re.match('^\w+\=(\w+)',arg):
-			parname,parval = re.findall('^(\w+)\=(\w+)$',arg)[0]
+		if re.match('^\w+\=([\w\.\/]+)',arg):
+			parname,parval = re.findall('^(\w+)\=([\w\.\/]+)$',arg)[0]
 			kwargs[parname] = parval
 			arglist.remove(arg)
 		else:
