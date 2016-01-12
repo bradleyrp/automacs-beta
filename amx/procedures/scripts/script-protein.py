@@ -5,6 +5,7 @@ step:                protein
 procedure:           aamd,protein
 equilibration:       nvt,npt
 start structure:     inputs/STRUCTURE.pdb
+run part two:        no
 system name:         SYSTEM
 protein water gap:   3.0
 water:               tip3p
@@ -38,4 +39,6 @@ amx.write_structure_pdb(pdb='protein-start.pdb',structure='counterions')
 amx.write_top('system.top')
 amx.checkpoint()
 amx.equilibrate()
-amx.continuation()
+if amx.wordspace['run_part_two']=='yes': continueamx.continuation() 
+else: amx.write_continue_script()
+
