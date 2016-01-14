@@ -60,6 +60,6 @@ push: scrub
 docs:
 ifeq (,$(findstring push,${RUN_ARGS}))
 	@echo -e "[STATUS] building documentation "
-	bash amx/docs/source/boostrap_docs.sh ${RUN_ARGS};
+	@bash amx/docs/source/boostrap_docs.sh ${RUN_ARGS};
 	@if [ -d amx/docs/build ]; then { echo "[STATUS] done"; exit 0; } else { bash amx/docs/source/boostrap_docs.sh; } fi
 endif

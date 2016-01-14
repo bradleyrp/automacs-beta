@@ -2,6 +2,10 @@
 
 #---! only run this from the top level alongside/from makefile
 
+<<notes
+notes
+
+
 here=$(pwd)
 codeback=../../../amx
 docsdir=amx/docs/build
@@ -18,6 +22,7 @@ cd $sourcedir
 cp conf.py $here/$docsdir
 cp *.png $here/$docsdir
 cp *.rst $here/$docsdir
+cp style.css $here/$docsdir/_static/
 cd $here
 echo $@
 make -C $docsdir html
