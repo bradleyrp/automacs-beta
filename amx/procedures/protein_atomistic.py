@@ -207,7 +207,7 @@ def trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None):
 			fp.write(gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl &> log-script-vmd-trim\n')
 		gmx_run(gmxpaths['editconf']+' -f solvate-vmd.pdb -o solvate.gro -resnr 1',
 			log='editconf-convert-vmd')
-	else: filecopy(wordspace['step']+'solvate-dense.gro',wordspace['step']+'solvate.gro'
+	else: filecopy(wordspace['step']+'solvate-dense.gro',wordspace['step']+'solvate.gro')
 
 @narrate
 def solvate(structure,top):
