@@ -152,15 +152,13 @@ def start(name):
 	if 'files' in wordspace:
 		fns = eval(wordspace['files'])
 		for fn in fns: 
-			try: filecopy('inputs/'+fn,wordspace['step']+fn)
-			except: continue
+			if not os.path.isfile(wordspace['step']+fn): filecopy('inputs/'+fn,wordspace['step']+fn)
 	#---sources keyword in the settings block refers to directories that should be copied from inputs
 	if 'sources' in wordspace:
 		source_dirs = eval(wordspace['sources'])
 		for dn in source_dirs: 
-			try: dircopy('inputs/'+dn,wordspace['step']+dn)
-			except: continue
-
+			if not os.path.isdir(wordspace['step']+dn): dircopy('inputs/'+dn,wordspace['step']+dn)
+			
 @narrate
 def filecopy(src,dest):
 
