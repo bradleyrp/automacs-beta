@@ -148,6 +148,14 @@ def start(name):
 		fp.write('#!/bin/bash\n\n#---automacs instruction set\n\n')
 	#---copy the calling script to this location for posterity
 	filecopy(wordspace['script'],wordspace['step']+os.path.basename(wordspace['script']))
+	#---files keyword in the settings block refers to files that should be copied from inputs
+	if 'files' in wordspace:
+		fns = eval(wordspace['files'])
+		for fn in fns: filecopy(fn,wordspace['step']+fn)
+	#---sources keyword in the settings block refers to directories that should be copied from inputs
+	if 'sources' in wordspace:
+		source_dirs = eval(wordspace['sources'])
+		for dn in source_dirs: dircopy(dn,wordspace['step']+dn)
 
 @narrate
 def filecopy(src,dest):
