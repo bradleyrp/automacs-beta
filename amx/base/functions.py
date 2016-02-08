@@ -184,9 +184,7 @@ def dircopy(src,dest,permissive=False):
 	Copy any directories that match the glob in src.
 	"""
 
-	for folder in [d for d in glob.glob(src) if os.path.isdir(d)]:
-		if not os.path.isdir(dest+'/'+os.path.basename(folder)):
-			shutil.copytree(folder,dest+'/'+os.path.basename(folder))
+	shutil.copytree(src,dest+'/'+os.path.basename(src))
 		
 def resume(init_settings=''):
 
