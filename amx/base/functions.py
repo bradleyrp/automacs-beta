@@ -157,7 +157,7 @@ def start(name):
 	if 'sources' in wordspace:
 		source_dirs = eval(wordspace['sources'])
 		for dn in source_dirs: 
-			if not os.path.isdir(wordspace['step']+dn): dircopy('inputs/'+dn,wordspace['step']+dn)
+			if not os.path.isdir(wordspace['step']+dn): dircopy('inputs/'+dn,wordspace['step'])
 			
 @narrate
 def filecopy(src,dest):
@@ -184,7 +184,9 @@ def dircopy(src,dest,permissive=False):
 	Copy any directories that match the glob in src.
 	"""
 
-	shutil.copytree(src,dest+'/'+os.path.basename(src))
+	for folder in [d for d in glob.glob(src) if os.path.isdir(d)]:
+		if not os.path.isdir(dest+'/'+os.path.basename(folder)):
+			shutil.copytree(folder,dest+'/'+os.path.basename(folder))
 		
 def resume(init_settings=''):
 
