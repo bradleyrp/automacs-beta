@@ -151,11 +151,11 @@ def start(name):
 	#---files keyword in the settings block refers to files that should be copied from inputs
 	if 'files' in wordspace:
 		fns = eval(wordspace['files'])
-		for fn in fns: filecopy(inputs+'/'+fn,wordspace['step']+fn)
+		for fn in fns: filecopy('inputs/'+fn,wordspace['step']+fn)
 	#---sources keyword in the settings block refers to directories that should be copied from inputs
 	if 'sources' in wordspace:
 		source_dirs = eval(wordspace['sources'])
-		for dn in source_dirs: dircopy(inputs+'/'+dn,wordspace['step']+dn)
+		for dn in source_dirs: dircopy('inputs/'+dn,wordspace['step']+dn)
 
 @narrate
 def filecopy(src,dest):
