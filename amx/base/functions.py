@@ -178,14 +178,15 @@ def filemove(src,dest):
 	shutil.move(src,dest)
 
 @narrate
-def dircopy(src,dest):
+def dircopy(src,dest,permissive=False):
 
 	"""
 	Copy any directories that match the glob in src.
 	"""
 
 	for folder in [d for d in glob.glob(src) if os.path.isdir(d)]:
-		shutil.copytree(d,dest+'/'+os.path.basename(d))
+		if not os.path.isdir(dest+'/'+os.path.basename(folder)):
+			shutil.copytree(folder,dest+'/'+os.path.basename(folder))
 		
 def resume(init_settings=''):
 
