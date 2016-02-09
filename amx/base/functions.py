@@ -148,7 +148,17 @@ def start(name):
 		fp.write('#!/bin/bash\n\n#---automacs instruction set\n\n')
 	#---copy the calling script to this location for posterity
 	filecopy(wordspace['script'],wordspace['step']+os.path.basename(wordspace['script']))
-
+	#---files keyword in the settings block refers to files that should be copied from inputs
+	if 'files' in wordspace:
+		fns = eval(wordspace['files'])
+		for fn in fns: 
+			if not os.path.isfile(wordspace['step']+fn): filecopy('inputs/'+fn,wordspace['step']+fn)
+	#---sources keyword in the settings block refers to directories that should be copied from inputs
+	if 'sources' in wordspace:
+		source_dirs = eval(wordspace['sources'])
+		for dn in source_dirs: 
+			if not os.path.isdir(wordspace['step']+dn): dircopy('inputs/'+dn,wordspace['step'])
+			
 @narrate
 def filecopy(src,dest):
 
@@ -175,7 +185,8 @@ def dircopy(src,dest):
 	"""
 
 	for folder in [d for d in glob.glob(src) if os.path.isdir(d)]:
-		shutil.copytree(d,dest+'/'+os.path.basename(d))
+		if not os.path.isdir(dest+'/'+os.path.basename(folder)):
+			shutil.copytree(folder,dest+'/'+os.path.basename(folder))
 		
 def resume(init_settings=''):
 

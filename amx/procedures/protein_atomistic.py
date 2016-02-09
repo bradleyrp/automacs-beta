@@ -183,30 +183,31 @@ def trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None):
 	Remove waters within a certain number of Angstroms of the protein.
 	"""
 
-	vmdtrim = [
-		'package require pbctools',
-		'mol new solvate-dense.gro',
-		'set sel [atomselect top \"(all not ('+\
-		'water and (same residue as water within '+str(gap)+\
-		' of not water)'+\
-		')) and '+\
-		'same residue as (x>=0 and x<='+str(10*boxvecs[0])+\
-		' and y>=0 and y<= '+str(10*boxvecs[1])+\
-		' and z>=0 and z<= '+str(10*boxvecs[2])+')"]',
-		'$sel writepdb solvate-vmd.pdb',
-		'exit',]			
-	with open(wordspace['step']+'script-vmd-trim.tcl','w') as fp:
-		for line in vmdtrim: fp.write(line+'\n')
-	vmdlog = open(wordspace['step']+'log-script-vmd-trim','w')
-	os.environ['VMDNOCUDA'] = "1"	
-	p = subprocess.Popen(gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl',
-		stdout=vmdlog,stderr=vmdlog,cwd=wordspace['step'],shell=True)
-	p.communicate()
-	with open(wordspace['bash_log'],'a') as fp:
-		fp.write(gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl &> log-script-vmd-trim\n')
-	#---! need to add VMD script to the BASH script here
-	gmx_run(gmxpaths['editconf']+' -f solvate-vmd.pdb -o solvate.gro -resnr 1',
-		log='editconf-convert-vmd')
+	if gap != 0.0:
+		vmdtrim = [
+			'package require pbctools',
+			'mol new solvate-dense.gro',
+			'set sel [atomselect top \"(all not ('+\
+			'water and (same residue as water within '+str(gap)+\
+			' of not water)'+\
+			')) and '+\
+			'same residue as (x>=0 and x<='+str(10*boxvecs[0])+\
+			' and y>=0 and y<= '+str(10*boxvecs[1])+\
+			' and z>=0 and z<= '+str(10*boxvecs[2])+')"]',
+			'$sel writepdb solvate-vmd.pdb',
+			'exit',]			
+		with open(wordspace['step']+'script-vmd-trim.tcl','w') as fp:
+			for line in vmdtrim: fp.write(line+'\n')
+		vmdlog = open(wordspace['step']+'log-script-vmd-trim','w')
+		#---previously used os.environ['VMDNOCUDA'] = "1" but this was causing segfaults on green
+		p = subprocess.Popen('VMDNOCUDA=1 '+gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl',
+			stdout=vmdlog,stderr=vmdlog,cwd=wordspace['step'],shell=True)
+		p.communicate()
+		with open(wordspace['bash_log'],'a') as fp:
+			fp.write(gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl &> log-script-vmd-trim\n')
+		gmx_run(gmxpaths['editconf']+' -f solvate-vmd.pdb -o solvate.gro -resnr 1',
+			log='editconf-convert-vmd')
+	else: filecopy(wordspace['step']+'solvate-dense.gro',wordspace['step']+'solvate.gro')
 
 @narrate
 def solvate(structure,top):
