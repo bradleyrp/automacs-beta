@@ -178,7 +178,7 @@ def filemove(src,dest):
 	shutil.move(src,dest)
 
 @narrate
-def dircopy(src,dest,permissive=False):
+def dircopy(src,dest):
 
 	"""
 	Copy any directories that match the glob in src.
