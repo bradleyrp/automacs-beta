@@ -16,17 +16,17 @@ Coarse-grained bilayer builder.
 
 #---common command interpretations
 command_library = """
+grompp -f MDP.mdp -c STRUCTURE.gro -p TOP.top -o BASE.tpr -po BASE.mdp
+mdrun -s BASE.tpr -cpo BASE.cpt -o BASE.trr -x BASE.xtc -e BASE.edr -g BASE.log -c BASE.gro -v NONE
+editconf -f STRUCTURE.gro -o GRO.gro
+genconf -f STRUCTURE.gro -nbox NBOX -o GRO.gro
 """
 
 #---customized parameters
 mdp_specs = {
-	'group':'aamd',
+	'group':'cgmd',
 	'input-em-steep-in.mdp':['minimize'],
 	'input-em-cg-in.mdp':['minimize',{'integrator':'cg'}],
-	'input-md-nvt-eq-in.mdp':['nvt-protein'],
-	'input-md-nvt-short-eq-in.mdp':['nvt-protein-short'],
-	'input-md-npt-eq-in.mdp':['npt-protein'],
-	'input-md-in.mdp':None,
 	}
 
 #---FUNCTIONS
@@ -132,9 +132,11 @@ def makeshape():
 	monolayer_mesh = makemesh(ptsmid,vecs,debug=False,curvilinear=False)
 	return ptsmid,monolayer_mesh,vecs
 
+@narrate
 def build_bilayer(name):
 
 	"""
+	build_bilayer(name)
 	Create a new bilayer according to a particular topography.
 	Requires the following settings:
 		???
@@ -172,9 +174,11 @@ def build_bilayer(name):
 				resnr += 1
 		fp.write(' '.join([dotplace(x) for x in vecs])+'\n')
 
+@narrate
 def gro_combinator(*args,**kwargs):
 	
 	"""
+	gro_combinator(*args,**kwargs)
 	Concatenate an arbitrary number of GRO files.
 	"""
 	
@@ -191,7 +195,7 @@ def gro_combinator(*args,**kwargs):
 			for line in c[2:-1]: fp.write(line)
 		#---use the box vectors from the first structure
 		fp.write(collection[0][-1])		
-		
+
 def read_gro(gro,cwd='./'):
 
 	"""
@@ -206,9 +210,11 @@ def read_gro(gro,cwd='./'):
 	for ii,i in enumerate(structure): points[ii] = [float(j) for j in i.pop('xyz').split()]
 	return structure,points
 
-def adhere_protein_cgmd_bilayer(bilayer,combo):
+@narrate
+def adhere_protein_cgmd_bilayer(bilayer,combo,protein_complex=None):
 
 	"""
+	adhere_protein_cgmd_bilayer(bilayer,combo,protein_complex=None)
 	Attach proteins to a CGMD (?) bilayer.
 	"""
 
@@ -219,6 +225,8 @@ def adhere_protein_cgmd_bilayer(bilayer,combo):
 	total_proteins = wordspace['total_proteins']
 	z_shift = float(wordspace['z_shift'])
 	lattice_type = wordspace['lattice_type']
+	if protein_complex: adhere_structure = protein_complex
+	else: adhere_structure = wordspace['protein_ready']
 
 	#---create the mesh of focal points
 	grid = [(i%ncols,int(i/nrows)) for i in arange(nrows*ncols)]
@@ -241,7 +249,7 @@ def adhere_protein_cgmd_bilayer(bilayer,combo):
 
 	#---read the protein and bilayer
 	combined,combined_points = read_gro(bilayer,cwd=wordspace['step'])
-	protein,protein_points = read_gro(wordspace['protein_ready'],cwd=wordspace['step'])
+	protein,protein_points = read_gro(adhere_structure,cwd=wordspace['step'])
 
 	#---take box vectors from the bilayer
 	with open(cwd+'/'+bilayer) as fp: rawgro = fp.readlines()
@@ -273,3 +281,40 @@ def adhere_protein_cgmd_bilayer(bilayer,combo):
 			fp.write(''.join([('%5s'%line[key])[:5] for key in ['resid','resname','name','index']]+
 				[dotplace(x) for x in combined_points[index]])+'\n')
 		fp.write(boxvecs)
+
+@narrate
+def write_top(topfile):
+
+	"""
+	write_top(topfile)
+	Write the topology file.
+	WET CODE DRIPPED FROM protein_atomstic.py
+	"""
+
+	#---always include forcefield.itp
+	if 'includes' not in wordspace: wordspace['includes'] = ['forcefield']		
+	with open(wordspace['step']+topfile,'w') as fp:
+		#---write include files for the force field
+		for incl in wordspace['ff_includes']:
+			fp.write('#include "%s.ff/%s.itp"\n'%(wordspace['force_field'],incl))
+		#---write include files
+		for itp in wordspace['itp']: fp.write('#include "'+itp+'"\n')
+		#---write system name
+		fp.write('[ system ]\n%s\n\n[ molecules ]\n'%wordspace['system_name'])
+		for key,val in wordspace['composition']: fp.write('%s %d\n'%(key,val))
+
+@narrate
+def minimize(name,method='steep'):
+
+	"""
+	minimize(name,method='steep')
+	Standard minimization procedure.
+	WET CODE DRIPPED FROM protein_atomstic.py
+	"""
+
+	gmx('grompp',base='em-%s-%s'%(name,method),top=name,structure=name,
+		log='grompp-%s-%s'%(name,method),mdp='input-em-%s-in'%method,skip=True)
+	gmx('mdrun',base='em-%s-%s'%(name,method),log='mdrun-%s-%s'%(name,method))
+	filecopy(wordspace['step']+'em-'+'%s-%s.gro'%(name,method),
+		wordspace['step']+'%s-minimized.gro'%name)
+	checkpoint()

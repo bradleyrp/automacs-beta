@@ -1,13 +1,29 @@
 #!/usr/bin/python
 
-#---wordspace tracks and writes all relevant variables
-wordspace = {}
+class WordSpace(dict):
+
+	"""
+	Custom dictionary which holds key variables
+	and (inevitable) returns intelligent errors.
+	"""
+
+	def __getitem__(self,key):
+		
+		if key=='last' and key not in self:
+			raise Exception("\n[ERROR]".join([
+				"wordspace['last'] is not defined",
+				"it is likely that you started AMX from a downstream step"]))
+		elif key not in self: raise Exception('\n[ERROR] "%s" not found in wordspace'%key)
+		return dict.get(self,key)
+
+wordspace = WordSpace()		
+import sys,os,importlib
 from base.functions import *
 from base.mdp import write_mdp
 from base.gmxwrap import *
+from procedures.toc import procedure_toc
 
 #---custom imports according to the procedure from the script that imported amx
-import sys,os
 wordspace['script'] = os.path.abspath(os.getcwd()+'/'+sys.argv[0])
 #---skip setup if we are only making docs
 if not os.path.basename(wordspace['script'])=='sphinx-build':
@@ -19,18 +35,12 @@ if not os.path.basename(wordspace['script'])=='sphinx-build':
 			raise Exception('[ERROR] procedure = %s'%str(procedure))
 		else: procedure = procedure[0]
 	except: raise Exception('[ERROR] could not find "procedure: <name>" in the script')
-	if procedure == 'aamd,protein':
-		#---imports: atomistic protein in water
-		from procedures.protein_atomistic import *
+	#---automatically load the correct function library
+	if procedure in procedure_toc:
+		libfile = procedure_toc[procedure]
+		mod = importlib.import_module('amx.procedures.'+libfile)
+		globals().update(vars(mod))
 		wordspace['command_library'] = interpret_command(command_library)
 		wordspace['mdp_specs'] = mdp_specs
-	elif procedure == 'cgmd,bilayer':
-		#---imports: coarse-grained bilayer in water
-		from procedures.cgmd_bilayer import *
-		wordspace['command_library'] = interpret_command(command_library)
-		wordspace['mdp_specs'] = mdp_specs
-	elif procedure == 'cgmd,protein':
-		#---imports: coarse-grained protein in water
-		from procedures.cgmd_protein import *
-	else: raise Exception('[ERROR] unclear procedure %s'%procedure)
+	else: raise Exception('[ERROR] unclear procedure "%s" see procedures.toc'%procedure)
 

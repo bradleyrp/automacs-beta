@@ -147,3 +147,14 @@ elif instruct['method'] == 'simple':
 		shift = np.mean(xyzs[head_atoms],axis=0)-pts_down
 		rewrite_gro(xyzs-shift,instruct['lipid_structure'],workdir+'/lipid-rotated.gro')
 
+	if 0:
+		protein_out = workdir+'/protein-rotated.gro'
+		uni = MDAnalysis.Universe(protein_out)
+		sel = uni.select_atoms('all')
+		pts_all = sel.coordinates()/lenscale
+		rewrite_gro(pts_all+[0,0,3],protein_out,protein_out)
+		lipid_out = workdir+'/lipid-rotated.gro'
+		uni = MDAnalysis.Universe(lipid_out)
+		sel = uni.select_atoms('all')
+		pts_all = sel.coordinates()/lenscale
+		rewrite_gro(pts_all+[0,0,3],lipid_out,lipid_out)

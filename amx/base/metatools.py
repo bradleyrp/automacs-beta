@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import re
-
+import os,re
+call = lambda x: os.system(x)
 def script_settings_replace(script,settings_string):
 
 	"""
@@ -11,7 +11,7 @@ def script_settings_replace(script,settings_string):
 
 	with open(script) as fp: lines = fp.readlines()
 	cutout = [next(ii for ii,i in enumerate(lines) if re.match(regex,i)) 
-		for regex in ['^settings','^import amx']]
+		for regex in ['^settings','^(import amx|from amx import)']]
 	with open(script,'w') as fp:
 		for line in lines[:cutout[0]]: fp.write(line)
 		fp.write('settings = """')

@@ -4,8 +4,7 @@
 
 #---show the banner if no targets
 banner:
-	@echo -n "[STATUS] banner via "
-	sed -n 1,13p amx/readme.md
+	@sed -n 1,13p amx/readme.md
 	@echo "[NOTE] use 'make help' for details"
 
 #---do not target arguments if using python
@@ -63,3 +62,4 @@ ifeq (,$(findstring push,${RUN_ARGS}))
 	@bash amx/docs/source/boostrap_docs.sh ${RUN_ARGS};
 	@if [ -d amx/docs/build ]; then { echo "[STATUS] done"; exit 0; } else { bash amx/docs/source/boostrap_docs.sh; } fi
 endif
+

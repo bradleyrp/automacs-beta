@@ -21,6 +21,7 @@ gmx4paths = {
 	'genbox':'genbox',
 	'make_ndx':'make_ndx',
 	'genion':'genion',
+	'genconf':'genconf',
 	'trjconv':'trjconv',
 	'vmd':'vmd',
 	}
@@ -34,6 +35,7 @@ gmx5paths = {
 	'make_ndx':'make_ndx',
 	'genion':'gmx genion',
 	'trjconv':'gmx trjconv',
+	'genconf':'gmx genconf',
 	'vmd':'vmd',
 	}
 	

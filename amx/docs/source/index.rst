@@ -83,6 +83,19 @@ The subdictionary contains three protected keys.
 
 The Automacs code can run successfully on clusters with the industry-standard TORQUE and MODULES packages. Failing that, the user may always choose to execute the python scripts locally, or wrap them in another execution script. 
 
+Development
+===========
+
+Automacs is both a tool and a framework. You can use it directly out of the box in order to generate molecular dynamics simulations according to typical use-cases, e.g. a coarse-grained bilayer or an atomistic simulation. But you can also use it to develop new simulations more easily. In this way, automacs provides some useful, standardized tools for making new simulation protocols. They can draw from pre-established parameter sets, have access to a number of geometric functions, automatically log themselves during the simulation, and so on. 
+
+Each new protocol consists of a script and a set of functions. Here are some brief notes.
+
+1. Each script has a YAML-style header section. Every variable is written to a dictionary called the "wordspace".
+2. Running ``from amx import *`` and ``init(settings)`` loads the parameters into the wordspace and they are accessible everywhere.
+3. Command library.
+4. Writing MDP files.
+5. Developing iteratively. Use the save function.
+
 Codebase
 ========
 

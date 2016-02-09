@@ -109,7 +109,7 @@ def bash(command,log=None,cwd=None):
 	if log == None: 
 		subprocess.call(command,cwd=cwd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	else:
-		output = open(cwd+log,'w')
+		output = open(cwd+'log-'+log,'w')
 		proc = subprocess.Popen(command,cwd=cwd,shell=True,stdout=output,stderr=output)
 		proc.communicate()
 
@@ -130,15 +130,22 @@ def checkpoint():
 	with open(wordspace['watch_file'],'a') as fp:
 		report('wordspace = '+json.dumps(wordspace),tag='checkpoint')
 
-def init(setting_string):
+def init(setting_string,dev=False):
 
 	"""
 	Automatically load settings from the python-amx script into the wordspace for safekeeping.
 	"""
 
 	os.umask(002)
+	#---in development environments we first load the previous wordspace
+	if dev and os.path.isfile('wordspace.pkl'): 
+		import pickle
+		incoming_wordspace = pickle.load(open('wordspace.pkl'))
+		wordspace.update(incoming_wordspace)
+
 	settings = yamlparse(setting_string)
-	for key,val in settings.items(): wordspace[re.sub(' ','_',key)] = val
+	for key,val in settings.items(): 
+		if not dev or (dev and key!='step'): wordspace[re.sub(' ','_',key)] = val
 	#---for convenience we automatically substitute a lone PDB file in inputs
 	#---! note that this is protein-atomistic specific and may need to be conditional
 	if 'start_structure' in wordspace and wordspace['start_structure'] == 'inputs/STRUCTURE.pdb': 
@@ -149,4 +156,6 @@ def init(setting_string):
 		else: 
 			if 'watch_file' not in wordspace: wordspace['watch_file'] = 'ERROR.log'
 			report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
+
+
 

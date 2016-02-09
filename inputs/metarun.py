@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 settings_cgmd_protein = """
+name:               enth
 step:               protein
 system_name:        CGMD PROTEIN
 start_structure:    inputs/1H0A.pdb
@@ -15,8 +16,8 @@ lipid_structures:   inputs/cgmd-lipid-structures
 step:               bilayer
 procedure:          cgmd,bilayer
 shape:              flat
-lx:                 100
-ly:                 100
+lx:                 20
+ly:                 20
 lz:                 50
 height:             6
 binsize:            0.9
