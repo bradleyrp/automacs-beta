@@ -14,7 +14,7 @@ Atomistic protein simulation module.
 
 #---common command interpretations
 command_library = """
-pdb2gmx -f STRUCTURE -ff FF -water WATER -o GRO.gro -p system.top -i BASE-posre.itp -missing NONE -ignh
+pdb2gmx -f STRUCTURE -ff FF -water WATER -o GRO.gro -p system.top -i BASE-posre.itp -missing NONE -ignh NONE
 editconf -f STRUCTURE.gro -o GRO.gro
 grompp -f MDP.mdp -c STRUCTURE.gro -p TOP.top -o BASE.tpr -po BASE.mdp
 mdrun -s BASE.tpr -cpo BASE.cpt -o BASE.trr -x BASE.xtc -e BASE.edr -g BASE.log -c BASE.gro -v NONE
