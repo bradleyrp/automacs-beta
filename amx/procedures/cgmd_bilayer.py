@@ -7,6 +7,7 @@ from amx.base.functions import filecopy
 from amx.base.gmxwrap import gmx,gmx_run,checkpoint
 from amx.base.gromacs import gmxpaths
 from amx.base.journal import *
+from amx.procedures.common import *
 import numpy as np
 from codes.mesh import *
 
@@ -20,6 +21,7 @@ grompp -f MDP.mdp -c STRUCTURE.gro -p TOP.top -o BASE.tpr -po BASE.mdp
 mdrun -s BASE.tpr -cpo BASE.cpt -o BASE.trr -x BASE.xtc -e BASE.edr -g BASE.log -c BASE.gro -v NONE
 editconf -f STRUCTURE.gro -o GRO.gro
 genconf -f STRUCTURE.gro -nbox NBOX -o GRO.gro
+make_ndx -f STRUCTURE.gro -o NDX.ndx
 """
 
 #---customized parameters
@@ -183,18 +185,21 @@ def gro_combinator(*args,**kwargs):
 	"""
 	
 	cwd = kwargs.pop('cwd','./')
-	out = kwargs.pop('out','out.gro')
+	out = kwargs.pop('gro','combined')
+	box = kwargs.pop('box',False)
 	name = kwargs.pop('name','SYSTEM')
 
 	collection = []
 	for arg in args: 
-		with open(cwd+arg) as fp: collection.append(fp.readlines())
-	with open(cwd+out,'w') as fp:
+		with open(cwd+arg+'.gro' if not re.match('^.+\.gro',arg) else cwd+arg) as fp: 
+			collection.append(fp.readlines())
+	with open(cwd+out+'.gro','w') as fp:
 		fp.write('%s\n%d\n'%(name,sum(len(i) for i in collection)-len(collection)*3))
 		for c in collection: 
 			for line in c[2:-1]: fp.write(line)
 		#---use the box vectors from the first structure
-		fp.write(collection[0][-1])		
+		if not box: fp.write(collection[0][-1])		
+		else: fp.write(' %.3f %.3f %.3f\n'%tuple(box))
 
 def read_gro(gro,cwd='./'):
 

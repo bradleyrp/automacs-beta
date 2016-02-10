@@ -17,28 +17,27 @@ cation:              NA
 anion:               CL
 """
 
-import amx
-amx.init(settings)
-amx.start(amx.wordspace['step'])
-amx.write_mdp()
-amx.dircopy('inputs/*.ff',amx.wordspace['step'])
-amx.filecopy(amx.wordspace['start_structure'],amx.wordspace['step']+'protein-start.pdb')
-amx.gmx('pdb2gmx',base='vacuum',structure='protein-start.pdb',gro='vacuum-alone',
-	log='pdb2gmx',water=amx.wordspace['water'],ff=amx.wordspace['force_field'])
-amx.filemove(amx.wordspace['step']+'system.top',amx.wordspace['step']+'vacuum.top')
-amx.extract_itp('vacuum.top')
-amx.write_top('vacuum.top')
-amx.gmx('editconf',structure='vacuum-alone',gro='vacuum',
-	log='editconf-vacuum-room',flag='-c -d %.2f'%amx.wordspace['water_buffer'])
-amx.minimize('vacuum',method='steep')
-amx.solvate(structure='vacuum-minimized',top='vacuum')
-amx.minimize('solvate')
-amx.counterions(structure='solvate-minimized',top='solvate')
-amx.minimize('counterions')
-amx.write_structure_pdb(pdb='protein-start.pdb',structure='counterions')
-amx.write_top('system.top')
-amx.checkpoint()
-amx.equilibrate()
-if amx.wordspace['run_part_two']=='yes': continueamx.continuation() 
-else: amx.write_continue_script()
-
+from amx import *
+init(settings)
+start(wordspace['step'])
+write_mdp()
+dircopy('inputs/*.ff',wordspace['step'])
+filecopy(wordspace['start_structure'],wordspace['step']+'protein-start.pdb')
+gmx('pdb2gmx',base='vacuum',structure='protein-start.pdb',gro='vacuum-alone',
+	log='pdb2gmx',water=wordspace['water'],ff=wordspace['force_field'])
+filemove(wordspace['step']+'system.top',wordspace['step']+'vacuum.top')
+extract_itp('vacuum.top')
+write_top('vacuum.top')
+gmx('editconf',structure='vacuum-alone',gro='vacuum',
+	log='editconf-vacuum-room',flag='-c -d %.2f'%wordspace['water_buffer'])
+minimize('vacuum',method='steep')
+solvate(structure='vacuum-minimized',top='vacuum')
+minimize('solvate')
+counterions(structure='solvate-minimized',top='solvate')
+minimize('counterions')
+write_structure_pdb(pdb='protein-start.pdb',structure='counterions')
+write_top('system.top')
+checkpoint()
+equilibrate()
+if wordspace['run_part_two']=='yes': continuecontinuation() 
+else: write_continue_script()

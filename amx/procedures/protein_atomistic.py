@@ -6,6 +6,7 @@ from amx.base.functions import filecopy
 from amx.base.gmxwrap import gmx,gmx_run,checkpoint
 from amx.base.gromacs import gmxpaths
 from amx.base.journal import *
+from amx.procedures.common import *
 
 """
 Atomistic protein simulation module.
@@ -13,7 +14,7 @@ Atomistic protein simulation module.
 
 #---common command interpretations
 command_library = """
-pdb2gmx -f STRUCTURE -ff FF -water WATER -o GRO.gro -p system.top -i BASE-posre.itp -missing NONE
+pdb2gmx -f STRUCTURE -ff FF -water WATER -o GRO.gro -p system.top -i BASE-posre.itp -missing NONE -ignh
 editconf -f STRUCTURE.gro -o GRO.gro
 grompp -f MDP.mdp -c STRUCTURE.gro -p TOP.top -o BASE.tpr -po BASE.mdp
 mdrun -s BASE.tpr -cpo BASE.cpt -o BASE.trr -x BASE.xtc -e BASE.edr -g BASE.log -c BASE.gro -v NONE
@@ -36,28 +37,6 @@ mdp_specs = {
 
 #---FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
-
-@narrate
-def component(name,count=None):
-
-	"""
-	component(name,count=None)
-	Add or modify the composition of the system and return the count if none is provided.
-	"""
-	
-	#---start a composition list if absent
-	if 'composition' not in wordspace: 
-		wordspace['composition'] = []
-		try: wordspace['composition'].append([name,int(count)])
-		except: raise Exception('[ERROR] the first time you add a component you must supply a count')
-	#---if count is supplied then we change the composition
-	names = zip(*wordspace['composition'])[0]
-	if count != None:
-		if name in names: wordspace['composition'][names.index(name)][1] = int(count)
-		else: wordspace['composition'].append([name,int(count)])
-	#---return the requested composition
-	names = zip(*wordspace['composition'])[0]
-	return wordspace['composition'][names.index(name)][1]
 
 def include(name):
 

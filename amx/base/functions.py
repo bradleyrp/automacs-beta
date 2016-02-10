@@ -152,7 +152,9 @@ def start(name):
 	if 'files' in wordspace:
 		fns = eval(wordspace['files'])
 		for fn in fns: 
-			if not os.path.isfile(wordspace['step']+fn): filecopy('inputs/'+fn,wordspace['step']+fn)
+			if not os.path.isfile(wordspace['step']+fn): 
+				#---files in subfolders in the inputs folder are elevated here
+				filecopy('inputs/'+fn,wordspace['step']+os.path.basename(fn))
 	#---sources keyword in the settings block refers to directories that should be copied from inputs
 	if 'sources' in wordspace:
 		source_dirs = eval(wordspace['sources'])
