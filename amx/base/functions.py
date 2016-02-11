@@ -46,7 +46,7 @@ def continue_simulation_from(path,needs_topology=True):
 		#---convert CPT to GRO
 		proc = subprocess.Popen(
 			'gmx trjconv -f md.part%04d.cpt -o md.part%04d.gro -s md.part%04d.tpr'%
-			(lastpart,lastpart,lastpart),cwd=dest,shell=True,
+			(lastpart,lastpart,lastpart),cwd=dest,shell=True,executable='/bin/bash',
 			stdout=subprocess.PIPE,stdin=subprocess.PIPE,stderr=subprocess.PIPE)
 		back = proc.communicate(input='0\n')
 	#---get ITP and TOP
@@ -102,7 +102,7 @@ def script(script,*args,**kwargs):
 		wordspace['root_directory']+'/'+script,' '.join(args),
 		' '.join([key+'='+val for key,val in kwargs.items()]))
 	report('running python script via "%s"'%cmd)
-	proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,
+	proc = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,executable='/bin/bash',
 		stdin=subprocess.PIPE,stderr=subprocess.PIPE,cwd=cwd)
 	back = proc.communicate()
 	for std in back:

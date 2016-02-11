@@ -32,10 +32,11 @@ def gmx_run(cmd,log,skip=False,inpipe=None):
 	output = open(wordspace['step']+'log-'+log,'w')
 	os.chmod(wordspace['step']+'log-'+log,0o664)
 	if inpipe == None:
-		proc = subprocess.Popen(cmd,cwd=wordspace['step'],shell=True,stdout=output,stderr=output)
+		proc = subprocess.Popen(cmd,cwd=wordspace['step'],shell=True,executable='/bin/bash',
+			stdout=output,stderr=output)
 		proc.communicate()
 	else:
-		proc = subprocess.Popen(cmd,cwd=wordspace['step'],shell=True,
+		proc = subprocess.Popen(cmd,cwd=wordspace['step'],shell=True,executable='/bin/bash',
 			stdout=output,stderr=output,stdin=subprocess.PIPE)
 		proc.communicate(input=inpipe)
 	#---check for errors
@@ -107,10 +108,12 @@ def bash(command,log=None,cwd=None):
 	
 	cwd = wordspace['step'] if cwd == None else cwd
 	if log == None: 
-		subprocess.call(command,cwd=cwd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		subprocess.call(command,cwd=cwd,shell=True,executable='/bin/bash',
+			stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	else:
 		output = open(cwd+'log-'+log,'w')
-		proc = subprocess.Popen(command,cwd=cwd,shell=True,stdout=output,stderr=output)
+		proc = subprocess.Popen(command,cwd=cwd,shell=True,executable='/bin/bash',
+			stdout=output,stderr=output)
 		proc.communicate()
 
 @narrate

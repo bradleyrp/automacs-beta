@@ -116,11 +116,11 @@ def upload(sure=False):
 		cwd = os.path.basename(os.path.abspath(os.getcwd()))
 		if not sure:
 			cmd = 'rsync -%s --files-from=uploads.txt ../%s %s:~/%s/%s'%('avin',cwd,sshname,subfolder,cwd)
-			p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()))
+			p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()),executable='/bin/bash')
 			log = p.communicate()
 		if sure or raw_input('\n[QUESTION] continue [y/N]? ')[:1] not in 'nN':
 			cmd = 'rsync -%s --files-from=uploads.txt ../%s %s:~/%s/%s'%('avi',cwd,sshname,subfolder,cwd)
-			p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()))
+			p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()),executable='/bin/bash')
 			log = p.communicate()
 			os.remove('uploads.txt')
 		with open('script-%s.log'%last_step,'a') as fp:

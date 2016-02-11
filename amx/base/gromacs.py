@@ -78,12 +78,12 @@ if 'modules' in machine_configuration:
 
 #---basic check for gromacs version series
 suffix = '' if 'suffix' not in machine_configuration else machine_configuration['suffix']
-check_gmx = subprocess.Popen('gmx%s'%suffix,shell=True,
+check_gmx = subprocess.Popen('gmx%s'%suffix,shell=True,executable='/bin/bash',
 	stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()
 if not re.search('command not found',check_gmx[1]): gmx_series = 5
 else:
-	check_mdrun = ' '.join(subprocess.Popen('mdrun%s -g /tmp/md.log'%suffix,
-		shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate())
+	check_mdrun = ' '.join(subprocess.Popen('mdrun%s -g /tmp/md.log'%suffix,shell=True,
+		executable='/bin/bash',stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate())
 	if re.search('VERSION 4',check_mdrun): gmx_series = 4
 	else: raise Exception('gromacs is absent')
 	del check_mdrun

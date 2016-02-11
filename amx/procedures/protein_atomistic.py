@@ -180,7 +180,7 @@ def trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None):
 		vmdlog = open(wordspace['step']+'log-script-vmd-trim','w')
 		#---previously used os.environ['VMDNOCUDA'] = "1" but this was causing segfaults on green
 		p = subprocess.Popen('VMDNOCUDA=1 '+gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl',
-			stdout=vmdlog,stderr=vmdlog,cwd=wordspace['step'],shell=True)
+			stdout=vmdlog,stderr=vmdlog,cwd=wordspace['step'],shell=True,executable='/bin/bash')
 		p.communicate()
 		with open(wordspace['bash_log'],'a') as fp:
 			fp.write(gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl &> log-script-vmd-trim\n')
