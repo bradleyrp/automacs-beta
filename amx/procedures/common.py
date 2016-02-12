@@ -35,12 +35,13 @@ def component(name,count=None):
 	return wordspace['composition'][names.index(name)][1]
 
 @narrate
-def get_box_vectors(structure,gro,new=False,d=0,log='checksize'):
+def get_box_vectors(structure,gro=None,d=0,log='checksize'):
 
 	"""
 	Return the box vectors.
 	"""
 
+	if not gro: gro = structure+'-gro'
 	#---note that we consult the command_library here
 	gmx('editconf',structure=structure,gro=gro,
 		log='editconf-%s'%log,flag='-d %d'%d)
@@ -65,3 +66,50 @@ def count_molecules(structure,resname):
 	count, = [int(re.findall(residue_regex,l)[0]) for l in lines if re.match(residue_regex,l)]
 	return count
 	
+@narrate
+def trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None,method='aamd'):
+
+	"""
+	trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None)
+	Remove waters within a certain number of Angstroms of the protein.
+	"""
+
+	if gap != 0.0:
+		if method == 'aamd':
+			vmdtrim = [
+				'package require pbctools',
+				'mol new solvate-dense.gro',
+				'set sel [atomselect top \"(all not ('+\
+				'water and (same residue as water within '+str(gap)+\
+				' of not water)'+\
+				')) and '+\
+				'same residue as (x>=0 and x<='+str(10*boxvecs[0])+\
+				' and y>=0 and y<= '+str(10*boxvecs[1])+\
+				' and z>=0 and z<= '+str(10*boxvecs[2])+')"]',
+				'$sel writepdb solvate-vmd.pdb',
+				'exit',]			
+		elif method == 'cgmd':
+			vmdtrim = [
+				'package require pbctools',
+				'mol new solvate-dense.gro',
+				'set sel [atomselect top \"(all not ('+\
+				'resname W and (same residue as resname W and within '+str(gap)+\
+				' of not resname W)'+\
+				')) and '+\
+				'same residue as (x>=0 and x<='+str(10*boxvecs[0])+\
+				' and y>=0 and y<= '+str(10*boxvecs[1])+\
+				' and z>=0 and z<= '+str(10*boxvecs[2])+')"]',
+				'$sel writepdb solvate-vmd.pdb',
+				'exit',]			
+		with open(wordspace['step']+'script-vmd-trim.tcl','w') as fp:
+			for line in vmdtrim: fp.write(line+'\n')
+		vmdlog = open(wordspace['step']+'log-script-vmd-trim','w')
+		#---previously used os.environ['VMDNOCUDA'] = "1" but this was causing segfaults on green
+		p = subprocess.Popen('VMDNOCUDA=1 '+gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl',
+			stdout=vmdlog,stderr=vmdlog,cwd=wordspace['step'],shell=True,executable='/bin/bash')
+		p.communicate()
+		with open(wordspace['bash_log'],'a') as fp:
+			fp.write(gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl &> log-script-vmd-trim\n')
+		gmx_run(gmxpaths['editconf']+' -f solvate-vmd.pdb -o solvate.gro -resnr 1',
+			log='editconf-convert-vmd')
+	else: filecopy(wordspace['step']+'solvate-dense.gro',wordspace['step']+'solvate.gro')
