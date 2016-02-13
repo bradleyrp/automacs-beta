@@ -68,9 +68,16 @@ def yamlparse(string):
 	for s in string.split('\n'):
 		if re.match(regex,s):
 			key,val = re.findall(regex,s)[0]
-			if re.match('^(T|t)rue$',val): unpacked[key] = True
-			elif re.match('^(F|f)alse$',val): unpacked[key] = False
-			elif re.match('^[0-9]+$',val): unpacked[key] = int(val)
-			elif re.match('^[0-9]*\.[0-9]*$',val): unpacked[key] = float(val)
+			#---allow lists in our pseudo-yaml format
+			try: val = eval(val)
+			except: pass
+			if type(val)==list: unpacked[key] = val
+			elif type(val)==str:
+				if re.match('^(T|t)rue$',val): unpacked[key] = True
+				elif re.match('^(F|f)alse$',val): unpacked[key] = False
+				#---! may be redundant with the eval command above
+				elif re.match('^[0-9]+$',val): unpacked[key] = int(val)
+				elif re.match('^[0-9]*\.[0-9]*$',val): unpacked[key] = float(val)
+				else: unpacked[key] = val
 			else: unpacked[key] = val
 	return unpacked

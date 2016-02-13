@@ -150,15 +150,13 @@ def start(name):
 	filecopy(wordspace['script'],wordspace['step']+os.path.basename(wordspace['script']))
 	#---files keyword in the settings block refers to files that should be copied from inputs
 	if 'files' in wordspace:
-		fns = eval(wordspace['files'])
-		for fn in fns: 
+		for fn in wordspace['files']: 
 			if not os.path.isfile(wordspace['step']+fn): 
 				#---files in subfolders in the inputs folder are elevated here
 				filecopy('inputs/'+fn,wordspace['step']+os.path.basename(fn))
 	#---sources keyword in the settings block refers to directories that should be copied from inputs
 	if 'sources' in wordspace:
-		source_dirs = eval(wordspace['sources'])
-		for dn in source_dirs: 
+		for dn in wordspace['sources']: 
 			if not os.path.isdir(wordspace['step']+dn): dircopy('inputs/'+dn,wordspace['step'])
 			
 @narrate

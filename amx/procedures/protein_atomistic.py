@@ -38,15 +38,6 @@ mdp_specs = {
 #---FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
 
-def include(name):
-
-	"""
-	include(name)
-	Add an ITP file to the includes list but avoid redundancies which cause errors in GROMACS.
-	"""
-
-	if name not in wordspace['includes']: wordspace['includes'].append(name)
-
 @narrate
 def extract_itp(topfile):
 
@@ -77,31 +68,12 @@ def extract_itp(topfile):
 	wordspace['itp'] = ['protein.itp']
 
 @narrate
-def write_top(topfile):
-
-	"""
-	write_top(topfile)
-	Write the topology file.
-	"""
-
-	#---always include forcefield.itp
-	if 'includes' not in wordspace: wordspace['includes'] = ['forcefield']		
-	with open(wordspace['step']+topfile,'w') as fp:
-		#---write include files for the force field
-		for incl in wordspace['includes']:
-			fp.write('#include "%s.ff/%s.itp"\n'%(wordspace['force_field'],incl))
-		#---write include files
-		for itp in wordspace['itp']: fp.write('#include "'+itp+'"\n')
-		#---write system name
-		fp.write('[ system ]\n%s\n\n[ molecules ]\n'%wordspace['system_name'])
-		for key,val in wordspace['composition']: fp.write('%s %d\n'%(key,val))
-
-@narrate
 def select_minimum(*args,**kwargs):
 
 	"""
 	select_minimum(*args,**kwargs)
 	Select the structure with the minimum force after consecutive energy minimization steps.
+	MOVED TO COMMON
 	"""
 
 	gro = 'confout' if 'gro' not in kwargs else kwargs['gro']
@@ -138,22 +110,6 @@ def minimize_steep_cg(name):
 	select_minimum('%s-steep'%name,'%s-cg'%name,gro='%s-minimized'%name)
 	checkpoint()
 
-@narrate
-def minimize(name,method='steep'):
-
-	"""
-	minimize(name,method='steep')
-	Standard minimization procedure.
-	"""
-
-	gmx('grompp',base='em-%s-%s'%(name,method),top=name,structure=name,
-		log='grompp-%s-%s'%(name,method),mdp='input-em-%s-in'%method,skip=True)
-	gmx('mdrun',base='em-%s-%s'%(name,method),log='mdrun-%s-%s'%(name,method))
-	filecopy(wordspace['step']+'em-'+'%s-%s.gro'%(name,method),
-		wordspace['step']+'%s-minimized.gro'%name)
-	checkpoint()
-
-	
 @narrate
 def solvate(structure,top):
 
@@ -195,34 +151,6 @@ def solvate(structure,top):
 	write_top('solvate.top')
 
 @narrate
-def counterions(structure,top):
-
-	"""
-	counterions(structure,top)
-	Standard procedure for adding counterions.
-	"""
-
-	filecopy(wordspace['step']+top+'.top',wordspace['step']+'counterions.top')
-	gmx('grompp',base='genion',structure=structure,
-		top='counterions',mdp='input-em-steep-in',
-		log='grompp-genion')
-	gmx('make_ndx',structure=structure,ndx='solvate-waters',
-		inpipe='keep 0\nr SOL\nkeep 1\nq\n',
-		log='make-ndx-counterions-check')
-	gmx('genion',base='genion',gro='counterions',ndx='solvate-waters',
-		cation=wordspace['cation'],anion=wordspace['anion'],
-		flag='-conc %f -neutral'%wordspace['ionic_strength'],
-		log='genion')
-	with open(wordspace['step']+'log-genion','r') as fp: lines = fp.readlines()
-	declare_ions = filter(lambda x:re.search('Will try',x)!=None,lines).pop()
-	ion_counts = re.findall(
-		'^Will try to add ([0-9]+) (\w+) ions and ([0-9]+) (\w+) ions',declare_ions).pop()
-	for ii in range(2): component(ion_counts[2*ii+1],count=ion_counts[2*ii])
-	component('SOL',count=component('SOL')-component(ion_counts[1])-component(ion_counts[3]))
-	include('ions')
-	write_top('counterions.top')
-
-@narrate
 def write_structure_pdb(structure,pdb):
 
 	"""
@@ -247,27 +175,3 @@ def write_structure_pdb(structure,pdb):
 		flag='-o structure.pdb -resnr %d'%startres,
 		log='editconf-structure-pdb')
 
-@narrate
-def equilibrate():
-
-	"""
-	equilibrate()
-	Standard minimization procedure.
-	"""
-
-	#---sequential equilibration stages
-	seq = wordspace['equilibration'].split(',')
-	for eqnum,name in enumerate(seq):
-		gmx('grompp',base='md-%s'%name,top='system',
-			structure='system' if eqnum == 0 else 'md-%s'%seq[eqnum-1],
-			log='grompp-%s'%name,mdp='input-md-%s-eq-in'%name)
-		gmx('mdrun',base='md-%s'%name,log='mdrun-%s'%name,skip=True)
-		checkpoint()
-
-	#---first part of the equilibration/production run
-	gmx('grompp',base='md.part0001',top='system',
-		structure='md-%s'%seq[-1],
-		log='grompp-0001',mdp='input-md-in')
-	gmx('mdrun',base='md.part0001',log='mdrun-0001')
-	checkpoint()
-	

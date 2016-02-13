@@ -67,7 +67,8 @@ def count_molecules(structure,resname):
 	return count
 	
 @narrate
-def trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None,method='aamd'):
+def trim_waters(structure='solvate-dense',gro='solvate',
+	gap=3,boxvecs=None,method='aamd',boxcut=True):
 
 	"""
 	trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None)
@@ -75,32 +76,22 @@ def trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None,metho
 	"""
 
 	if gap != 0.0:
-		if method == 'aamd':
-			vmdtrim = [
-				'package require pbctools',
-				'mol new solvate-dense.gro',
-				'set sel [atomselect top \"(all not ('+\
-				'water and (same residue as water within '+str(gap)+\
-				' of not water)'+\
-				')) and '+\
-				'same residue as (x>=0 and x<='+str(10*boxvecs[0])+\
-				' and y>=0 and y<= '+str(10*boxvecs[1])+\
-				' and z>=0 and z<= '+str(10*boxvecs[2])+')"]',
-				'$sel writepdb solvate-vmd.pdb',
-				'exit',]			
-		elif method == 'cgmd':
-			vmdtrim = [
-				'package require pbctools',
-				'mol new solvate-dense.gro',
-				'set sel [atomselect top \"(all not ('+\
-				'resname W and (same residue as resname W and within '+str(gap)+\
-				' of not resname W)'+\
-				')) and '+\
-				'same residue as (x>=0 and x<='+str(10*boxvecs[0])+\
-				' and y>=0 and y<= '+str(10*boxvecs[1])+\
-				' and z>=0 and z<= '+str(10*boxvecs[2])+')"]',
-				'$sel writepdb solvate-vmd.pdb',
-				'exit',]			
+		if method == 'aamd': watersel = "water"
+		elif method == 'cgmd': watersel = "resname W"
+		else: raise Exception("\n[ERROR] unclear method %s"%method)
+		vmdtrim = [
+			'package require pbctools',
+			'mol new solvate-dense.gro',
+			'set sel [atomselect top \"(all not ('+\
+			'%s and (same residue as %s and within '%(watersel,watersel)+str(gap)+\
+			' of not %s)))'%watersel]
+		#---box trimming is typical for e.g. atomstic protein simulations but discards anything outside
+		if boxcut:
+			vmdtrim += [' and '+\
+			'same residue as (x>=0 and x<='+str(10*boxvecs[0])+\
+			' and y>=0 and y<= '+str(10*boxvecs[1])+\
+			' and z>=0 and z<= '+str(10*boxvecs[2])+')']
+		vmdtrim += ['"]','$sel writepdb solvate-vmd.pdb','exit',]			
 		with open(wordspace['step']+'script-vmd-trim.tcl','w') as fp:
 			for line in vmdtrim: fp.write(line+'\n')
 		vmdlog = open(wordspace['step']+'log-script-vmd-trim','w')
@@ -113,3 +104,107 @@ def trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None,metho
 		gmx_run(gmxpaths['editconf']+' -f solvate-vmd.pdb -o solvate.gro -resnr 1',
 			log='editconf-convert-vmd')
 	else: filecopy(wordspace['step']+'solvate-dense.gro',wordspace['step']+'solvate.gro')
+
+@narrate
+def minimize(name,method='steep'):
+
+	"""
+	minimize(name,method='steep')
+	Standard minimization procedure.
+	"""
+
+	gmx('grompp',base='em-%s-%s'%(name,method),top=name,structure=name,
+		log='grompp-%s-%s'%(name,method),mdp='input-em-%s-in'%method,skip=True)
+	gmx('mdrun',base='em-%s-%s'%(name,method),log='mdrun-%s-%s'%(name,method))
+	filecopy(wordspace['step']+'em-'+'%s-%s.gro'%(name,method),
+		wordspace['step']+'%s-minimized.gro'%name)
+	checkpoint()
+
+@narrate
+def write_top(topfile):
+
+	"""
+	write_top(topfile)
+	Write the topology file.
+	"""
+
+	#---always include forcefield.itp
+	if 'ff_includes' not in wordspace: wordspace['ff_includes'] = ['forcefield']		
+	with open(wordspace['step']+topfile,'w') as fp:
+		#---write include files for the force field
+		for incl in wordspace['ff_includes']:
+			fp.write('#include "%s.ff/%s.itp"\n'%(wordspace['force_field'],incl))
+		#---write include files
+		for itp in wordspace['itp']: fp.write('#include "'+itp+'"\n')
+		#---write system name
+		fp.write('[ system ]\n%s\n\n[ molecules ]\n'%wordspace['system_name'])
+		for key,val in wordspace['composition']: fp.write('%s %d\n'%(key,val))
+
+def include(name):
+
+	"""
+	include(name)
+	Add an ITP file to the itp (non-ff includes) list but avoid redundancies 
+	which cause errors in GROMACS.
+	"""
+
+	if 'itp' not in wordspace: wordspace['itp'] = []
+	if name not in wordspace['itp']: wordspace['itp'].append(name)
+
+@narrate
+def equilibrate(groups=None):
+
+	"""
+	equilibrate()
+	Standard equilibration procedure.
+	"""
+
+	#---sequential equilibration stages
+	seq = wordspace['equilibration'].split(',')
+	for eqnum,name in enumerate(seq):
+		gmx('grompp',base='md-%s'%name,top='system',
+			structure='system' if eqnum == 0 else 'md-%s'%seq[eqnum-1],
+			log='grompp-%s'%name,mdp='input-md-%s-eq-in'%name,
+			flag='' if not groups else '-n %s'%groups)
+		gmx('mdrun',base='md-%s'%name,log='mdrun-%s'%name,skip=True)
+		checkpoint()
+
+	#---first part of the equilibration/production run
+	gmx('grompp',base='md.part0001',top='system',
+		structure='md-%s'%seq[-1],
+		log='grompp-0001',mdp='input-md-in',
+		flag='' if not groups else '-n %s'%groups)
+	gmx('mdrun',base='md.part0001',log='mdrun-0001')
+	checkpoint()
+
+@narrate
+def counterions(structure,top,resname="SOL",includes=None,gro='counterions'):
+
+	"""
+	counterions(structure,top)
+	Standard procedure for adding counterions.
+	The resname must be understandable by "r RESNAME" in make_ndx and writes to the top file.
+	"""
+
+	filecopy(wordspace['step']+top+'.top',wordspace['step']+'counterions.top')
+	gmx('grompp',base='genion',structure=structure,
+		top='counterions',mdp='input-em-steep-in',
+		log='grompp-genion')
+	gmx('make_ndx',structure=structure,ndx='solvate-waters',
+		inpipe='keep 0\nr %s\nkeep 1\nq\n'%resname,
+		log='make-ndx-counterions-check')
+	gmx('genion',base='genion',gro=gro,ndx='solvate-waters',
+		cation=wordspace['cation'],anion=wordspace['anion'],
+		flag='-conc %f -neutral'%wordspace['ionic_strength'],
+		log='genion')
+	with open(wordspace['step']+'log-genion','r') as fp: lines = fp.readlines()
+	declare_ions = filter(lambda x:re.search('Will try',x)!=None,lines).pop()
+	ion_counts = re.findall(
+		'^Will try to add ([0-9]+)\+?\-? ([\w\+\-]+) ions and ([0-9]+) ([\w\+\-]+) ions',
+		declare_ions).pop()
+	for ii in range(2): component(ion_counts[2*ii+1],count=ion_counts[2*ii])
+	component(resname,count=component(resname)-component(ion_counts[1])-component(ion_counts[3]))
+	if includes:
+		if type(includes)==str: includes = [includes]
+		for i in includes: include(i)
+	write_top('counterions.top')

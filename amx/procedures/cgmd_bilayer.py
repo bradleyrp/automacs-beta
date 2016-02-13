@@ -22,6 +22,8 @@ mdrun -s BASE.tpr -cpo BASE.cpt -o BASE.trr -x BASE.xtc -e BASE.edr -g BASE.log 
 editconf -f STRUCTURE.gro -o GRO.gro
 genconf -f STRUCTURE.gro -nbox NBOX -o GRO.gro
 make_ndx -f STRUCTURE.gro -o NDX.ndx
+genion -s BASE.tpr -o GRO.gro -n NDX.ndx -nname ANION -pname CATION
+trjconv -f STRUCTURE.gro -n NDX.ndx -s TPR.tpr -o GRO.gro
 """
 
 #---customized parameters
@@ -29,6 +31,8 @@ mdp_specs = {
 	'group':'cgmd',
 	'input-em-steep-in.mdp':['minimize'],
 	'input-em-cg-in.mdp':['minimize',{'integrator':'cg'}],
+	'input-md-npt-bilayer-eq-in.mdp':['npt-bilayer'],
+	'input-md-in.mdp':None,
 	}
 
 #---FUNCTIONS
@@ -140,8 +144,6 @@ def build_bilayer(name):
 	"""
 	build_bilayer(name)
 	Create a new bilayer according to a particular topography.
-	Requires the following settings:
-		???
 	"""
 	
 	#---collect the bilayer topography and the lipid points
@@ -151,7 +153,7 @@ def build_bilayer(name):
 	resname = 'DOPC'
 	
 	#---move the lipids into position and write a compbined GRO file	
-	with open(wordspace['step']+name,'w') as fp:
+	with open(wordspace['step']+name+'.gro','w') as fp:
 		fp.write('%s\n'%wordspace['system_name']+str(2*len(ptsmid)*len(lpts))+'\n')
 		resnr = 1
 		#---loop over monolayers
@@ -175,6 +177,15 @@ def build_bilayer(name):
 					for i in range(len(lpts))])+'\n')
 				resnr += 1
 		fp.write(' '.join([dotplace(x) for x in vecs])+'\n')
+
+	#---save the slab dimensions for solvation
+	boxdims_old,boxdims = get_box_vectors(name)
+	wordspace['bilayer_dimensions_slab'] = boxdims
+	#---! need explicit calculation of what ends up in the box, not inference as below
+	#---! need multiple lipid types
+	component(wordspace['lipid'],count=
+		int(wordspace['lx']/wordspace['binsize'])*
+		int(wordspace['ly']/wordspace['binsize'])*2)
 
 @narrate
 def gro_combinator(*args,**kwargs):
@@ -288,38 +299,141 @@ def adhere_protein_cgmd_bilayer(bilayer,combo,protein_complex=None):
 		fp.write(boxvecs)
 
 @narrate
-def write_top(topfile):
-
+def solvate_bilayer(structure='vacuum'):
+	
 	"""
-	write_top(topfile)
-	Write the topology file.
-	WET CODE DRIPPED FROM protein_atomstic.py
+	Solvate a CGMD bilayer (possibly with proteins) avoiding overlaps.
 	"""
 
-	#---always include forcefield.itp
-	if 'includes' not in wordspace: wordspace['includes'] = ['forcefield']		
-	with open(wordspace['step']+topfile,'w') as fp:
-		#---write include files for the force field
-		for incl in wordspace['ff_includes']:
-			fp.write('#include "%s.ff/%s.itp"\n'%(wordspace['force_field'],incl))
-		#---write include files
-		for itp in wordspace['itp']: fp.write('#include "'+itp+'"\n')
-		#---write system name
-		fp.write('[ system ]\n%s\n\n[ molecules ]\n'%wordspace['system_name'])
-		for key,val in wordspace['composition']: fp.write('%s %d\n'%(key,val))
+	#---check the size of the slab
+	boxdims_old,boxdims = get_box_vectors(structure)
+
+	#---! standardize these?
+	basedim = 3.64428
+	waterbox = 'inputs/martini-water'
+
+	#---make an oversized water box
+	newdims = boxdims_old[:2]+[wordspace['solvent_thickness']]
+	gmx('genconf',structure='martini-water',gro='solvate-empty-uncentered-untrimmed',
+		nbox=' '.join([str(int(i/basedim+1)) for i in newdims]),log='genconf')
+
+	#---trimming waters
+	with open(wordspace['step']+'solvate-empty-uncentered-untrimmed.gro','r') as fp:
+		lines = fp.readlines()
+	modlines = []
+	for line in lines[2:-1]:
+		coords = [float(i) for i in line[20:].split()][:3]
+		if all([coords[i]<newdims[i] for i in range(3)]): modlines.append(line)
+	with open(wordspace['step']+'solvate-empty-uncentered.gro','w') as fp:
+		fp.write(lines[0])
+		fp.write(str(len(modlines))+'\n')
+		for l in modlines: fp.write(l)
+		fp.write(lines[-1])
+
+	#---update waters
+	structure='solvate-empty-uncentered'
+	component('W',count=count_molecules(structure,'W'))
+
+	#---! DEVELOPMENT update the command library if it changes
+	from amx.procedures.cgmd_bilayer import command_library
+	from amx.base.functions import interpret_command
+	wordspace['command_library'] = interpret_command(command_library)
+
+	#---translate the water box
+	gmx('editconf',structure=structure,gro='solvate-water-shifted',
+		flag='-translate 0 0 %f'%(wordspace['bilayer_dimensions_slab'][2]/2.),log='editconf-solvate-shift')
+
+	#---combine and trim with new box vectors
+	#---! skipping minimization?
+	structure = 'solvate-water-shifted'
+	boxdims_old,boxdims = get_box_vectors(structure)
+	boxvecs = wordspace['bilayer_dimensions_slab'][:2]+[wordspace['bilayer_dimensions_slab'][2]+boxdims[2]]
+	gro_combinator('vacuum.gro',structure,box=boxvecs,cwd=wordspace['step'],gro='solvate-dense')
+	structure = 'solvate-dense'
+	trim_waters(structure=structure,gro='solvate',boxcut=False,
+		gap=wordspace['protein_water_gap'],method='cgmd',boxvecs=boxvecs)
+	structure = 'solvate'
+	component('W',count=count_molecules(structure,'W'))
+	wordspace['bilayer_dimensions_solvate'] = boxvecs
 
 @narrate
-def minimize(name,method='steep'):
+def add_proteins():
 
 	"""
-	minimize(name,method='steep')
-	Standard minimization procedure.
-	WET CODE DRIPPED FROM protein_atomstic.py
+	Protein addition procedure for CGMD bilayers.
 	"""
 
-	gmx('grompp',base='em-%s-%s'%(name,method),top=name,structure=name,
-		log='grompp-%s-%s'%(name,method),mdp='input-em-%s-in'%method,skip=True)
-	gmx('mdrun',base='em-%s-%s'%(name,method),log='mdrun-%s-%s'%(name,method))
-	filecopy(wordspace['step']+'em-'+'%s-%s.gro'%(name,method),
-		wordspace['step']+'%s-minimized.gro'%name)
-	checkpoint()
+	#---assume that cgmd-protein step named the itp as follows
+	filecopy(wordspace['last']+"Protein.itp",wordspace['step'])
+	filecopy(wordspace['last']+wordspace['protein_ready'],wordspace['step'])
+	filecopy(wordspace['last']+wordspace['lipid_ready'],wordspace['step'])
+	gro_combinator(wordspace['protein_ready'],wordspace['lipid_ready'],
+		cwd=wordspace['step'],gro='protein-lipid')
+	adhere_protein_cgmd_bilayer(bilayer='vacuum-bilayer.gro',
+		protein_complex='protein-lipid.gro',combo='vacuum.gro')
+	#---assume inclusion of a partner lipid here
+	include('Protein.itp')
+	include('PIP2.itp')
+	component('Protein',count=1)
+	component('PIP2',count=1)
+
+@narrate
+def counterion_renamer(structure):
+
+	"""
+	Fix the ion names for MARTINI.
+	"""
+
+	with open(wordspace['step']+structure+'.gro') as fp: lines = fp.readlines()
+	for lineno,line in enumerate(lines):
+		if re.match('.{5}(CL|NA)',line):
+			lines[lineno] = re.sub(re.escape(line[5:15]),
+				'ION  '+line[5:10].strip().rjust(5),lines[lineno])
+	with open(wordspace['step']+structure+'.gro','w') as fp:
+		for line in lines: fp.write(line)
+
+@narrate
+def bilayer_middle(structure,gro):
+
+	"""
+	Move the bilayer to the middle of the z-coordinate of the box.
+	Note that the protein adhesion procedure works best on a slab that is centered on z=0.
+	This means that the bilayer will be broken across z=0.
+	For visualization it is better to center it.
+	"""
+
+	gmx('make_ndx',ndx='system-dry',structure='counterions-minimized',
+		inpipe="keep 0\nr %s || r ION || r %s || r %s\n!1\ndel 1\nq\n"%(
+		wordspace['sol'],wordspace['anion'],wordspace['cation']),
+		log='make-ndx-center')
+	#---bilayer slab is near z=0 so it is likely split so we shift by half of the box vector
+	gmx('trjconv',structure='counterions-minimized',gro='counterions-shifted',ndx='system-dry',
+		flag='-trans 0 0 %f -pbc mol'%(wordspace['bilayer_dimensions_solvate'][2]/2.),
+		tpr='em-counterions-steep',log='trjconv-shift',inpipe="0\n")
+	#---center everything
+	gmx('trjconv',structure='counterions-shifted',gro='system',ndx='system-dry',
+		tpr='em-counterions-steep',log='trjconv-middle',inpipe="1\n0\n",flag='-center -pbc mol')
+
+@narrate
+def bilayer_sorter(structure,ndx='system-groups'):
+
+	"""
+	"""
+
+	gmx('make_ndx',structure=structure,ndx='%s-inspect'%structure,
+		log='make-ndx-%s-inspect'%structure,inpipe="q\n")
+	with open(wordspace['step']+'log-make-ndx-%s-inspect'%structure) as fp: lines = fp.readlines()
+	#---find the protein group because it may not be obvious in CGMD
+	make_ndx_sifter = '^\s*([0-9]+)\s*Protein'
+	protein_group = int(re.findall(make_ndx_sifter,
+		next(i for i in lines if re.match(make_ndx_sifter,i)))[0])
+	group_selector = "\n".join([
+		"keep %s"%protein_group,
+		"name 0 PROTEIN",
+		" || ".join(['r '+r for r in ['DOPC','PIP2']]),
+		"name 1 LIPIDS",
+		" || ".join(['r '+r for r in ['W','ION',wordspace['cation'],wordspace['anion']]]),
+		"name 2 SOLVENT",
+		"0 | 1 | 2","name 3 SYSTEM","q"])+"\n"
+	gmx('make_ndx',structure='system',ndx=ndx,log='make-ndx-groups',
+		inpipe=group_selector)

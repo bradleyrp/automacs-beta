@@ -2,47 +2,54 @@
 execfile('/etc/pythonstart')
 
 settings = """
+system name:        CGMD BILAYER
+lipid structures:   inputs/cgmd-lipid-structures
 step:               bilayer
-system_name:        CGMD BILAYER
-lipid_structures:   inputs/cgmd-lipid-structures
 procedure:          cgmd,bilayer
 shape:              flat
-lx:                 100
-ly:                 100
+lx:                 20
+ly:                 30
 lz:                 50
 height:             6
 binsize:            0.9
-monolayer_offset:   1.5
+monolayer offset:   1.5
 lipid:              DOPC
+solvent thickness:  15
+protein water gap:  3
+lipid ready:        lipid-ready.gro
+protein ready:      protein-ready.gro
+ncols:              1
+nrows:              1
+total proteins:     1
+space scale:        20
+z shift:            4.5
+lattice type:       square
+force field:        martini
+cation:             NA+
+anion:              CL-
+ionic strength:     0.150
+sol:                W
+ff includes:        ['martini-v2.2','martini-v2.0-lipids','martini-v2.2-aminoacids','martini-v2.0-ions']
+files:              ['cgmd-tops/PIP2.itp','martini-water.gro']
+sources:            ['martini.ff']
+equilibration:      npt-bilayer
 """
 
 from amx import *
 init(settings)
 start(wordspace['step'])
-build_bilayer(name='vacuum-bilayer.gro')
-filecopy(wordspace['last']+wordspace['protein_ready'],wordspace['step'])
-filecopy(wordspace['last']+wordspace['lipid_ready'],wordspace['step'])
-if 'protein_ready' in wordspace:
-	gro_combinator(wordspace['protein_ready'],
-		wordspace['lipid_ready'],cwd=wordspace['step'],out='protein-lipid.gro')
-	adhere_protein_cgmd_bilayer(bilayer='vacuum-bilayer.gro',
-		protein_complex='protein-lipid.gro',combo='vacuum.gro')
-#---! needs generalized
-os.system('cp -arv inputs/martini.ff '+wordspace['step'])
-filecopy('inputs/PIP2.itp',wordspace['step'])
-filecopy(wordspace['last']+"Protein.itp",wordspace['step'])
-wordspace['itp'] = ['Protein.itp','PIP2.itp']
-wordspace['ff_includes'] = eval(wordspace['ff_includes'])
-wordspace['composition'] = [
-	(wordspace['lipid'],
-		int(wordspace['lx']/wordspace['binsize'])*int(wordspace['ly']/wordspace['binsize'])*2),
-	('Protein',1),
-	('PIP2',1)]
-write_top('vacuum.top')
 write_mdp()
-minimize('vacuum',method='steep')
-import pickle
-pickle.dump(wordspace,open('wordspace.pkl','w'))
-
-"""
-"""
+build_bilayer(name='vacuum-bilayer')
+if 'protein_ready' in wordspace: add_proteins()
+write_top('vacuum.top')
+solvate_bilayer('vacuum')
+write_top('solvate.top')
+minimize('solvate')
+counterions('solvate-minimized','solvate',resname="W")
+counterion_renamer('counterions')
+write_top('counterions.top')
+minimize('counterions')
+bilayer_middle(structure='counterions',gro='system')
+bilayer_sorter(structure='system',ndx='system-groups')
+write_top('system.top')
+equilibrate(groups='system-groups')
