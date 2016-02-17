@@ -21,8 +21,11 @@ echo "[STATUS] logging to $metalog"
 echo "[STATUS] running ... "
 
 #---extend TPR
+if [[ ! -z $EXTEND  ]]; then EXTEND_FLAG="-extend $EXTEND";
+elif [[ ! -z $UNTIL ]]; then EXTEND_FLAG="-until $UNTIL";
+else EXTEND_FLAG="-nsteps -1"; fi
 log=$(printf tpbconv-%04d $NRUN)
-cmd="$TPBCONV -extend $EXTEND -s $(printf md.part%04d.tpr $PRUN) -o $(printf md.part%04d.tpr $NRUN)"
+cmd="$TPBCONV $EXTEND_FLAG -s $(printf md.part%04d.tpr $PRUN) -o $(printf md.part%04d.tpr $NRUN)"
 cmdexec=$cmd" &> log-$log"
 echo "[FUNCTION] gmx_run ('"$cmd"',) {'skip': False, 'log': '$log', 'inpipe': None}" >> $metalog
 eval $cmdexec
@@ -36,4 +39,3 @@ cmdexec=$cmd" &> log-$log"
 echo "[FUNCTION] gmx_run ('"$cmd"',) {'skip': False, 'log': '$log', 'inpipe': None}" >> $metalog
 eval $cmdexec
 echo "[STATUS] done continuation stage"
-

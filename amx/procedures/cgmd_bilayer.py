@@ -31,6 +31,7 @@ mdp_specs = {
 	'group':'cgmd',
 	'input-em-steep-in.mdp':['minimize'],
 	'input-em-cg-in.mdp':['minimize',{'integrator':'cg'}],
+	'input-md-vacuum-pack-eq-in.mdp':['vacuum-packing'],
 	'input-md-npt-bilayer-eq-in.mdp':['npt-bilayer'],
 	'input-md-in.mdp':None,
 	}
@@ -139,7 +140,7 @@ def makeshape():
 	return ptsmid,monolayer_mesh,vecs
 
 @narrate
-def build_bilayer(name):
+def build_bilayer(name,random_rotation=True):
 
 	"""
 	build_bilayer(name)
@@ -150,7 +151,9 @@ def build_bilayer(name):
 	ptsmid,monolayer_mesh,vecs = makeshape()
 	lpts,atomnames = read_molecule(wordspace['lipid'])
 	mono_offset = wordspace['monolayer_offset']
-	resname = 'DOPC'
+	resname = wordspace['lipid']
+	#---! hack for an extra buffer
+	for i in range(2): vecs[i] += 0.5
 	
 	#---move the lipids into position and write a compbined GRO file	
 	with open(wordspace['step']+name+'.gro','w') as fp:
@@ -165,27 +168,28 @@ def build_bilayer(name):
 				#---rotate the lipids by the surface normal and offset by the half-bilayer 
 				#---...thickness to the center
 				offset = [1,-1][mn]*mono_offset*monolayer_mesh['vertnorms'][pnum]
+				if random_rotation:
+					random_angle = np.random.uniform()*2*np.pi
+					lpts_copy = dot(rotation_matrix(zvec,random_angle),lpts.T).T
+				else: lpts_copy = array(lpts)
 				xys = p+offset+[1,-1][mn]*dot(
 					rotation_matrix(cross(zvec,monolayer_mesh['vertnorms'][pnum]),
-					dot(zvec,monolayer_mesh['vertnorms'][pnum])),lpts.T).T
+					dot(zvec,monolayer_mesh['vertnorms'][pnum])),lpts_copy.T).T
 				fp.write('\n'.join([''.join([
 					str(resnr).rjust(5),
 					resname.ljust(5),
 					atomnames[i].rjust(5),
-					(str((resnr-1)*len(lpts)+i+1).rjust(5))[:5],
+					(str((resnr-1)*len(lpts_copy)+i+1).rjust(5))[:5],
 					''.join([dotplace(x) for x in xys[i]])])
-					for i in range(len(lpts))])+'\n')
+					for i in range(len(lpts_copy))])+'\n')
 				resnr += 1
 		fp.write(' '.join([dotplace(x) for x in vecs])+'\n')
 
 	#---save the slab dimensions for solvation
 	boxdims_old,boxdims = get_box_vectors(name)
 	wordspace['bilayer_dimensions_slab'] = boxdims
-	#---! need explicit calculation of what ends up in the box, not inference as below
 	#---! need multiple lipid types
-	component(wordspace['lipid'],count=
-		int(wordspace['lx']/wordspace['binsize'])*
-		int(wordspace['ly']/wordspace['binsize'])*2)
+	component(wordspace['lipid'],count=resnr-1)
 
 @narrate
 def gro_combinator(*args,**kwargs):
@@ -277,19 +281,38 @@ def adhere_protein_cgmd_bilayer(bilayer,combo,protein_complex=None):
 
 	#---for each point in the lattice move the protein and combine the structures
 	for translate in grid_space:
-		combined += protein
-		combined_points = concatenate((combined_points,
-			protein_points+concatenate((translate,[0]))+center_shift))
+		combined = protein + combined
+		combined_points = concatenate((protein_points+concatenate((translate,[0]))+center_shift,
+			combined_points))
+
+	#---remove the nearest lipid to the PIP2
+	#---! this is a hack to find the only PIP2 after it's been added to the combined list
+	lipid_center = mean(combined_points[array([ii for ii,i in enumerate(combined) 
+		if i['resname']=='PIP2 '])],axis=0)
+	#---get absolute indices of the standard lipids
+	indices = array([ii for ii,i in enumerate(combined) if i['resname']=='DOPC'.ljust(5)]) 
+	#---group indices by resid
+	resids = array([int(combined[i]['resid']) for i in indices])
+	#---centroids of the standard lipids
+	cogs = array([mean(combined_points[indices][where(resids==r)],axis=0) for r in unique(resids)])
+	nearest = argmin(linalg.norm(cogs-lipid_center,axis=1))
+	nearest_resid = unique(resids)[nearest]
+	excise = array([ii for ii,i in enumerate(combined) if i['resid']=='%5s'%nearest_resid 
+		and i['resname']=='DOPC'.ljust(5)])
+	combined = [i for ii,i in enumerate(combined) if ii not in excise]
+	combined_points = [i for ii,i in enumerate(combined_points) if ii not in excise]
+	component(wordspace['lipid'],count=component(wordspace['lipid'])-1)
 
 	#---renumber residues and atoms
-	resnr = 1
-	last_resnr = int(combined[0]['resid'])
-	for index,line in enumerate(combined):
-		this_resnr = int(line['resid'])
-		if this_resnr != last_resnr: resnr += 1
-		line['resid'] = '%5s'%resnr
-		line['index'] = '%5s'%index
-		
+	if 0:
+		resnr = 1
+		last_resnr = int(combined[0]['resid'])
+		for index,line in enumerate(combined):
+			this_resnr = int(line['resid'])
+			if this_resnr != last_resnr: resnr += 1
+			line['resid'] = '%5s'%resnr
+			line['index'] = '%5s'%index
+
 	#---write the combined file
 	with open(cwd+combo,'w') as fp:
 		fp.write('%s\n%d\n'%(name,len(combined)))
@@ -306,6 +329,7 @@ def solvate_bilayer(structure='vacuum'):
 	"""
 
 	#---check the size of the slab
+	incoming_structure = str(structure)
 	boxdims_old,boxdims = get_box_vectors(structure)
 
 	#---! standardize these?
@@ -334,11 +358,6 @@ def solvate_bilayer(structure='vacuum'):
 	structure='solvate-empty-uncentered'
 	component('W',count=count_molecules(structure,'W'))
 
-	#---! DEVELOPMENT update the command library if it changes
-	from amx.procedures.cgmd_bilayer import command_library
-	from amx.base.functions import interpret_command
-	wordspace['command_library'] = interpret_command(command_library)
-
 	#---translate the water box
 	gmx('editconf',structure=structure,gro='solvate-water-shifted',
 		flag='-translate 0 0 %f'%(wordspace['bilayer_dimensions_slab'][2]/2.),log='editconf-solvate-shift')
@@ -348,7 +367,8 @@ def solvate_bilayer(structure='vacuum'):
 	structure = 'solvate-water-shifted'
 	boxdims_old,boxdims = get_box_vectors(structure)
 	boxvecs = wordspace['bilayer_dimensions_slab'][:2]+[wordspace['bilayer_dimensions_slab'][2]+boxdims[2]]
-	gro_combinator('vacuum.gro',structure,box=boxvecs,cwd=wordspace['step'],gro='solvate-dense')
+	gro_combinator('%s.gro'%incoming_structure,structure,box=boxvecs,
+		cwd=wordspace['step'],gro='solvate-dense')
 	structure = 'solvate-dense'
 	trim_waters(structure=structure,gro='solvate',boxcut=False,
 		gap=wordspace['protein_water_gap'],method='cgmd',boxvecs=boxvecs)
@@ -374,8 +394,15 @@ def add_proteins():
 	#---assume inclusion of a partner lipid here
 	include('Protein.itp')
 	include('PIP2.itp')
-	component('Protein',count=1)
-	component('PIP2',count=1)
+	component('PIP2',count=wordspace['total_proteins'],top=True)
+	component('Protein',count=wordspace['total_proteins'],top=True)
+	#---custom additions to the mdp_specs to allow for protein groups
+	for key in ['groups','temperature']:
+		wordspace['mdp_specs']['input-md-npt-bilayer-eq-in.mdp'].append({key:'protein'})
+		if wordspace['mdp_specs']['input-md-in.mdp'] == None:
+			wordspace['mdp_specs']['input-md-in.mdp'] = []
+		wordspace['mdp_specs']['input-md-in.mdp'].append({key:'protein'})
+	write_mdp()
 
 @narrate
 def counterion_renamer(structure):
@@ -418,22 +445,60 @@ def bilayer_middle(structure,gro):
 def bilayer_sorter(structure,ndx='system-groups'):
 
 	"""
+	Divide the system into groups.
 	"""
 
-	gmx('make_ndx',structure=structure,ndx='%s-inspect'%structure,
-		log='make-ndx-%s-inspect'%structure,inpipe="q\n")
-	with open(wordspace['step']+'log-make-ndx-%s-inspect'%structure) as fp: lines = fp.readlines()
-	#---find the protein group because it may not be obvious in CGMD
-	make_ndx_sifter = '^\s*([0-9]+)\s*Protein'
-	protein_group = int(re.findall(make_ndx_sifter,
-		next(i for i in lines if re.match(make_ndx_sifter,i)))[0])
-	group_selector = "\n".join([
-		"keep %s"%protein_group,
-		"name 0 PROTEIN",
-		" || ".join(['r '+r for r in ['DOPC','PIP2']]),
-		"name 1 LIPIDS",
-		" || ".join(['r '+r for r in ['W','ION',wordspace['cation'],wordspace['anion']]]),
-		"name 2 SOLVENT",
-		"0 | 1 | 2","name 3 SYSTEM","q"])+"\n"
+	if 'protein_ready' in wordspace:
+		gmx('make_ndx',structure=structure,ndx='%s-inspect'%structure,
+			log='make-ndx-%s-inspect'%structure,inpipe="q\n")
+		with open(wordspace['step']+'log-make-ndx-%s-inspect'%structure) as fp: lines = fp.readlines()
+		#---find the protein group because it may not be obvious in CGMD
+		make_ndx_sifter = '^\s*([0-9]+)\s*Protein'
+		protein_group = int(re.findall(make_ndx_sifter,
+			next(i for i in lines if re.match(make_ndx_sifter,i)))[0])
+		group_selector = "\n".join([
+			"keep %s"%protein_group,
+			"name 0 PROTEIN",
+			#---! hacked
+			" || ".join(['r '+r for r in [wordspace['lipid']]+['PIP2']]),
+			"name 1 LIPIDS",
+			" || ".join(['r '+r for r in ['W','ION',wordspace['cation'],wordspace['anion']]]),
+			"name 2 SOLVENT",
+			"0 | 1 | 2","name 3 SYSTEM","q"])+"\n"
+	else:
+		group_selector = "\n".join([
+			"keep 0",
+			"name 0 SYSTEM",
+			" || ".join(['r '+r for r in [wordspace['lipid']]]),
+			"name 1 LIPIDS",
+			" || ".join(['r '+r for r in ['W','ION',wordspace['cation'],wordspace['anion']]]),
+			"name 2 SOLVENT","q"])+"\n"
 	gmx('make_ndx',structure='system',ndx=ndx,log='make-ndx-groups',
 		inpipe=group_selector)
+
+@narrate
+def remove_jump(structure,tpr,gro):
+
+	"""
+	Correct that thing where the bilayer crosses the PBCs and gets split.
+	"""
+
+	gmx('make_ndx',ndx=structure,structure=structure,inpipe="keep 0\nq\n",log='make-ndx-nojump')	
+	gmx('trjconv',ndx=structure,structure=structure,gro=gro,tpr=tpr,
+		log='trjconv-%s-nojump'%structure,flag='-pbc nojump')
+	os.remove(wordspace['step']+'log-'+'make-ndx-nojump')
+
+def vacuum_pack(structure='vacuum',name='vacuum-pack',gro='vacuum-packed'):
+
+	"""
+	Pack the lipids in the plane, gently.
+	"""
+
+	gmx('grompp',base='md-%s'%name,top='vacuum',
+		structure=structure,log='grompp-%s'%name,mdp='input-md-%s-eq-in'%name,
+		flag='-maxwarn 100')
+	gmx('mdrun',base='md-%s'%name,log='mdrun-%s'%name,skip=True)
+	remove_jump(structure='md-%s'%name,tpr='md-'+name,gro='md-%s-nojump'%name)
+	filecopy(wordspace['step']+'md-%s-nojump.gro'%name,wordspace['step']+'%s.gro'%gro)
+	boxdims_old,boxdims = get_box_vectors(gro)
+	wordspace['bilayer_dimensions_slab'][:2] = boxdims_old[:2]

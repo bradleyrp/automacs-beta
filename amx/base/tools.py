@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import inspect,re
+import inspect,re,glob,os
 
 def asciitree(obj,depth=0,wide=2,last=[],recursed=False):
 
@@ -81,3 +81,47 @@ def yamlparse(string):
 				else: unpacked[key] = val
 			else: unpacked[key] = val
 	return unpacked
+
+def detect_last():
+
+	"""
+	Find the last step number and part number (if available).
+	"""
+
+	step_regex = '^s([0-9]+)-\w+$'
+	part_regex = '^[^\/]+\/md\.part([0-9]{4})\.cpt' 
+	possible_steps = glob.glob('s*-*')
+	last_step_num = max(map(
+		lambda z:int(z),map(
+		lambda y:re.findall(step_regex,y).pop(),filter(
+		lambda x:re.match(step_regex,x),possible_steps))))
+	last_step = filter(lambda x:re.match('^s%02d'%last_step_num,x),possible_steps).pop()
+	part_num = None
+	try:
+		possible_parts = glob.glob(last_step+'/*.cpt')
+		part_num = max(map(lambda y:int(re.findall(part_regex,y)[0]),filter(
+			lambda x:re.match(part_regex,x),possible_parts)))
+	except: pass
+	return last_step,part_num
+
+
+def serial_number():
+
+	"""
+	Add a random serial number to the simulation.
+	"""
+
+	import random
+	serial_prefix = 'serial-'
+	if not glob.glob('./'+serial_prefix+'*'):
+		print "[STATUS] branding your simulation"
+		serial = random.randint(0,10**7)
+		with open('./'+serial_prefix+'%d'%serial,'w') as fp: pass
+		last_step,part_num = detect_last()
+		with open('script-%s.log'%last_step,'a') as fp:
+			fp.write("[FUNCTION] serial_number (%d) {}\n"%serial)
+	else: 
+		serial_fn, = glob.glob('./'+serial_prefix+'*')
+		serial, = re.findall('^'+re.escape(serial_prefix)+'([0-9]+)$',os.path.basename(serial_fn))
+	print "[STATUS] serial no. %s"%serial
+	return serial

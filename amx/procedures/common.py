@@ -12,7 +12,7 @@ Common simulation construction tools.
 """
 
 @narrate
-def component(name,count=None):
+def component(name,count=None,top=False):
 
 	"""
 	component(name,count=None)
@@ -29,7 +29,9 @@ def component(name,count=None):
 	names = zip(*wordspace['composition'])[0]
 	if count != None:
 		if name in names: wordspace['composition'][names.index(name)][1] = int(count)
-		else: wordspace['composition'].append([name,int(count)])
+		else: 
+			if top: wordspace['composition'].insert(0,[name,int(count)])
+			else: wordspace['composition'].append([name,int(count)])
 	#---return the requested composition
 	names = zip(*wordspace['composition'])[0]
 	return wordspace['composition'][names.index(name)][1]
@@ -41,13 +43,15 @@ def get_box_vectors(structure,gro=None,d=0,log='checksize'):
 	Return the box vectors.
 	"""
 
-	if not gro: gro = structure+'-gro'
+	if not gro: gro = structure+'-check-box'
 	#---note that we consult the command_library here
 	gmx('editconf',structure=structure,gro=gro,
 		log='editconf-%s'%log,flag='-d %d'%d)
 	with open(wordspace['step']+'log-editconf-%s'%log,'r') as fp: lines = fp.readlines()
 	box_vector_regex = '\s*box vectors\s*\:\s*([^\s]+)\s+([^\s]+)\s+([^\s]+)'
 	box_vector_new_regex = '\s*new box vectors\s*\:\s*([^\s]+)\s+([^\s]+)\s+([^\s]+)'
+	#---no need to keep the output since it is a verbatim copy for diagnostic only
+	os.remove(wordspace['step']+gro+'.gro')
 	return [[[float(j) for j in re.findall(regex,line)[0]] 
 		for line in lines if re.match(regex,line)][0] 
 		for regex in [box_vector_regex,box_vector_new_regex]]
@@ -135,6 +139,7 @@ def write_top(topfile):
 		for incl in wordspace['ff_includes']:
 			fp.write('#include "%s.ff/%s.itp"\n'%(wordspace['force_field'],incl))
 		#---write include files
+		if 'itp' not in wordspace: wordspace['itp'] = []
 		for itp in wordspace['itp']: fp.write('#include "'+itp+'"\n')
 		#---write system name
 		fp.write('[ system ]\n%s\n\n[ molecules ]\n'%wordspace['system_name'])
@@ -165,7 +170,7 @@ def equilibrate(groups=None):
 		gmx('grompp',base='md-%s'%name,top='system',
 			structure='system' if eqnum == 0 else 'md-%s'%seq[eqnum-1],
 			log='grompp-%s'%name,mdp='input-md-%s-eq-in'%name,
-			flag='' if not groups else '-n %s'%groups)
+			flag=('' if not groups else '-n %s'%groups)+' -maxwarn 10')
 		gmx('mdrun',base='md-%s'%name,log='mdrun-%s'%name,skip=True)
 		checkpoint()
 

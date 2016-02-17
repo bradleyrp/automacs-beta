@@ -3,6 +3,7 @@
 import sys,os,re,shutil,glob,inspect,subprocess,datetime,time
 from base.config import bootstrap_configuration
 from base.metatools import script_settings_replace
+from base.tools import detect_last,serial_number
 
 #---CONFIGURE
 #-------------------------------------------------------------------------------------------------------------
@@ -86,22 +87,15 @@ def upload(sure=False):
 
 	"""
 	Upload the most recent CPT and TPR file to a cluster for continuation.
+	Need to re-write the step/part-specific uploader.
 	"""
 
+	serial_number()
 	default_fns,default_dirs = ['makefile'],['amx']
 	default_fns += [os.path.join(root,fn) for root,dirnames,fns 
 		in os.walk('./amx') for fn in fns for dn in default_dirs
 		if not re.match('.+\.pyc$',fn)!=None]
-	part_regex = '^[^\/]+\/md\.part([0-9]{4})\.cpt' 
-	last_step_num = max(map(
-		lambda z:int(z),map(
-		lambda y:re.findall('^s([0-9]+)',y).pop(),filter(
-		lambda x:re.match('^s[0-9]+-\w+$',x),glob.glob('s*-*')))))
-	last_step = filter(lambda x:re.match('^s%02d'%last_step_num,x),glob.glob('s*-*')).pop()
-	part_num = max(map(
-		lambda y:int(re.findall(part_regex,y)[0]),filter(
-		lambda x:re.match(part_regex,x),
-		glob.glob(last_step+'/*.cpt'))))
+	last_step,part_num = detect_last()
 	restart_fns = [last_step+'/md.part%04d.%s'%(part_num,suf) for suf in ['cpt','tpr']]
 	restart_fns += [last_step+'/script-continue.sh']
 	if not all([os.path.isfile(fn) for fn in restart_fns]):
@@ -123,16 +117,56 @@ def upload(sure=False):
 			p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()),executable='/bin/bash')
 			log = p.communicate()
 			os.remove('uploads.txt')
-		with open('script-%s.log'%last_step,'a') as fp:
-			destination = '%s:~/%s/%s'%(sshname,subfolder,cwd)
-			ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y.%m.%d.%H%M')
-			fp.write("[FUNCTION] upload () {'destination': '%s', 'time': '%s', 'sure': %s}\n"%(
-				destination,ts,str(sure)))
+		if p.returncode == 0:
+			with open('script-%s.log'%last_step,'a') as fp:
+				destination = '%s:~/%s/%s'%(sshname,subfolder,cwd)
+				ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y.%m.%d.%H%M')
+				fp.write("[FUNCTION] upload () {'destination': '%s', 'time': '%s', 'sure': %s}\n"%(
+					destination,ts,str(sure)))
+		else: 
+			print "[STATUS] upload failure (not logged)"
+			sys.exit(1)
+
+def download():
+
+	"""
+	Synchronize uploaded files according to log-uploads.
+	"""
+
+	regex_upload = '^\[FUNCTION]\s+upload\s+\(\)\s+(\{[^\}]+\})'
+	last_step,part_num = detect_last()
+	last_log = 'script-%s.log'%last_step
+	with open(last_log) as fp: loglines = fp.readlines()
+	upload_records = [i for i in loglines if re.match('^\[FUNCTION]\s+upload',i)]
+	if upload_records == []: raise Exception("\n[ERROR] cannot download that which has not been uploaded")
+	last_upload = upload_records[-1]
+	upload_dict = eval(re.findall(regex_upload,last_upload)[0])
+	destination = upload_dict['destination']
+	print "[STATUS] log at %s says that this simulation is located at %s"%(last_log,destination)
+	try:
+		cmd = 'rsync -avin --progress %s ./'%destination
+		p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()))
+		log = p.communicate()
+		if p.returncode != 0: raise
+		if raw_input('\n[QUESTION] continue [y/N]? ')[:1] not in 'nN':
+			cmd = 'rsync -avi --progress %s:%s/ ./'%(sshname,subfolder)
+			print '[STATUS] running "%s"'%cmd
+			p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()))
+			log = p.communicate()
+	except Exception as e:
+		import traceback
+		#---from omnicalc
+		s = traceback.format_exc()
+		print "[TRACE] > "+"\n[TRACE] > ".join(s.split('\n'))
+		print "[ERROR] failed to find simulation"
+		print "[NOTE] find the data on the remote machine via \"find ./ -name serial-%s\""%serial_number()
+		sys.exit(1)
 
 def cluster():
 
 	"""
 	Write a cluster header according to the machine configuration.
+	Note that we do not log this operation because it only changes the BASH scripts
 	"""
 
 	if not 'cluster_header' in machine_configuration: print '[STATUS] no cluster information'
@@ -151,11 +185,13 @@ def cluster():
 			#---code from base.functions.write_continue_script to rewrite the continue script
 			with open('amx/procedures/scripts/script-continue.sh','r') as fp: lines = fp.readlines()
 			settings = {
-				'maxhours':24,
-				'extend':100000,
-				'tpbconv':'gmx convert-tpr',
-				'mdrun':'gmx mdrun',
+				'maxhours':machine_configuration['walltime'],
+				'tpbconv':gmxpaths['tpbconv'],
+				'mdrun':gmxpaths['mdrun'],
 				}
+			for key in ['extend','until']: 
+				if key in machine_configuration: settings[key] = machine_configuration[key]
+			#---! must intervene above to come up with the correct executables
 			setting_text = '\n'.join([
 				str(key.upper())+'='+('"' if type(val)==str else '')+str(val)+('"' if type(val)==str else '') 
 				for key,val in settings.items()])
@@ -182,17 +218,35 @@ def cluster():
 				fp.write(header+'\n')
 				fp.write('python script-%s.py &> log-%s\n'%(name,name))
 			print '[STATUS] wrote cluster-%s.sh'%name
-		#---note that we do not log this operation because it only changes the BASH scripts
 
-def metarun(script):
+def metarun(script=None):
 
 	"""
 	Run a series of commands via a meta script in the inputs folder.
 	May be deprecated due to execution problems and "moving to directory" weirdness.
 	"""
 
-	call = lambda x: os.system(x)
-	execfile(script)
+	if not script:
+		print "[USAGE] make metarun <script>"
+		print "[USAGE] available scripts: \n > "+'\n > '.join([re.findall('^(.+)\.py',os.path.basename(i))[0]
+			for i in glob.glob('inputs/meta*')])
+	else:
+		call = lambda x: os.system(x)
+		execfile(script)
+
+def look(script):
+
+	"""
+	Drop into the wordspace for a script. 
+	Useful for adding commands to a procedure without starting from scratch or making a new script.
+	Example: after forgetting to add this line, we can make a continuation script from here:
+	"from amx.base.functions import write_continue_script;write_continue_script()"
+	Any actions you take here will continue to be recorded to the watch_file.
+	"""
+
+	cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(init_settings=\'%s\')"'%(script,script)
+	print 'python -i -c '+cmd
+	os.system('python -i -c '+cmd)
 
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
