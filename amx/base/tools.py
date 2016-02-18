@@ -120,7 +120,7 @@ def serial_number():
 		serial = random.randint(0,10**7)
 		with open('./'+serial_prefix+'%d'%serial,'w') as fp: pass
 		last_step,part_num = detect_last()
-		with open('script-%s.log'%last_step,'a') as fp:
+		with open('script-%s.log'%last_step.rstrip('/'),'a') as fp:
 			fp.write("[FUNCTION] serial_number (%d) {}\n"%serial)
 	else: 
 		serial_fn, = glob.glob('./'+serial_prefix+'*')
