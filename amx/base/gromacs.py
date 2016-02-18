@@ -23,6 +23,7 @@ gmx4paths = {
 	'genion':'genion',
 	'genconf':'genconf',
 	'trjconv':'trjconv',
+	'tpbconv':'tpbconv',
 	'vmd':'vmd',
 	}
 
@@ -36,6 +37,7 @@ gmx5paths = {
 	'genion':'gmx genion',
 	'trjconv':'gmx trjconv',
 	'genconf':'gmx genconf',
+	'tpbconv':'gmx convert-tpr',
 	'vmd':'vmd',
 	}
 	
@@ -65,13 +67,15 @@ machine_configuration = machine_configuration[this_machine]
 #---modules in LOCAL configuration must be loaded before checking version
 module_path = '/usr/share/Modules/default/init/python.py'
 if 'modules' in machine_configuration:
-	print '[STATUS] found modules in LOCAL configuration'
+	print '[STATUS] found modules in %s configuration'%this_machine
 	if 'module_path' in machine_configuration: module_path = machine_configuration['module_path']
 	try: execfile(module_path)
 	except: raise Exception('could not execute %s'%module_path)
 	print '[STATUS] unloading GROMACS'
 	#---note that modules that rely on dynamically-linked C-code must use EnvironmentModules
-	for mod in machine_configuration['modules'].split(','):
+	modlist = machine_configuration['modules']
+	if type(modlist)==str: modlist = modlist.split(',')
+	for mod in modlist:
 		print '[STATUS] module load %s'%mod
 		module('load',mod)
 	del mod
@@ -97,6 +101,8 @@ if gmx_series == 5: gmxpaths = dict(gmx5paths)
 config = machine_configuration
 if suffix != '': gmxpaths = dict([(key,val+suffix) for key,val in gmxpaths.items()])
 if 'nprocs' in config and config['nprocs'] != None: gmxpaths['mdrun'] += ' -nt %d'%config['nprocs']
+#---use mdrun_command for quirky mpi-type mdrun calls on clusters
+if 'mdrun_command' in machine_configuration: gmxpaths['mdrun'] = machine_configuration['mdrun_command']
 #---if any utilities are keys in config we override it and then perform uppercase substitutions from config
 utility_keys = [key for key in gmxpaths if key in config]
 if any(utility_keys):

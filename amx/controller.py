@@ -94,9 +94,10 @@ def upload(sure=False,part=None):
 	default_fns,default_dirs = ['makefile'],['amx']
 	default_fns += [os.path.join(root,fn) for root,dirnames,fns 
 		in os.walk('./amx') for fn in fns for dn in default_dirs
-		if not re.match('.+\.pyc$',fn)!=None]
+		if not re.match('.+\.pyc$',fn)!=None and not re.match('amx/docs',fn)]
 	last_step,part_num = detect_last()
 	if part: part_num = int(part)
+	if not last_step: raise Exception('\n[ERROR] no steps to upload')
 	restart_fns = [last_step+'/md.part%04d.%s'%(part_num,suf) for suf in ['cpt','tpr']]
 	restart_fns += [last_step+'/script-continue.sh']
 	if not all([os.path.isfile(fn) for fn in restart_fns]):
@@ -170,55 +171,52 @@ def cluster():
 	Note that we do not log this operation because it only changes the BASH scripts
 	"""
 
-	if not 'cluster_header' in machine_configuration: print '[STATUS] no cluster information'
-	else:
-		head = machine_configuration['cluster_header']
-		for key,val in machine_configuration.items(): head = re.sub(key.upper(),str(val),head)
-		with open('cluster-header.sh','w') as fp: fp.write(head)
-		print '[STATUS] wrote cluster-header.sh'
-		#---get the most recent step (possibly duplicate code from base)
-		if len(filter(lambda x:re.match('^s[0-9]+-\w+',x),glob.glob('s*-*')))>0:
-			last_step_num = max(map(
-				lambda z:int(z),map(
-				lambda y:re.findall('^s([0-9]+)',y).pop(),filter(
-				lambda x:re.match('^s[0-9]+-\w+$',x),glob.glob('s*-*')))))
-			last_step = filter(lambda x:re.match('^s%02d'%last_step_num,x),glob.glob('s*-*')).pop()+'/'
-			#---code from base.functions.write_continue_script to rewrite the continue script
-			with open('amx/procedures/scripts/script-continue.sh','r') as fp: lines = fp.readlines()
-			settings = {
-				'maxhours':machine_configuration['walltime'],
-				'tpbconv':gmxpaths['tpbconv'],
-				'mdrun':gmxpaths['mdrun'],
-				}
-			for key in ['extend','until']: 
-				if key in machine_configuration: settings[key] = machine_configuration[key]
-			#---! must intervene above to come up with the correct executables
-			setting_text = '\n'.join([
-				str(key.upper())+'='+('"' if type(val)==str else '')+str(val)+('"' if type(val)==str else '') 
-				for key,val in settings.items()])
-			lines = map(lambda x: re.sub('#---SETTINGS OVERRIDES HERE$',setting_text,x),lines)
-			script_fn = 'script-continue.sh'
-			cont_fn = last_step+script_fn
-			print '[STATUS] %swriting %s'%('over' if os.path.isfile(last_step+script_fn) else '',cont_fn)
-			with open(last_step+script_fn,'w') as fp:
-				for line in lines: fp.write(line)
-			os.chmod(last_step+script_fn,0744)
-			#---code above from base.functions.write_continue_script		
-			with open(cont_fn,'r') as fp: continue_script = fp.read()
-			continue_script = re.sub('#!/bin/bash\n','',continue_script)
-			cluster_continue = last_step+'/cluster-continue.sh'
-			print '[STATUS] writing %s'%cluster_continue
-			with open(cluster_continue,'w') as fp: fp.write(head+continue_script)
-		#---for each python script in the root directory we write an equivalent cluster script
-		pyscripts = glob.glob('script-*.py')
-		if len(pyscripts)>0: 
-			with open('cluster-header.sh','r') as fp: header = fp.read()
-		for script in pyscripts:
-			name = re.findall('^script-([\w-]+)\.py$',script)[0]
-			with open('cluster-%s.sh'%name,'w') as fp:
-				fp.write(header+'\n')
-				fp.write('python script-%s.py &> log-%s\n'%(name,name))
-			print '[STATUS] wrote cluster-%s.sh'%name
+	if not 'cluster_header' in machine_configuration: 
+		print '[STATUS] no cluster information'
+		return
+	head = machine_configuration['cluster_header']
+	for key,val in machine_configuration.items(): head = re.sub(key.upper(),str(val),head)
+	with open('cluster-header.sh','w') as fp: fp.write(head)
+	print '[STATUS] wrote cluster-header.sh'
+	#---get the most recent step (possibly duplicate code from base)
+	last_step,part_num = detect_last()
+	if last_step:
+		#---code from base.functions.write_continue_script to rewrite the continue script
+		with open('amx/procedures/scripts/script-continue.sh','r') as fp: lines = fp.readlines()
+		settings = {
+			'maxhours':machine_configuration['walltime'],
+			'tpbconv':gmxpaths['tpbconv'],
+			'mdrun':gmxpaths['mdrun'],
+			}
+		for key in ['extend','until']: 
+			if key in machine_configuration: settings[key] = machine_configuration[key]
+		#---! must intervene above to come up with the correct executables
+		setting_text = '\n'.join([
+			str(key.upper())+'='+('"' if type(val)==str else '')+str(val)+('"' if type(val)==str else '') 
+			for key,val in settings.items()])
+		lines = map(lambda x: re.sub('#---SETTINGS OVERRIDES HERE$',setting_text,x),lines)
+		script_fn = 'script-continue.sh'
+		cont_fn = last_step+script_fn
+		print '[STATUS] %swriting %s'%('over' if os.path.isfile(last_step+script_fn) else '',cont_fn)
+		with open(last_step+script_fn,'w') as fp:
+			for line in lines: fp.write(line)
+		os.chmod(last_step+script_fn,0744)
+		#---code above from base.functions.write_continue_script		
+		with open(cont_fn,'r') as fp: continue_script = fp.read()
+		continue_script = re.sub('#!/bin/bash\n','',continue_script)
+		cluster_continue = last_step+'/cluster-continue.sh'
+		print '[STATUS] writing %s'%cluster_continue
+		with open(cluster_continue,'w') as fp: fp.write(head+continue_script)
+	#---for each python script in the root directory we write an equivalent cluster script
+	pyscripts = glob.glob('script-*.py')
+	if len(pyscripts)>0: 
+		with open('cluster-header.sh','r') as fp: header = fp.read()
+	for script in pyscripts:
+		name = re.findall('^script-([\w-]+)\.py$',script)[0]
+		with open('cluster-%s.sh'%name,'w') as fp:
+			fp.write(header+'\n')
+			fp.write('python script-%s.py &> log-%s\n'%(name,name))
+		print '[STATUS] wrote cluster-%s.sh'%name
 
 def metarun(script=None):
 

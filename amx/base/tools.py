@@ -91,11 +91,14 @@ def detect_last():
 	step_regex = '^s([0-9]+)-\w+$'
 	part_regex = '^[^\/]+\/md\.part([0-9]{4})\.cpt' 
 	possible_steps = glob.glob('s*-*')
-	last_step_num = max(map(
-		lambda z:int(z),map(
-		lambda y:re.findall(step_regex,y).pop(),filter(
-		lambda x:re.match(step_regex,x),possible_steps))))
-	last_step = filter(lambda x:re.match('^s%02d'%last_step_num,x),possible_steps).pop()
+	try:
+		last_step_num = max(map(
+			lambda z:int(z),map(
+			lambda y:re.findall(step_regex,y).pop(),filter(
+			lambda x:re.match(step_regex,x),possible_steps))))
+		last_step = os.path.join(filter(lambda x:
+			re.match('^s%02d'%last_step_num,x),possible_steps).pop(),'')
+	except: last_step = None
 	part_num = None
 	try:
 		possible_parts = glob.glob(last_step+'/*.cpt')
@@ -103,7 +106,6 @@ def detect_last():
 			lambda x:re.match(part_regex,x),possible_parts)))
 	except: pass
 	return last_step,part_num
-
 
 def serial_number():
 
