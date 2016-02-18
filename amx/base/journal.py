@@ -61,4 +61,4 @@ def narrate(func):
 		return func(*args,**kwargs)
 	return func_narrate
 
-def register_trajectory 
+#def register_trajectory 

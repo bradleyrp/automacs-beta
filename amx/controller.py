@@ -94,7 +94,8 @@ def upload(sure=False,part=None):
 	default_fns,default_dirs = ['makefile'],['amx']
 	default_fns += [os.path.join(root,fn) for root,dirnames,fns 
 		in os.walk('./amx') for fn in fns for dn in default_dirs
-		if not re.match('.+\.pyc$',fn)!=None and not re.match('amx/docs',fn)]
+		if not re.match('.+\.pyc$',fn)!=None]
+	default_fns = [i for i in default_fns if not re.match('.+\/amx\/docs',i)]
 	last_step,part_num = detect_last()
 	if part: part_num = int(part)
 	if not last_step: raise Exception('\n[ERROR] no steps to upload')
@@ -103,6 +104,7 @@ def upload(sure=False,part=None):
 	if not all([os.path.isfile(fn) for fn in restart_fns]):
 		error = '[STATUS] could not find latest CPT or TPR for part%04d'%part_num
 		error += '\n[ERROR] upload only works if there is a TPR for the last CPT part'
+		import pdb;pdb.set_trace()
 		raise Exception(error)
 	else:
 		with open('uploads.txt','w') as fp:
@@ -120,7 +122,7 @@ def upload(sure=False,part=None):
 			log = p.communicate()
 			os.remove('uploads.txt')
 		if p.returncode == 0:
-			with open('script-%s.log'%last_step,'a') as fp:
+			with open('script-%s.log'%last_step.rstrip('/'),'a') as fp:
 				destination = '%s:~/%s/%s'%(sshname,subfolder,cwd)
 				ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y.%m.%d.%H%M')
 				fp.write("[FUNCTION] upload () {'destination': '%s', 'time': '%s', 'sure': %s}\n"%(
