@@ -83,7 +83,7 @@ def clean(sure=False):
 		for fn in remove_dirs: shutil.rmtree(fn)
 	else: print '[STATUS] doing nothing'
 
-def upload(sure=False):
+def upload(sure=False,part=None):
 
 	"""
 	Upload the most recent CPT and TPR file to a cluster for continuation.
@@ -96,6 +96,7 @@ def upload(sure=False):
 		in os.walk('./amx') for fn in fns for dn in default_dirs
 		if not re.match('.+\.pyc$',fn)!=None]
 	last_step,part_num = detect_last()
+	if part: part_num = int(part)
 	restart_fns = [last_step+'/md.part%04d.%s'%(part_num,suf) for suf in ['cpt','tpr']]
 	restart_fns += [last_step+'/script-continue.sh']
 	if not all([os.path.isfile(fn) for fn in restart_fns]):
