@@ -143,7 +143,8 @@ def start(name):
 	wordspace['watch_file'] = 'script-'+step_name+'.log'
 	wordspace['bash_log'] = 'script-'+step_name+'.sh'
 	logfile = wordspace['watch_file']
-	if os.path.isfile(logfile): raise Exception('logfile %s exists'%logfile)
+	#---disabled the following so that we could route error logs here from tasks.py by inferring the log
+	#---....if os.path.isfile(logfile): raise Exception('logfile %s exists'%logfile)
 	with open(wordspace['bash_log'],'a') as fp: 
 		fp.write('#!/bin/bash\n\n#---automacs instruction set\n\n')
 	#---copy the calling script to this location for posterity
