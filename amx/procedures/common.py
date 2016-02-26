@@ -119,6 +119,7 @@ def minimize(name,method='steep'):
 
 	gmx('grompp',base='em-%s-%s'%(name,method),top=name,structure=name,
 		log='grompp-%s-%s'%(name,method),mdp='input-em-%s-in'%method,skip=True)
+	assert os.path.isfile(wordspace['step']+'em-%s-%s.tpr'%(name,method))
 	gmx('mdrun',base='em-%s-%s'%(name,method),log='mdrun-%s-%s'%(name,method))
 	filecopy(wordspace['step']+'em-'+'%s-%s.gro'%(name,method),
 		wordspace['step']+'%s-minimized.gro'%name)
