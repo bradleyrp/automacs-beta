@@ -148,7 +148,7 @@ def solvate(structure,top):
 		filter(lambda x:re.match('\s*[0-9]+\s+Water',x),lines).pop()).pop())/3
 	component('SOL',count=nwaters)
 	#---add the suffix so that water is referred to by its name in the settings
-	include(wordspace['force_field']+'/'+wordspace['water']+'.itp')
+	include(wordspace['water'],ff=True)
 	write_top('solvate.top')
 
 @narrate

@@ -146,7 +146,7 @@ def write_top(topfile):
 		fp.write('[ system ]\n%s\n\n[ molecules ]\n'%wordspace['system_name'])
 		for key,val in wordspace['composition']: fp.write('%s %d\n'%(key,val))
 
-def include(name):
+def include(name,ff=False):
 
 	"""
 	include(name)
@@ -154,8 +154,9 @@ def include(name):
 	which cause errors in GROMACS.
 	"""
 
-	if 'itp' not in wordspace: wordspace['itp'] = []
-	if name not in wordspace['itp']: wordspace['itp'].append(name)
+	which = 'ff_includes' if ff else 'itp'
+	if 'itp' not in wordspace: wordspace[which] = []
+	if name not in wordspace[which]: wordspace[which].append(name)
 
 @narrate
 def equilibrate(groups=None):
