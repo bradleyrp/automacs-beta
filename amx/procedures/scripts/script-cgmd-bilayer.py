@@ -75,5 +75,5 @@ try:
 	equilibrate(groups='system-groups')
 	write_continue_script()
 #---development
-except Exception as e: print e
+except Exception as e: print e+'\n[ERROR] development'
 pickle.dump(wordspace,open('wordspace.pkl','w'))

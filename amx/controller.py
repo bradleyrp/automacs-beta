@@ -220,20 +220,21 @@ def cluster():
 			fp.write('python script-%s.py &> log-%s\n'%(name,name))
 		print '[STATUS] wrote cluster-%s.sh'%name
 
-def metarun(script=None):
+def metarun(script=None,more=False):
 
 	"""
 	Run a series of commands via a meta script in the inputs folder.
 	May be deprecated due to execution problems and "moving to directory" weirdness.
 	"""
 
+	candidates = [re.findall('^(.+)\.py',os.path.basename(i))[0] for i in glob.glob('inputs/meta*')]
 	if not script:
 		print "[USAGE] make metarun <script>"
-		print "[USAGE] available scripts: \n > "+'\n > '.join([re.findall('^(.+)\.py',os.path.basename(i))[0]
-			for i in glob.glob('inputs/meta*')])
+		print "[USAGE] available scripts: \n > "+'\n > '.join(candidates)
 	else:
-		call = lambda x: os.system(x)
-		execfile(script)
+		try: target, = [i for i in candidates if re.search(script,i)]
+		except: raise Exception('[ERROR] failed to match %s with known scripts'%script)
+		execfile('inputs/%s.py'%target)
 
 def look(script):
 

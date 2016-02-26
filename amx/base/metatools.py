@@ -1,7 +1,16 @@
 #!/usr/bin/python
 
-import os,re
-call = lambda x: os.system(x)
+import os,re,subprocess,sys
+
+def call(cmd):
+
+	"""
+	Execute a shell command.
+	"""
+
+	try: subprocess.check_call(cmd,shell=True,executable='/bin/bash')
+	except Exception as e: sys.exit(1)
+
 def script_settings_replace(script,settings_string):
 
 	"""

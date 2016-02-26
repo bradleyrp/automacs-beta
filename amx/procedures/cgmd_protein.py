@@ -18,12 +18,14 @@ def build_cgmd_protein():
 	name = 'protein'
 	cwd = wordspace['step']
 	#---this function is run from the step but martinize_path is relative to root
+	assert os.path.isfile(wordspace['martinize_path'])
 	cmd = 'python ../'+wordspace['martinize_path']+' -v -p backbone '
 	cmd += ' -f protein-start.pdb -o %s.top -x %s.pdb'%(name,name)
 	if 'dssp' in wordspace: cmd += ' -dssp %s'%wordspace['dssp']
 	if 'martinize_ff' in wordspace: cmd += ' -ff %s'%wordspace['martinize_ff']
 	if 'martinize_flags' in wordspace: cmd += ' '+wordspace['martinize_flags']
 	bash(cmd,cwd=wordspace['step'],log='martinize')
+	assert os.path.isfile(wordspace['step']+'protein.pdb')
 	gmx_run(gmxpaths['editconf']+' -f %s.pdb -o %s.gro'%(name,name),log='editconf-convert-pdb')
 	#---only allow Z-restraints because this is probably for a bilayer
 	bash("sed -i 's/POSRES_FC    POSRES_FC    POSRES_FC/0 0 POSRES_FC/g' Protein.itp",
