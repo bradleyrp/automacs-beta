@@ -185,7 +185,7 @@ def equilibrate(groups=None):
 	checkpoint()
 
 @narrate
-def counterions(structure,top,resname="SOL",includes=None,gro='counterions'):
+def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='counterions'):
 
 	"""
 	counterions(structure,top)
@@ -214,4 +214,7 @@ def counterions(structure,top,resname="SOL",includes=None,gro='counterions'):
 	if includes:
 		if type(includes)==str: includes = [includes]
 		for i in includes: include(i)
+	if ff_includes:
+		if type(ff_includes)==str: ff_includes = [ff_includes]
+		for i in ff_includes: include(i,ff=True)
 	write_top('counterions.top')

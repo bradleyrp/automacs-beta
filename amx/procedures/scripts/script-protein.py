@@ -33,7 +33,7 @@ gmx('editconf',structure='vacuum-alone',gro='vacuum',
 minimize('vacuum',method='steep')
 solvate(structure='vacuum-minimized',top='vacuum')
 minimize('solvate')
-counterions(structure='solvate-minimized',top='solvate')
+counterions(structure='solvate-minimized',top='solvate',ff_includes='ions')
 minimize('counterions')
 write_structure_pdb(pdb='protein-start.pdb',structure='counterions')
 write_top('system.top')
