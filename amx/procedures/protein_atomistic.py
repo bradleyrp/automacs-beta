@@ -147,7 +147,8 @@ def solvate(structure,top):
 	nwaters = int(re.findall('\s*[0-9]+\s+Water\s+:\s+([0-9]+)\s+atoms',
 		filter(lambda x:re.match('\s*[0-9]+\s+Water',x),lines).pop()).pop())/3
 	component('SOL',count=nwaters)
-	# removed because unnecessary for atomistic simulation: include(wordspace['water'])
+	#---add the suffix so that water is referred to by its name in the settings
+	include(wordspace['water']+'.itp')
 	write_top('solvate.top')
 
 @narrate
