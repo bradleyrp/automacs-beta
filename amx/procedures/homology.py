@@ -165,3 +165,5 @@ def get_best_structure():
 	best = sorted(results,key=lambda x:x[1])[0][0]
 	gmx('editconf',structure=best,gro=wordspace.target_name+'.pdb',
 		flag='-resnr %d'%wordspace.starting_residue,log='editconf-renumber')
+	with open(wordspace.step+'best_structure_path','w') as fp: fp.write(best+'\n')
+	
