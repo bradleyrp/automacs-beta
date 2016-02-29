@@ -12,7 +12,7 @@ many models:         2
 """
 
 from amx import *
-init(settings,dev=dev)
+init(settings)
 start(wordspace.step)
 template,chain = wordspace.template.split(',')
 pdb_attr = get_pdb(template,chain)
