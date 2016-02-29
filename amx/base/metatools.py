@@ -27,3 +27,13 @@ def script_settings_replace(script,settings_string):
 		fp.write(settings_string)
 		fp.write('"""\n\n')
 		for line in lines[cutout[1]:]: fp.write(line)
+
+def concise_error(e):
+
+	"""
+	"""
+
+	exc_type, exc_obj, exc_tb = sys.exc_info()
+	fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+	print "[ERROR] %s in %s at line %d"%(str(exc_type),fname,exc_tb.tb_lineno)
+	print "[ERROR] %s"%e

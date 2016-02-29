@@ -6,15 +6,33 @@ class WordSpace(dict):
 	Custom dictionary which holds key variables
 	and (inevitable) returns intelligent errors.
 	"""
+	
+	def __getattribute__(self,key):
+
+		"""
+		Honestly this is a sick functionality that lets you run e.g. 
+		wordspace.step instead of wordspace['step'].
+		"""
+
+		if key in self: return self[key]
+		else: return dict.__getattribute__(self,key)
 
 	def __getitem__(self,key):
-		
+
+		"""
+		Intelligent warnings for some functions.
+		"""
+
 		if key=='last' and key not in self:
 			raise Exception("\n[ERROR]".join([
 				"wordspace['last'] is not defined",
 				"it is likely that you started AMX from a downstream step"]))
 		elif key not in self: raise Exception('\n[ERROR] "%s" not found in wordspace'%key)
 		return dict.get(self,key)
+
+class WordSpaceLook():
+	def __init__(self,d): self.__dict__ = d
+	def __getitem__(self,i): return self.__dict__[i]
 
 wordspace = WordSpace()		
 import sys,os,importlib

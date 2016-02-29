@@ -41,23 +41,15 @@ def program(script,flag=False):
 	Prepare a script for a particular AUTOMACS program.
 	"""
 
-	#---multiple naming schemes
-	lookups = {
-		'protein':'script-protein',
-		'cgmd-bilayer':'script-cgmd-bilayer',
-		'cgmd-protein':'script-cgmd-protein',
-		}
 	os.umask(002)
-
-	if script not in lookups: raise Exception('[ERROR] invalid program, select from %s'%str(lookups.keys()))
-	fn = 'amx/procedures/scripts/%s.py'%lookups[script]
-	new_script = '%s.py'%lookups[script]
+	fn = 'amx/procedures/scripts/script-%s.py'%script
+	new_script = 'script-%s.py'%script
 	if os.path.isfile(fn) and os.path.isfile(new_script): raise Exception('[DEV_ERROR] found %s'%new_script)
 	elif os.path.isfile(fn): 
 		print '[STATUS] copying %s'%fn
 		shutil.copy(fn,new_script)
 		print '[STATUS] wrote executable to %s'%new_script
-		print '[STATUS] check the settings and run via: "./%s.py"'%lookups[script]
+		print '[STATUS] check the settings and run via: "./%s"'%new_script
 	else: raise Exception('[ERROR] cannot find script at %s'%fn)
 	
 def clean(sure=False):
