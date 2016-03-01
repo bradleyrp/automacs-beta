@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import re,os,subprocess
+import re,os,subprocess,shutil
 from amx import wordspace
 from amx.base.functions import filecopy
 from amx.base.gmxwrap import gmx,gmx_run,checkpoint
@@ -135,21 +135,32 @@ def extract_sequence_pdb(filename,chain):
 		sequence = ''.join(seqraw)
 		startres = int([line for line in lines if re.match('^ATOM',line)][0][22:25+1])
 	else: raise Exception('need either REMARK 300 or SEQRES in your pdb file')
-	return {'starting_residue':startres,'sequence':sequence}
+	return {'starting_residue':startres,'sequence':sequence,
+		'filename':os.path.basename(filename).rstrip('.pdb')}
 
 @narrate
-def get_pdb(code,chain):
+def get_pdb():
 
 	"""
-	Download a PDB from the database. Takes a 4-character PDB code and downloads to the current step.
+	Download a PDB from the database or copy from file.
 	"""
 
-	template = code
-	import urllib2
-	response = urllib2.urlopen('http://www.rcsb.org/pdb/files/'+template+'.pdb')
-	pdbfile = response.read()
-	with open(wordspace.step+template+'.pdb','w') as fp: fp.write(pdbfile)
-	return extract_sequence_pdb(filename=wordspace.step+template+'.pdb',chain=chain)
+	#---if template is a path we copy the file
+	if os.path.isfile(os.path.abspath(os.path.expanduser(wordspace.template))):
+		template = os.path.basename(wordspace.template).rstrip('.pdb')
+		shutil.copy(wordspace.template,wordspace.step)
+	#---if template is a PDB code and a chain letter then we download it from the PDB
+	elif re.match('^[A-Z0-9]{4}$',wordspace.template):
+		import urllib2
+		template,chain = wordspace.template,wordspace.template_chain
+		response = urllib2.urlopen('http://www.rcsb.org/pdb/files/'+template+'.pdb')
+		pdbfile = response.read()
+		with open(wordspace.step+template+'.pdb','w') as fp: fp.write(pdbfile)
+	else: 
+		raise Exception(
+			'\n[ERROR] unable to understand template "%s"'%wordspace.template+
+			'\n[ERROR] supply a PDB,chain or a path')
+	return extract_sequence_pdb(filename=wordspace.step+template+'.pdb',chain=wordspace.template_chain)
 
 @narrate
 def get_best_structure():

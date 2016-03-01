@@ -150,7 +150,7 @@ def init(setting_string,dev=False):
 	for key,val in settings.items(): 
 		if not dev or (dev and key!='step'): wordspace[re.sub(' ','_',key)] = val
 	#---for convenience we automatically substitute a lone PDB file in inputs
-	#---! note that this is protein-atomistic specific and may need to be conditional
+	#---! note that this is protein_atomistic-specific and may need to be conditional
 	if 'start_structure' in wordspace and wordspace['start_structure'] == 'inputs/STRUCTURE.pdb': 
 		pdbs = glob.glob('inputs/*.pdb')
 		if len(pdbs)==1: 
@@ -159,6 +159,7 @@ def init(setting_string,dev=False):
 		else: 
 			if 'watch_file' not in wordspace: wordspace['watch_file'] = 'ERROR.log'
 			report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
+	#---instead of copying a single PDB for the homology run here, we do that in the homology codes
 
 
 

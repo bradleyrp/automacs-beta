@@ -1,11 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/python -i
 
 settings = """
 step:                homology
 procedure:           homology
 modeller path:       mod9.15
 homology method:     point
-template:            2GS7,A
+template:            inputs/STRUCTURE.pdb
+template chain:      A
 target name:         egfr_E710R
 point mutation:      E710R
 target sequence:     none
@@ -15,8 +16,8 @@ many models:         2
 from amx import *
 init(settings)
 start(wordspace.step)
-template,chain = wordspace.template.split(',')
-pdb_attr = get_pdb(template,chain)
+# template variable may be a PDB code or a path
+pdb_attr = get_pdb()
 wordspace.starting_residue = pdb_attr['starting_residue']
 # if point mutation figure out the right target sequence
 if wordspace.homology_method == 'point':
@@ -34,8 +35,8 @@ if wordspace.homology_method == 'point':
 	wordspace.target_sequence = ''.join(target_sequence)
 export_modeller_settings(
 	filename=wordspace.step+'settings-homology.py',
-	template_struct=template,
-	template_struct_chain=chain,
+	template_struct=pdb_attr['filename'],
+	template_struct_chain=wordspace.template_chain,
 	target_seq=wordspace.target_name,
 	n_models=wordspace.many_models)
 write_ali_file()
