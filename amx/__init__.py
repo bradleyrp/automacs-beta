@@ -17,6 +17,16 @@ class WordSpace(dict):
 		if key in self: return self[key]
 		else: return dict.__getattribute__(self,key)
 
+	def __setattr__(self,key,value):
+
+		"""
+		Assign items as attributes.
+		"""
+
+		if key not in dict.__dict__:
+			dict.__setitem__(self,key,value)
+		else: raise Exception('[ERROR] cannot set the %s key in the wordspace'%key)
+
 	def __getitem__(self,key):
 
 		"""
