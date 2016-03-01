@@ -12,10 +12,10 @@ from amx.procedures.common import *
 Protein homology modeling modules which wraps MODELLER.
 """
 
-# no gromacs but these are not optional
 command_library = """
 editconf -f STRUCTURE -o GRO
 """
+
 mdp_specs = {}
 
 # scripts
@@ -165,5 +165,6 @@ def get_best_structure():
 	best = sorted(results,key=lambda x:x[1])[0][0]
 	gmx('editconf',structure=best,gro=wordspace.target_name+'.pdb',
 		flag='-resnr %d'%wordspace.starting_residue,log='editconf-renumber')
-	with open(wordspace.step+'best_structure_path','w') as fp: fp.write(best+'\n')
+	with open(wordspace.step+'best_structure_path','w') as fp: 
+		fp.write(wordspace.target_name+'.pdb'+'\n')
 	

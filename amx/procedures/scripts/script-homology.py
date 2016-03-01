@@ -8,6 +8,7 @@ homology method:     point
 template:            2GS7,A
 target name:         egfr_E710R
 point mutation:      E710R
+target sequence:     null
 many models:         2
 """
 
