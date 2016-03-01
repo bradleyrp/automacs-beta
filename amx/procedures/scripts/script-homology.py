@@ -1,4 +1,4 @@
-#!/usr/bin/python -i
+#!/usr/bin/python
 
 settings = """
 step:                homology
@@ -10,7 +10,7 @@ template chain:      A
 target name:         egfr_E710R
 point mutation:      E710R
 target sequence:     none
-many models:         2
+many models:         5
 """
 
 from amx import *
@@ -43,3 +43,4 @@ write_ali_file()
 with open(wordspace.step+'script-single.py','w') as fp: fp.write(script_single)
 bash(wordspace.modeller_path+' '+'script-single.py',cwd=wordspace.step)
 get_best_structure()
+write_view_script()

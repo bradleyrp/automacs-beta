@@ -54,6 +54,44 @@ a.ending_model = n_models
 a.make()
 """
 
+script_vmd = """#!/usr/bin/python
+
+\"\"\"
+View the homology models in VMD. 
+Note that this script must be run from *within* the step directory.
+\"\"\"
+
+import os,sys,glob
+sys.path.insert(0,os.path.abspath('../'))
+from amx.procedures.codes.vmdwrap import *
+execfile('settings-homology.py')
+
+v = VMDWrap(subdir=False)
+
+# overload the loader
+v.commons['load'] = \"\"\"
+mol new GRO
+mol delrep 0 top
+\"\"\"
+
+# align each to the first
+v.commons['align'] = \"\"\"
+set sel0 [atomselect top all]
+set sel1 [atomselect 0 all]
+set M [measure fit $sel0 $sel1]
+$sel0 move $M
+\"\"\"
+
+v.do('standard')
+for num,fn in enumerate(glob.glob('%s.*.pdb'%target_seq)):
+	v.gro = fn
+	v.do('load')
+	if num>0: v.do('align')
+	v.select(protein='protein',style='NewCartoon',structure_color=True)
+v.show()
+
+"""
+
 dna_mapping = {
 	'UUU':'F','UUC':'F','UUA':'L','UUG':'L','UCU':'S','UCC':'s','UCA':'S','UCG':'S','UAU':'Y','UAC':'Y',
 	'UAA':'STOP','UAG':'STOP','UGU':'C','UGC':'C','UGA':'STOP','UGG':'W','CUU':'L','CUC':'L','CUA':'L',
@@ -179,3 +217,13 @@ def get_best_structure():
 	with open(wordspace.step+'best_structure_path','w') as fp: 
 		fp.write(wordspace.target_name+'.pdb'+'\n')
 	
+@narrate 
+def write_view_script():
+
+	"""
+	Write a viewer script.
+	"""
+
+	with open(wordspace.step+'script-vmd.py','w') as fp: fp.write(script_vmd)
+	os.chmod(wordspace.step+'script-vmd.py',0744)
+	status('view script is ready at %sscript-vmd.py'%wordspace.step,tag='note')
