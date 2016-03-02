@@ -402,10 +402,10 @@ def add_proteins():
 		if wordspace['mdp_specs']['input-md-in.mdp'] == None:
 			wordspace['mdp_specs']['input-md-in.mdp'] = []
 		wordspace['mdp_specs']['input-md-in.mdp'].append({key:'protein'})
-	print "???"
-	import pdb;pdb.set_trace()
-	write_mdp()
-	print "DDD"
+	#print "???"
+	#import pdb;pdb.set_trace()
+	#write_mdp()
+	#print "DDD"
 
 @narrate
 def counterion_renamer(structure):

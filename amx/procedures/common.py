@@ -50,11 +50,20 @@ def get_box_vectors(structure,gro=None,d=0,log='checksize'):
 	with open(wordspace['step']+'log-editconf-%s'%log,'r') as fp: lines = fp.readlines()
 	box_vector_regex = '\s*box vectors\s*\:\s*([^\s]+)\s+([^\s]+)\s+([^\s]+)'
 	box_vector_new_regex = '\s*new box vectors\s*\:\s*([^\s]+)\s+([^\s]+)\s+([^\s]+)'
+	runon_regex = '^\s*([0-9]+\.?[0-9]{0,3})\s*([0-9]+\.?[0-9]{0,3})\s*([0-9]+\.?[0-9]{0,3})'
+	old_line = [l for l in lines if re.match(box_vector_regex,l)][0]
+	vecs_old = re.findall('\s*box vectors\s*:([^\(]+)',old_line)[0]
+	#---sometimes the numbers run together
+	try: vecs_old = [float(i) for i in vecs.split(' ')]
+	except: vecs_old = re.findall(runon_regex,vecs)
+	#---repeat for new box vectors
+	new_line = [l for l in lines if re.match(box_vector_new_regex,l)][0]
+	vecs_new = re.findall('\s*box vectors\s*:([^\(]+)',new_line)[0]
+	try: vecs_new = [float(i) for i in vecs.split(' ')]
+	except: vecs_new = re.findall(runon_regex,vecs)
 	#---no need to keep the output since it is a verbatim copy for diagnostic only
 	os.remove(wordspace['step']+gro+'.gro')
-	return [[[float(j) for j in re.findall(regex,line)[0]] 
-		for line in lines if re.match(regex,line)][0] 
-		for regex in [box_vector_regex,box_vector_new_regex]]
+	return vecs_old,vecs_new
 
 @narrate
 def count_molecules(structure,resname):

@@ -34,9 +34,9 @@ class WordSpace(dict):
 		"""
 
 		if key=='last' and key not in self:
-			raise Exception("\n[ERROR]".join([
-				"wordspace['last'] is not defined",
-				"it is likely that you started AMX from a downstream step"]))
+			raise Exception("".join([
+				"[ERROR] wordspace['last'] is not defined ...",
+				"[ERROR] it is likely that you started AMX from a downstream step"]))
 		elif key not in self: raise Exception('\n[ERROR] "%s" not found in wordspace'%key)
 		return dict.get(self,key)
 

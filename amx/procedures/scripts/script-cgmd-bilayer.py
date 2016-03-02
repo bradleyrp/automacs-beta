@@ -65,6 +65,7 @@ try:
 		write_top('system.top')
 		#---periodically save for continuation
 		pickle.dump(wordspace,open('wordspace.pkl','w'))
+	#---modify MDP to accomodate a protein
 	if 'protein_ready' in wordspace: 
 		for key in ['groups','temperature']:
 			wordspace['mdp_specs']['input-md-npt-bilayer-eq-in.mdp'].append({key:'protein'})
@@ -75,5 +76,5 @@ try:
 	equilibrate(groups='system-groups')
 	write_continue_script()
 #---development
-except Exception as e: print e+'\n[ERROR] development'
+except Exception as e: print e
 pickle.dump(wordspace,open('wordspace.pkl','w'))
