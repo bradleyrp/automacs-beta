@@ -179,6 +179,7 @@ def cluster():
 		with open('amx/procedures/scripts/script-continue.sh','r') as fp: lines = fp.readlines()
 		settings = {
 			'maxhours':machine_configuration['walltime'],
+			'nprocs':machine_configuration['nprocs'],
 			'tpbconv':gmxpaths['tpbconv'],
 			'mdrun':gmxpaths['mdrun'],
 			}
