@@ -54,13 +54,13 @@ def get_box_vectors(structure,gro=None,d=0,log='checksize'):
 	old_line = [l for l in lines if re.match(box_vector_regex,l)][0]
 	vecs_old = re.findall('\s*box vectors\s*:([^\(]+)',old_line)[0]
 	#---sometimes the numbers run together
-	try: vecs_old = [float(i) for i in vecs.split(' ')]
-	except: vecs_old = re.findall(runon_regex,vecs)
+	try: vecs_old = [float(i) for i in vecs_old.split(' ')]
+	except: vecs_old = re.findall(runon_regex,vecs_old)
 	#---repeat for new box vectors
 	new_line = [l for l in lines if re.match(box_vector_new_regex,l)][0]
 	vecs_new = re.findall('\s*box vectors\s*:([^\(]+)',new_line)[0]
-	try: vecs_new = [float(i) for i in vecs.split(' ')]
-	except: vecs_new = re.findall(runon_regex,vecs)
+	try: vecs_new = [float(i) for i in vecs_new.split(' ')]
+	except: vecs_new = re.findall(runon_regex,vecs_new)
 	#---no need to keep the output since it is a verbatim copy for diagnostic only
 	os.remove(wordspace['step']+gro+'.gro')
 	return vecs_old,vecs_new
