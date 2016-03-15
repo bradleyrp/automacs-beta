@@ -59,8 +59,8 @@ mdpdefs = {
 			'start':{'continuation':'no'},
 			},
 		'output':{
-			'nstxout':5000,
-			'nstvout':5000,
+			'nstxout':20000,
+			'nstvout':20000,
 			'nstlog':1000,
 			'nstenergy':1000,
 			'nstxtcout':1000,		
