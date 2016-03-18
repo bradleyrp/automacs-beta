@@ -54,7 +54,9 @@ from procedures.toc import procedure_toc
 #---custom imports according to the procedure from the script that imported amx
 wordspace['script'] = os.path.abspath(os.getcwd()+'/'+sys.argv[0])
 #---skip setup if we are only making docs or running a view script
-if not os.path.basename(wordspace['script']) in ['sphinx-build','script-vmd.py']:
+script_call = os.path.basename(wordspace['script'])
+if (not script_call in ['sphinx-build','script-vmd.py'] and 
+	not re.match('^script-vmd',script_call)):
 	with open(wordspace['script'],'r') as fp: original_script_lines = fp.readlines()
 	try: 
 		procedure = [re.findall('^procedure:\s*([\w,]+)',l)[0] 
