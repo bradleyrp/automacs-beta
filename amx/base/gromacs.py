@@ -25,6 +25,7 @@ gmx4paths = {
 	'trjconv':'trjconv',
 	'tpbconv':'tpbconv',
 	'vmd':'vmd',
+	'gmxcheck':'gmxcheck',
 	}
 
 gmx5paths = {
@@ -38,6 +39,7 @@ gmx5paths = {
 	'trjconv':'gmx trjconv',
 	'genconf':'gmx genconf',
 	'tpbconv':'gmx convert-tpr',
+	'gmxcheck':'gmxcheck',
 	'vmd':'vmd',
 	}
 	

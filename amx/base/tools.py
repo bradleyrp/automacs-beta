@@ -126,3 +126,25 @@ def serial_number():
 		serial, = re.findall('^'+re.escape(serial_prefix)+'([0-9]+)$',os.path.basename(serial_fn))
 	print "[STATUS] serial no. %s"%serial
 	return serial
+
+def ask_user(*msgs):
+
+	return all(re.match('^(y|Y)',raw_input('[QUESTION] %s (y/N)? '%msg))!=None for msg in msgs)
+
+def ready_to_continue(sure=False):
+
+	"""
+	Use this function at the beginning of a continuation step e.g. the multiply procedure which takes a
+	previous simulation and increases the size of the unit cell. This function checks for a previous 
+	wordspace and asks the user if they want to delete it before continuing. Note that using the add=True flag
+	to the resume function will ask AUTOMACS to retrieve the previous wordspace from a checkpoing in the log
+	file of the last step. This obviates the need to open the pickled wordspace, which is intended purely
+	for rapid development purposes and is not necessary in a production environment.
+	"""
+
+	if os.path.isfile('wordspace.pkl'):
+		msgs = [
+			"detected wordspace.pkl but this must be deleted if this is a follow-up. delete? ",
+			"confirm"]
+		if sure or ask_user(*msgs): os.remove('wordspace.pkl')
+		else: print '[WARNING] wordspace.pkl remains despite ready_to_continue check'

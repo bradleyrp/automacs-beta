@@ -63,7 +63,7 @@ def clean(sure=False):
 	if os.path.isdir('amx/docs/build'): remove_dirs.append('amx/docs/build')
 	remove_files = [i for i in filenames if i != 'config.py' and 
 		(re.match('^script-s[0-9]+',i) or re.match('^([\w-]+)\.py$',i) 
-		or re.match('^(cluster|gmxjob)',i))]
+		or re.match('^(cluster|gmxjob)',i) or i=='wordspace.pkl')]
 	print '[STATUS] preparing to remove directories:'
 	for fn in remove_dirs: print '[STATUS] >> %s'%fn
 	print '[STATUS] preparing to remove files:'
@@ -229,7 +229,7 @@ def metarun(script=None,more=False):
 		except: raise Exception('[ERROR] failed to match %s with known scripts'%script)
 		execfile('inputs/%s.py'%target)
 
-def look(script):
+def look(script=''):
 
 	"""
 	Drop into the wordspace for a script. 
@@ -239,8 +239,11 @@ def look(script):
 	Any actions you take here will continue to be recorded to the watch_file.
 	"""
 
+	if not script: 
+		script = max(glob.iglob('script-*.py'),key=os.path.getctime)
+		print 'STATUS] resuming from the last step, apparently creeated by %s'%script
 	cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(init_settings=\'%s\')"'%(script,script)
-	print 'python -i -c '+cmd
+	print '[STATUS] running: python -i -c '+cmd
 	os.system('python -i -c '+cmd)
 
 #---INTERFACE

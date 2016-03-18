@@ -28,12 +28,17 @@ def script_settings_replace(script,settings_string):
 		fp.write('"""\n\n')
 		for line in lines[cutout[1]:]: fp.write(line)
 
-def concise_error(e):
+def concise_error(e,all=False):
 
 	"""
+	Report an error concisely to the terminal to avoid overwhelming the user.
 	"""
 
 	exc_type, exc_obj, exc_tb = sys.exc_info()
 	fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-	print "[ERROR] %s in %s at line %d"%(str(exc_type),fname,exc_tb.tb_lineno)
-	print "[ERROR] %s"%e
+	report('%s in %s at line %d'%(str(exc_type),fname,exc_tb.tb_lineno),tag='error')
+	report('%s'%e,tag='error')
+	if all:
+		import traceback
+		traceback.print_exc()
+

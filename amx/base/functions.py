@@ -189,30 +189,42 @@ def dircopy(src,dest):
 		if not os.path.isdir(dest+'/'+os.path.basename(folder)):
 			shutil.copytree(folder,dest+'/'+os.path.basename(folder))
 		
-def resume(init_settings=''):
+def resume(init_settings='',add=False):
 
 	"""
 	Continue a simulation procedure that was halted by extracting the wordspace 
-	from checkpoing lines in the log file.
+	from checkpoing lines in the log file. Set add flag to remove the step from the wordspace
+	in order to load the wordspace before an additional step. 
+	Always run resume before start.
 	"""
 
+	#---preserve settings in case we are doing an additional step
+	if add: new_step = wordspace['step']
 	last_step_num = max(map(
 		lambda z:int(z),map(
 		lambda y:re.findall('^s([0-9]+)',y).pop(),filter(
 		lambda x:re.match('^s[0-9]+-\w+$',x),glob.glob('s*-*')))))
 	last_step = filter(lambda x:re.match('^s%02d'%last_step_num,x),glob.glob('s*-*')).pop()
+	status('[STATUS] resuming from %s'%last_step)
 	with open('script-%s.log'%last_step,'r') as fp: lines = fp.readlines()
 	regex_wordspace = '^\[CHECKPOINT\]\s+wordspace\s*=\s*(.+)'
-	add_wordspace = json.loads(re.findall(regex_wordspace,
-		filter(lambda x:re.search(regex_wordspace,x),lines[::-1])[0])[0])
-	for key,val in add_wordspace.items(): wordspace[key] = val
-	
+	#---try to add the checkpoint
+	try:
+		add_wordspace = json.loads(re.findall(regex_wordspace,
+			filter(lambda x:re.search(regex_wordspace,x),lines[::-1])[0])[0])
+		for key,val in add_wordspace.items(): wordspace[key] = val
+	except: pass	
 	#---override original settings if available, using code from gmxwrap.init
 	if init_settings != '':
 		settings = yamlparse(init_settings)
 		for key,val in settings.items(): 
 			if key not in ['step']:
 				wordspace[re.sub(' ','_',key) if key not in ['start_structure'] else key] = val
+	#---if we wish to use resume to get the checkpoint from a previous step, we remove the step variable
+	#---...so that start makes a new directory with the correct naming scheme. this allows us to retain
+	#---...the previous wordspace on a new step
+	if add:
+		wordspace['step'] = new_step
 		
 def interpret_command(block):
 

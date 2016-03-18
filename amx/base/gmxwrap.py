@@ -5,6 +5,7 @@ from amx.base.gromacs import *
 from amx.base.journal import *
 from amx.base.tools import *
 import os,shutil,re,subprocess,json,glob
+from amx.base.tools import ready_to_continue
 
 #---FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
@@ -133,7 +134,7 @@ def checkpoint():
 	with open(wordspace['watch_file'],'a') as fp:
 		report('wordspace = '+json.dumps(wordspace),tag='checkpoint')
 
-def init(setting_string,dev=False):
+def init(setting_string,dev=False,proceed=False):
 
 	"""
 	Automatically load settings from the python-amx script into the wordspace for safekeeping.
@@ -160,6 +161,5 @@ def init(setting_string,dev=False):
 			if 'watch_file' not in wordspace: wordspace['watch_file'] = 'ERROR.log'
 			report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
 	#---instead of copying a single PDB for the homology run here, we do that in the homology codes
-
-
+	if proceed: ready_to_continue(sure=wordspace['proceed'] if 'proceed' in wordspace else False)
 

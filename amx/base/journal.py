@@ -60,5 +60,3 @@ def narrate(func):
 		report(' '.join([str(i) for i in [name,args,kwargs]]),tag='function')
 		return func(*args,**kwargs)
 	return func_narrate
-
-#def register_trajectory 

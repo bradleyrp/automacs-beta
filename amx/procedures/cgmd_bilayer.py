@@ -10,6 +10,7 @@ from amx.base.journal import *
 from amx.procedures.common import *
 import numpy as np
 from codes.mesh import *
+import random
 
 """
 Coarse-grained bilayer builder.
@@ -71,6 +72,28 @@ def read_molecule(gro):
 	pts -= mean(pts,axis=0)
 	atomnames = np.array([i.strip('\n')[10:15].strip(' ') for i in rawgro[2:-1]])
 	return pts,atomnames
+
+def random_lipids(total,composition,binsize):
+
+	"""
+	Generate a random 2D grid of lipids in an arrangement according to the aspect ratio.
+	Note that this is currently designed for flat bilayers so the binsize spacing is on the XY plane.
+	"""
+
+	aspect = wordspace['aspect']
+	names,complist = zip(*composition.items())
+	if sum(complist) != 1.0: complist = [float(i)/sum(complist) for i in complist]
+	counts = [int(round(total*i)) for i in complist]
+	arrange = concatenate([ones(j)*jj for jj,j in enumerate(counts)])
+	random.shuffle(arrange)
+	#---morph to fit the aspect ratio
+	side_y = int(ceil(sqrt(total/aspect)))
+	side_x = aspect*side_y
+	pts = binsize*concatenate(array(meshgrid(arange(side_x),arange(side_y))).T)
+	#---our grid will always be slightly too large so we trim it randomly
+	selects = array(sorted(sorted(range(len(pts)),key=lambda *args:random.random())[:total]))
+	vecs = array([side_x*binsize,side_y*binsize])
+	return pts[selects],vecs
 		
 def makeshape():
 
@@ -79,25 +102,24 @@ def makeshape():
 	"""
 	
 	shape = wordspace['shape']
-	lx,ly,lz = [wordspace['l%s'%i] for i in 'xyz']
+	lz = wordspace['solvent_thickness']
 	binsize = wordspace['binsize']
-	height = wordspace['height']
-	if 'width' in wordspace: width = wordspace['width']
-	mono_offset = wordspace['monolayer_offset']
-	
-	#---standard settings
-	lenscale = 1.
-	vecs = np.array([lx,ly,lz])
-	x0,y0 = 1.5*vecs[:2]
-
-	#---generate sample points
-	griddims = np.array([round(i) for i in vecs/binsize])
-	m,n = [int(i) for i in griddims[:2]]
-	getgrid = np.array([[[i,j] for j in np.linspace(0,3*vecs[1]/lenscale,3*n)] 
-		for i in np.linspace(0,3*vecs[0]/lenscale,3*m)])
-	xys = np.concatenate(getgrid)
-	pts = np.concatenate(([xys[:,0]],[xys[:,1]],[np.zeros(len(xys))])).T
-
+	#---are the monolayers symmetric?
+	monolayer_other = wordspace.get('monolayer_other',None)
+	composition_other = wordspace.get('composition_other',None)
+	if not monolayer_other and composition_other or not composition_other and monolayer_other:
+		raise Exception('you must specify both "monolayer other" and "composition other"')
+	monolayers = [[wordspace['monolayer_top'],wordspace['composition_top']]]
+	if monolayer_other: monolayers += [[monolayer_other,composition_other]]
+	else: monolayers += [monolayers[0]]
+	#---compute spots on the 2D grid where we will place the lipids
+	#---! note that we are still in 2D so the grid-spacing is only accurate for the flat bilayer
+	spots,vecs = zip(*[random_lipids(total,composition,binsize) for total,composition in monolayers])
+	#---for asymmetric bilayers we choose the larger set of box vectors
+	vecs = transpose([max(i) for i in transpose(vecs)])
+	pts = [np.concatenate(([s[:,0]],[s[:,1]],[np.zeros(len(s))])).T for s in spots]
+	#---! non-flat points will be stretched in Z hence not evenly spaced in 3-space
+	#---! needs 2 monolayers
 	if shape == 'saddle':
 
 		def bump(x,y,x0,y0,height,width):
@@ -120,6 +142,7 @@ def makeshape():
 	
 		if 0: meshplot(ptsmid,show='surf')
 	
+	#---! needs 2 monolayers
 	elif shape == 'buckle':
 
 		def buckle(x,y,height):
@@ -128,68 +151,107 @@ def makeshape():
 		
 		pts[:,2] += buckle(xys[:,0],xys[:,1],height)
 
-	elif shape == 'flat': pts += 0
+	elif shape == 'flat': pts = [p+0 for p in pts]
 	else: raise Exception('\n[ERROR] unclear bilayer topography: %s'%shape)
-	
-	ptsmid = np.concatenate(np.reshape(pts,(3*m,3*n,3))[m:2*m,n:2*n])
-	ptsmid[:,0]-=vecs[0]
-	ptsmid[:,1]-=vecs[1]
-	#---mesh the points
-	#---note that curvlinear is slow and unnecessary for a flat membrane
-	monolayer_mesh = makemesh(ptsmid,vecs,debug=False,curvilinear=False)
-	return ptsmid,monolayer_mesh,vecs
+	#---previously used PBCs and selected the middle tile here before makemesh and then shifted to origin
+	monolayer_meshes = [makemesh(p,vecs,debug=False,curvilinear=False) for p in pts]
+	return pts,monolayer_meshes,array([v for v in vecs]+[lz])
 
 @narrate
 def build_bilayer(name,random_rotation=True):
 
 	"""
-	build_bilayer(name)
+	build_bilayer(name,random_rotation=True)
 	Create a new bilayer according to a particular topography.
 	"""
 	
 	#---collect the bilayer topography and the lipid points
 	ptsmid,monolayer_mesh,vecs = makeshape()
-	lpts,atomnames = read_molecule(wordspace['lipid'])
+
+	#---infer composition of the other monolayer
+	if type(wordspace['composition_top'])==str: monolayer0 = {wordspace['composition_top']:1.0}
+	else: monolayer0 = wordspace['composition_top']
+	if 'composition_bottom' not in wordspace or not wordspace['composition_bottom']: 
+		monolayer1 = dict(monolayer0)
+	else: monolayer1 = wordspace['composition_bottom']
+	nlipids0 = wordspace['monolayer_top']
+	if 'monolayer_bottom' not in wordspace or not wordspace['monolayer_bottom']: nlipids1 = nlipids0
+	else: nlipids1 = wordspace['monolayer_bottom']
+	lipid_resnames = wordspace['composition_top'].keys()
+	if wordspace['composition_bottom']: lipid_resnames += wordspace['composition_bottom']
+	#---save for bilayer_sorter
+	wordspace['lipids'] = list(set(lipid_resnames))
+
+	lipids,lipid_order = {},[]
+	for key in list(set(monolayer0.keys()+monolayer1.keys())):
+		lpts,atomnames = read_molecule(key)
+		lipids[key] = {'lpts':lpts,'atomnames':atomnames}
+		lipid_order.append(key)
+
+	#---prepare random grids
+	identities = [zeros([nlipids0,nlipids1][mn]) for mn in range(2)]
+	for mn,composition in enumerate([monolayer0,monolayer1]):
+		names,complist = zip(*composition.items())
+		#---allow non-unity complist sums so you can use ratios or percentages
+		if sum(complist) != 1.0: complist = [float(i)/sum(complist) for i in complist]
+		nlipids = [nlipids0,nlipids1][mn]
+		counts = array([int(round(i)) for i in array(complist)*nlipids])
+		identities[mn] = concatenate([ones(counts[ii])*lipid_order.index(lname) 
+			for ii,lname in enumerate(names)])[array(sorted(range(nlipids),
+			key=lambda *args:random.random()))]
+
 	mono_offset = wordspace['monolayer_offset']
-	resname = wordspace['lipid']
-	#---! hack for an extra buffer
-	for i in range(2): vecs[i] += 0.5
-	
-	#---move the lipids into position and write a compbined GRO file	
-	with open(wordspace['step']+name+'.gro','w') as fp:
-		fp.write('%s\n'%wordspace['system_name']+str(2*len(ptsmid)*len(lpts))+'\n')
-		resnr = 1
+	#---we wish to preserve the ordering of the lipids so we write them in order of identity
+	placements = [[] for l in lipid_order]
+	#---loop over lipid types
+	for lipid_num,lipid in enumerate(lipid_order):
+		lpts = lipids[lipid]['lpts']
 		#---loop over monolayers
 		for mn in range(2):
 			zvec = np.array([0,0,1]) if mn==0 else np.array([0,0,-1])
-			for pnum,p in enumerate(ptsmid):
-				status('lipid',i=pnum,looplen=len(ptsmid))
-				#---for no rotation use xys = p+lpts
-				#---rotate the lipids by the surface normal and offset by the half-bilayer 
-				#---...thickness to the center
-				offset = [1,-1][mn]*mono_offset*monolayer_mesh['vertnorms'][pnum]
+			#---loop over positions of this lipid type
+			indices = where(identities[mn]==lipid_num)[0]
+			for ii,index in enumerate(indices):
+				status('placing %s'%lipid,i=ii,looplen=len(indices))
+				#---begin move routine
+				point = ptsmid[mn][index]
+				offset = [1,-1][mn]*mono_offset*monolayer_mesh[mn]['vertnorms'][index]
 				if random_rotation:
 					random_angle = np.random.uniform()*2*np.pi
 					lpts_copy = dot(rotation_matrix(zvec,random_angle),lpts.T).T
 				else: lpts_copy = array(lpts)
-				xys = p+offset+[1,-1][mn]*dot(
-					rotation_matrix(cross(zvec,monolayer_mesh['vertnorms'][pnum]),
-					dot(zvec,monolayer_mesh['vertnorms'][pnum])),lpts_copy.T).T
+				xys = point+offset+[1,-1][mn]*dot(
+					rotation_matrix(cross(zvec,monolayer_mesh[mn]['vertnorms'][index]),
+					dot(zvec,monolayer_mesh[mn]['vertnorms'][index])),lpts_copy.T).T
+				#---end move routine
+				placements[lipid_num].append(xys)
+	natoms = sum([sum(concatenate(identities)==ii)*len(lipids[i]['lpts']) 
+		for ii,i in enumerate(lipid_order)])
+
+	#---write the placed lipids to a file
+	resnr = 1
+	with open(wordspace['step']+name+'.gro','w') as fp:
+		fp.write('%s\n'%wordspace['system_name']+'%d\n'%natoms)
+		#---loop over lipid types
+		for lipid_num,resname in enumerate(lipid_order):
+			atomnames = lipids[resname]['atomnames']
+			for xys in placements[lipid_num]:
 				fp.write('\n'.join([''.join([
 					str(resnr).rjust(5),
 					resname.ljust(5),
 					atomnames[i].rjust(5),
-					(str((resnr-1)*len(lpts_copy)+i+1).rjust(5))[:5],
+					(str((resnr-1)*len(xys)+i+1).rjust(5))[:5],
 					''.join([dotplace(x) for x in xys[i]])])
-					for i in range(len(lpts_copy))])+'\n')
+					for i in range(len(xys))])+'\n')
 				resnr += 1
 		fp.write(' '.join([dotplace(x) for x in vecs])+'\n')
 
 	#---save the slab dimensions for solvation
 	boxdims_old,boxdims = get_box_vectors(name)
 	wordspace['bilayer_dimensions_slab'] = boxdims
-	#---! need multiple lipid types
-	component(wordspace['lipid'],count=resnr-1)
+	#---save composition for topology
+	for lipid_num,lipid in enumerate(lipid_order):
+		component(lipid,count=len(placements[lipid_num]))
 
 @narrate
 def gro_combinator(*args,**kwargs):
@@ -357,7 +419,6 @@ def solvate_bilayer(structure='vacuum'):
 	#---update waters
 	structure='solvate-empty-uncentered'
 	component('W',count=count_molecules(structure,'W'))
-
 	#---translate the water box
 	gmx('editconf',structure=structure,gro='solvate-water-shifted',
 		flag='-translate 0 0 %f'%(wordspace['bilayer_dimensions_slab'][2]/2.),log='editconf-solvate-shift')
@@ -373,8 +434,10 @@ def solvate_bilayer(structure='vacuum'):
 	trim_waters(structure=structure,gro='solvate',boxcut=False,
 		gap=wordspace['protein_water_gap'],method='cgmd',boxvecs=boxvecs)
 	structure = 'solvate'
-	component('W',count=count_molecules(structure,'W'))
+	nwaters = count_molecules(structure,'W')
+	component('W',count=nwaters)
 	wordspace['bilayer_dimensions_solvate'] = boxvecs
+	wordspace['water_without_ions'] = nwaters
 
 @narrate
 def add_proteins():
@@ -402,10 +465,6 @@ def add_proteins():
 		if wordspace['mdp_specs']['input-md-in.mdp'] == None:
 			wordspace['mdp_specs']['input-md-in.mdp'] = []
 		wordspace['mdp_specs']['input-md-in.mdp'].append({key:'protein'})
-	#print "???"
-	#import pdb;pdb.set_trace()
-	#write_mdp()
-	#print "DDD"
 
 @narrate
 def counterion_renamer(structure):
@@ -463,7 +522,7 @@ def bilayer_sorter(structure,ndx='system-groups'):
 			"keep %s"%protein_group,
 			"name 0 PROTEIN",
 			#---! hacked
-			" || ".join(['r '+r for r in [wordspace['lipid']]+['PIP2']]),
+			" || ".join(['r '+r for r in wordspace['lipids']+['PIP2']]),
 			"name 1 LIPIDS",
 			" || ".join(['r '+r for r in ['W','ION',wordspace['cation'],wordspace['anion']]]),
 			"name 2 SOLVENT",
@@ -472,7 +531,7 @@ def bilayer_sorter(structure,ndx='system-groups'):
 		group_selector = "\n".join([
 			"keep 0",
 			"name 0 SYSTEM",
-			" || ".join(['r '+r for r in [wordspace['lipid']]]),
+			" || ".join(['r '+r for r in wordspace['lipids']]),
 			"name 1 LIPIDS",
 			" || ".join(['r '+r for r in ['W','ION',wordspace['cation'],wordspace['anion']]]),
 			"name 2 SOLVENT","q"])+"\n"

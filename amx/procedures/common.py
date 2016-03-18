@@ -5,7 +5,9 @@ from amx import wordspace
 from amx.base.functions import filecopy
 from amx.base.gmxwrap import gmx,gmx_run,checkpoint
 from amx.base.gromacs import gmxpaths
-from amx.base.journal import *
+from amx.base.journal import narrate,report
+from amx.base.tools import detect_last
+import shutil,glob
 
 """
 Common simulation construction tools.
@@ -54,12 +56,12 @@ def get_box_vectors(structure,gro=None,d=0,log='checksize'):
 	old_line = [l for l in lines if re.match(box_vector_regex,l)][0]
 	vecs_old = re.findall('\s*box vectors\s*:([^\(]+)',old_line)[0]
 	#---sometimes the numbers run together
-	try: vecs_old = [float(i) for i in vecs_old.split(' ')]
+	try: vecs_old = [float(i) for i in vecs_old.strip(' ').split()]
 	except: vecs_old = re.findall(runon_regex,vecs_old)
 	#---repeat for new box vectors
 	new_line = [l for l in lines if re.match(box_vector_new_regex,l)][0]
 	vecs_new = re.findall('\s*box vectors\s*:([^\(]+)',new_line)[0]
-	try: vecs_new = [float(i) for i in vecs_new.split(' ')]
+	try: vecs_new = [float(i) for i in vecs_new.strip(' ').split()]
 	except: vecs_new = re.findall(runon_regex,vecs_new)
 	#---no need to keep the output since it is a verbatim copy for diagnostic only
 	os.remove(wordspace['step']+gro+'.gro')
@@ -167,6 +169,19 @@ def include(name,ff=False):
 	if 'itp' not in wordspace: wordspace[which] = []
 	if name not in wordspace[which]: wordspace[which].append(name)
 
+def equilibrate_check(name):
+
+	"""
+	Check if the gro file for this step has been written.
+	"""
+
+	found = False
+	fn = wordspace['step']+'md-%s.gro'%name
+	if os.path.isfile(fn): 
+		report('found %s'%fn,tag='RETURN')
+		found = True
+	return found
+
 @narrate
 def equilibrate(groups=None):
 
@@ -178,20 +193,23 @@ def equilibrate(groups=None):
 	#---sequential equilibration stages
 	seq = wordspace['equilibration'].split(',')
 	for eqnum,name in enumerate(seq):
-		gmx('grompp',base='md-%s'%name,top='system',
-			structure='system' if eqnum == 0 else 'md-%s'%seq[eqnum-1],
-			log='grompp-%s'%name,mdp='input-md-%s-eq-in'%name,
-			flag=('' if not groups else '-n %s'%groups)+' -maxwarn 10')
-		gmx('mdrun',base='md-%s'%name,log='mdrun-%s'%name,skip=True)
-		checkpoint()
+		if not equilibrate_check(name):
+			gmx('grompp',base='md-%s'%name,top='system',
+				structure='system' if eqnum == 0 else 'md-%s'%seq[eqnum-1],
+				log='grompp-%s'%name,mdp='input-md-%s-eq-in'%name,
+				flag=('' if not groups else '-n %s'%groups)+' -maxwarn 10')
+			gmx('mdrun',base='md-%s'%name,log='mdrun-%s'%name,skip=True)
+			checkpoint()
 
 	#---first part of the equilibration/production run
-	gmx('grompp',base='md.part0001',top='system',
-		structure='md-%s'%seq[-1],
-		log='grompp-0001',mdp='input-md-in',
-		flag='' if not groups else '-n %s'%groups)
-	gmx('mdrun',base='md.part0001',log='mdrun-0001')
-	checkpoint()
+	name = 'md.part0001'
+	if not equilibrate_check(name):
+		gmx('grompp',base=name,top='system',
+			structure='md-%s'%seq[-1],
+			log='grompp-0001',mdp='input-md-in',
+			flag='' if not groups else '-n %s'%groups)
+		gmx('mdrun',base=name,log='mdrun-0001')
+		checkpoint()
 
 @narrate
 def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='counterions'):
@@ -202,7 +220,13 @@ def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='
 	The resname must be understandable by "r RESNAME" in make_ndx and writes to the top file.
 	"""
 
-	filecopy(wordspace['step']+top+'.top',wordspace['step']+'counterions.top')
+	#---clean up the composition in case this is a restart
+	for key in ['cation','anion','sol']:
+		try: wordspace['composition'].pop(zip(*wordspace['composition'])[0].index(wordspace[key]))
+		except: pass
+	component('W',count=wordspace['water_without_ions'])
+	#---write the topology file as of the solvate step instead of copying them (genion overwrites top)
+	write_top('counterions.top')
 	gmx('grompp',base='genion',structure=structure,
 		top='counterions',mdp='input-em-steep-in',
 		log='grompp-genion')
@@ -227,3 +251,41 @@ def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='
 		if type(ff_includes)==str: ff_includes = [ff_includes]
 		for i in ff_includes: include(i,ff=True)
 	write_top('counterions.top')
+
+def get_last_frame():
+
+	"""
+	Get the last frame of any step in this simulation.
+	NOT NARRATED because the watch file is typically not ready until the new step 
+	directory is created at which point you cannot use detect_last to get the last frame easily.
+	"""
+
+	if 'last_step' not in wordspace or 'last_part' not in wordspace:
+		raise Exception('must run detect_last before get_last_frame')
+	last_step,part_num = wordspace['last_step'],wordspace['last_part']
+	last_frame_exists = last_step+'md.part%04d.gro'%part_num
+	if os.path.isfile(last_frame_exists): 
+		shutil.copyfile(last_frame_exists,wordspace['step']+'system-input.gro')
+	else:
+		xtc = os.path.join(os.getcwd(),last_step+'md.part%04d.xtc'%wordspace['last_part'])
+		if not os.path.isfile(xtc): raise Exception('cannot locate %s'%xtc)
+		logfile = 'gmxcheck-%s-part%04d'%(last_step.rstrip('/'),part_num)
+		gmx_run(' '.join([gmxpaths['gmxcheck'],'-f '+xtc]),log=logfile)
+		with open(wordspace['step']+'log-'+logfile) as fp: lines = re.sub('\r','\n',fp.read()).split('\n')
+		last_step_regex = '^Step\s+([0-9]+)\s*([0-9]+)'
+		first_step_regex = '^Reading frame\s+0\s+time\s+(.+)'
+		first_frame_time = [float(re.findall(first_step_regex,l)[0][0]) 
+			for l in lines if re.match(first_step_regex,l)][0]
+		last_step_regex = '^Step\s+([0-9]+)\s*([0-9]+)'
+		nframes,timestep = [int(j) for j in [re.findall(last_step_regex,l)[0] 
+			for l in lines if re.match(last_step_regex,l)][0]]
+		#---! last viable time may not be available so this needs better error-checking
+		last_time = float(int((float(nframes)-1)*timestep))
+		last_time = round(last_time/10)*10
+		#---interesting that trjconv uses fewer digits than the gro so this is not a perfect match
+		#---note that we select group zero which is always the entire system
+		#---note that we assume a like-named TPR file is available
+		gmx_run(gmxpaths['trjconv']+' -f %s -o %s -s %s.tpr -b %f -e %f'%(
+			xtc,'system-input.gro',xtc.rstrip('.xtc'),last_time,last_time),
+			log='trjconv-last-frame',inpipe='0\n')
+

@@ -7,40 +7,37 @@ lipid structures:   inputs/cgmd-lipid-structures
 step:               bilayer
 procedure:          cgmd,bilayer
 shape:              flat
-lx:                 20
-ly:                 30
-lz:                 50
 height:             6
-binsize:            0.95
+binsize:            1.0
 monolayer offset:   1.5
-lipid:              DOPC
-solvent thickness:  15
+monolayer top:      400
+monolayer bottom:   None
+composition top:    {'DOPC':0.8,'DOPS':0.2}
+composition bottom: None
+aspect:             1.0
+solvent thickness:  220
 protein water gap:  3
 lipid ready:        lipid-ready.gro
-protein ready:      protein-ready.gro
-ncols:              1
-nrows:              1
-total proteins:     1
-space scale:        20
-z shift:            4.85
-lattice type:       square
 force field:        martini
 cation:             NA+
 anion:              CL-
 ionic strength:     0.150
 sol:                W
 ff includes:        ['martini-v2.2','martini-v2.0-lipids','martini-v2.2-aminoacids','martini-v2.0-ions']
-files:              ['cgmd-tops/PIP2.itp','martini-water.gro']
+files:              ['martini-water.gro']
 sources:            ['martini.ff']
 equilibration:      npt-bilayer
 """
 
 from amx import *
 #---development
-import os,pickle;dev = os.path.isfile('wordspace.pkl')
-init(settings,dev=dev)
+import os,pickle
+execfile('amx/base/metatools.py')
+under_development = os.path.isfile('wordspace.pkl')
+init(settings)
 try:
-	if not dev:
+	if not under_development:
+		#---only start if not under_development
 		start(wordspace['step'])
 		write_mdp()
 		build_bilayer(name='vacuum-bilayer')
@@ -61,10 +58,10 @@ try:
 		remove_jump(structure='counterions-minimized',tpr='em-counterions-steep',gro='counterions-nojump')
 		bilayer_middle(structure='counterions-nojump',gro='system')
 		write_mdp()
-		bilayer_sorter(structure='system',ndx='system-groups')
-		write_top('system.top')
-		#---periodically save for continuation
-		pickle.dump(wordspace,open('wordspace.pkl','w'))
+	bilayer_sorter(structure='system',ndx='system-groups')
+	write_top('system.top')
+	#---periodically save for continuation
+	pickle.dump(wordspace,open('wordspace.pkl','w'))
 	#---modify MDP to accomodate a protein
 	if 'protein_ready' in wordspace: 
 		for key in ['groups','temperature']:
@@ -76,5 +73,9 @@ try:
 	equilibrate(groups='system-groups')
 	write_continue_script()
 #---development
-except Exception as e: print e
-pickle.dump(wordspace,open('wordspace.pkl','w'))
+except KeyboardInterrupt: 
+	pickle.dump(wordspace,open('wordspace.pkl','w'))
+	report('interrupted!')
+except Exception as e: 
+	pickle.dump(wordspace,open('wordspace.pkl','w'))
+	concise_error(e,all=True)

@@ -64,7 +64,7 @@ def write_mdp(param_file='inputs/parameters.py',rootdir='./',outdir=''):
 			for refinecode in mdpspecs[mdpname]:
 				#---if the refinement code in the list given at mdpspecs[mdpname] is a string then we
 				#---...navigate to mdpdefs[refinecode] and use its children to override settings[key] 
-				if type(refinecode)==str:
+				if type(refinecode) in [str,unicode]:
 					for key,val in mdpdefs[refinecode].items():
 						#---if the value for an object in mdpdefs[refinecode] is a dictionary, we 
 						#---...replace settings[key] with that dictionary
@@ -72,7 +72,7 @@ def write_mdp(param_file='inputs/parameters.py',rootdir='./',outdir=''):
 						#---otherwise the value is really a lookup code and we search for a default value
 						#---...at the top level of mdpdefs where we expect mdpdefs[key][val] to be 
 						#---...a particular default value for the MDP heading given by key
-						elif type(val)==str: settings[key] = deepcopy(mdpdefs[key][val])				
+						elif type(val) in [str,unicode]: settings[key] = deepcopy(mdpdefs[key][val])				
 						else: raise Exception('unclear refinecode = '+refinecode+', '+key+', '+str(val))
 				#---if the refinement code is a dictionary, we iterate over each rule
 				else:

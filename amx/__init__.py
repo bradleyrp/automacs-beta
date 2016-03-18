@@ -37,7 +37,7 @@ class WordSpace(dict):
 			raise Exception("".join([
 				"[ERROR] wordspace['last'] is not defined ...",
 				"[ERROR] it is likely that you started AMX from a downstream step"]))
-		elif key not in self: raise Exception('\n[ERROR] "%s" not found in wordspace'%key)
+		elif key not in self: raise Exception('[ERROR] "%s" not found in wordspace'%key)
 		return dict.get(self,key)
 
 class WordSpaceLook():
@@ -68,7 +68,6 @@ if not os.path.basename(wordspace['script']) in ['sphinx-build','script-vmd.py']
 		libfile = procedure_toc[procedure]
 		mod = importlib.import_module('amx.procedures.'+libfile)
 		globals().update(vars(mod))
-		wordspace['command_library'] = interpret_command(command_library)
-		wordspace['mdp_specs'] = mdp_specs
+		if 'command_library' in globals(): wordspace['command_library'] = interpret_command(command_library)
+		if 'mdp_specs' in globals(): wordspace['mdp_specs'] = mdp_specs
 	else: raise Exception('[ERROR] unclear procedure "%s" see procedures.toc'%procedure)
-
