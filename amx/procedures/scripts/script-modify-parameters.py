@@ -5,6 +5,7 @@ settings = """
 step:               more
 procedure:          modify_parameters
 equilibration:      None
+mdp_specs:          {'group':'cgmd','input-md-in.mdp':None}
 """
 
 from amx import *

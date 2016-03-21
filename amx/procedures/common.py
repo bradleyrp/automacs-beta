@@ -253,7 +253,7 @@ def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='
 		for i in ff_includes: include(i,ff=True)
 	write_top('counterions.top')
 
-def get_last_frame(tpr=False,cpt=False):
+def get_last_frame(tpr=False,cpt=False,top=True):
 
 	"""
 	Get the last frame of any step in this simulation.
@@ -289,12 +289,15 @@ def get_last_frame(tpr=False,cpt=False):
 		gmx_run(gmxpaths['trjconv']+' -f %s -o %s -s %s.tpr -b %f -e %f'%(
 			xtc,'system-input.gro',xtc.rstrip('.xtc'),last_time,last_time),
 			log='trjconv-last-frame',inpipe='0\n')
-	if tpr:
-		tpr_file = last_step+'md.part%04d.tpr'%part_num
-		if not os.path.isfile(tpr_file): raise Exception('cannot find %s'%tpr_file)
-		shutil.copyfile(tpr_file,wordspace['step']+'system-input.tpr')
-	if cpt:
-		cpt_file = last_step+'md.part%04d.cpt'%part_num
-		if not os.path.isfile(cpt_file): raise Exception('cannot find %s'%cpt_file)
-		shutil.copyfile(cpt_file,wordspace['step']+'system-input.cpt')
-
+	upstream_files = {
+		'tpr':(last_step+'md.part%04d.tpr'%part_num,'system-input.tpr'),
+		'cpt':(last_step+'md.part%04d.cpt'%part_num,'system-input.cpt'),
+		'top':('system.top','system.top'),
+		}
+	if not tpr: upstream_files.pop('tpr')
+	if not cpt: upstream_files.pop('cpt')
+	if not top: upstream_files.pop('top')
+	import pdb;pdb.set_trace()
+	for key,val in upstream_files.items():
+		if not os.path.isfile(val[0]): raise Exception('cannot find %s'%val)
+		shutil.copyfile(tpr_file,wordspace['step']+val[1])

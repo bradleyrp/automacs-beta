@@ -12,7 +12,7 @@ echo "[STATUS] running ... "
 
 #---modify the mdp via grompp as per manual recommendations
 log="grompp-change"
-cmd="$GROMPP -f input-md-in.mdp -c system-input.tpr -o md.part0001.tpr -t system-input.cpt"
+cmd="$TPBCONV -f input-md-in.mdp -c system-input.tpr -o md.part0001.tpr -t system-input.cpt"
 cmdexec=$cmd" &> log-$log"
 echo "[FUNCTION] gmx_run ('"$cmd"',) {'skip': False, 'log': '$log', 'inpipe': None}" >> $metalog
 eval $cmdexec

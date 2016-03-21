@@ -51,6 +51,7 @@ def write_mdp(param_file=None,rootdir='./',outdir=''):
 		else: 
 			param_file = 'amx/procedures/parameters.py'
 			report('using amx/procedures/parameters.py for mdp parameters',tag='status')
+
 	#---retrieve the master inputs file
 	mdpfile = {}
 	execfile(param_file,mdpfile)
