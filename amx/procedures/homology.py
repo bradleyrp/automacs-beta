@@ -213,7 +213,7 @@ def get_best_structure():
 	results = [(i[0],float(i[1]),float(i[2])) for i in results]
 	best = sorted(results,key=lambda x:x[1])[0][0]
 	gmx('editconf',structure=best,gro=wordspace.target_name+'.pdb',
-		flag='-resnr %d -label %s'%(wordspace.starting_residue, wordspace.template_chain),log='editconf-renumber')
+		flag='-resnr %d'%wordspace.starting_residue,log='editconf-renumber')
 	with open(wordspace.step+'best_structure_path','w') as fp: 
 		fp.write(wordspace.target_name+'.pdb'+'\n')
 	
