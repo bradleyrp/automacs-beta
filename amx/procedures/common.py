@@ -225,7 +225,7 @@ def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='
 	for key in ['cation','anion','sol']:
 		try: wordspace['composition'].pop(zip(*wordspace['composition'])[0].index(wordspace[key]))
 		except: pass
-	component('W',count=wordspace['water_without_ions'])
+	component(resname,count=wordspace['water_without_ions'])
 	#---write the topology file as of the solvate step instead of copying them (genion overwrites top)
 	write_top('counterions.top')
 	gmx('grompp',base='genion',structure=structure,
