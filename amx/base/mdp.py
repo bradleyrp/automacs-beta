@@ -8,7 +8,7 @@ from amx.base.journal import *
 def delve(o,*k): return delve(o[k[0]],*k[1:]) if len(k)>1 else o[k[0]]
 
 @narrate
-def write_mdp(param_file='amx/procedures/parameters.py',rootdir='./',outdir=''):
+def write_mdp(param_file=None,rootdir='./',outdir=''):
 
 	"""
 	Universal MDP file writer which creates input files based on a unified dictionary.
@@ -43,13 +43,19 @@ def write_mdp(param_file='amx/procedures/parameters.py',rootdir='./',outdir=''):
 
 	mdpspecs = wordspace['mdp_specs']
 
-	#---! allow overrides in inputs/parameters.py or specified in the wordspace?
-	import pdb;pdb.set_trace()
+	if not param_file:
+		custom_mdp_parameters = 'inputs/parameters.py'
+		if os.path.isfile(custom_mdp_parameters):
+			param_file = custom_mdp_parameters
+			report('found custom parameters.py in inputs',tag='status')
+		else: 
+			param_file = 'amx/procedures/parameters.py'
+			report('using amx/procedures/parameters.py for mdp parameters',tag='status')
 
 	#---retrieve the master inputs file
 	mdpfile = {}
 	execfile(param_file,mdpfile)
-	mdpdefs = mdpfile['mdpdefs']		
+	mdpdefs = mdpfile['mdpdefs']
 
 	#--topkeys is the root node for our parameters in mdpdict
 	mdpdefs = mdpdefs[mdpspecs['group']] if 'group' in mdpspecs else mdpdefs

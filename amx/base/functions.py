@@ -245,25 +245,30 @@ def interpret_command(block):
 	return commands
 
 @narrate
-def write_continue_script(script='amx/procedures/scripts/script-continue.sh'):
+def write_continue_script(script='script-continue.sh',**kwargs):
 
 	"""
 	Uses a template in amx/procedures to write a bash continuation script.
 	"""
-	
-	with open(script,'r') as fp: lines = fp.readlines()
+
+	#---assume that the scripts are in the scripts folder
+	with open(os.path.join('amx/procedures/scripts',script),'r') as fp: lines = fp.readlines()
 	#---settings required for continuation script
+	#---! get these from the proper setup
 	settings = {
 		'maxhours':24,
 		'extend':100000,
 		'tpbconv':'gmx convert-tpr',
 		'mdrun':'gmx mdrun',
+		'grompp':'gmx grompp',
+		'start_part':1,
 		}
+	settings.update(**kwargs)
 	setting_text = '\n'.join([
 		str(key.upper())+'='+('"' if type(val)==str else '')+str(val)+('"' if type(val)==str else '') 
 		for key,val in settings.items()])
 	lines = map(lambda x: re.sub('#---SETTINGS OVERRIDES HERE$',setting_text,x),lines)
-	wordspace['continuation_script'] = script_fn = 'script-continue.sh'
+	wordspace['continuation_script'] = script_fn = script
 	with open(wordspace['step']+script_fn,'w') as fp:
 		for line in lines: fp.write(line)
 	os.chmod(wordspace['step']+script_fn,0744)
