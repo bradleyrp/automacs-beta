@@ -142,6 +142,26 @@ def write_ali_file(fasta_linelen=50):
 def extract_sequence_pdb(filename,chain):
 
 	"""
+
+	"""
+
+	import Bio
+	import Bio.PDB
+	parser = Bio.PDB.PDBParser()
+	structure = parser.get_structure('this_pdb',filename)
+	#---extract residue ID and name for non HETATM elements of all chains in the PDB
+	seqs = {c.id:[(i.id[1],i.resname) 
+		for i in c.get_residues() if i.id[0]==' '] 
+		for c in structure.get_chains()}
+	return {
+		'starting_residue':zip(*seqs[chain])[0][0],
+		'sequence':''.join([aacodemap[i] for i in zip(*seqs[chain])[1]]),
+		'filename':os.path.basename(filename).rstrip('.pdb')}
+	
+@narrate
+def extract_sequence_pdb_deprecated(filename,chain):
+
+	"""
 	Extract the sequence and staring residue from a PDB file.
 	This is a holdover from the original automacs.
 	"""
