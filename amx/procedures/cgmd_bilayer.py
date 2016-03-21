@@ -400,6 +400,7 @@ def solvate_bilayer(structure='vacuum'):
 
 	#---make an oversized water box
 	newdims = boxdims_old[:2]+[wordspace['solvent_thickness']]
+	#import pdb;pdb.set_trace()
 	gmx('genconf',structure='martini-water',gro='solvate-empty-uncentered-untrimmed',
 		nbox=' '.join([str(int(i/basedim+1)) for i in newdims]),log='genconf')
 

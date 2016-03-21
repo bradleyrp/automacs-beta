@@ -123,6 +123,9 @@ def start(name):
 	Start a new step and register it.
 	"""
 
+	if wordspace['under_development']: 
+		report('looks like we are developing so skipping start',tag='warning')
+		return
 	#---register root
 	detect_root_directory()
 	#---get the most recent step number
@@ -223,8 +226,7 @@ def resume(init_settings='',add=False):
 	#---if we wish to use resume to get the checkpoint from a previous step, we remove the step variable
 	#---...so that start makes a new directory with the correct naming scheme. this allows us to retain
 	#---...the previous wordspace on a new step
-	if add:
-		wordspace['step'] = new_step
+	if add: wordspace['step'] = new_step
 		
 def interpret_command(block):
 
@@ -243,13 +245,13 @@ def interpret_command(block):
 	return commands
 
 @narrate
-def write_continue_script():
+def write_continue_script(script='amx/procedures/scripts/script-continue.sh'):
 
 	"""
 	Uses a template in amx/procedures to write a bash continuation script.
 	"""
 	
-	with open('amx/procedures/scripts/script-continue.sh','r') as fp: lines = fp.readlines()
+	with open(script,'r') as fp: lines = fp.readlines()
 	#---settings required for continuation script
 	settings = {
 		'maxhours':24,

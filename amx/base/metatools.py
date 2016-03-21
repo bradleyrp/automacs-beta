@@ -1,15 +1,6 @@
 #!/usr/bin/python
 
-import os,re,subprocess,sys
-
-def call(cmd):
-
-	"""
-	Execute a shell command.
-	"""
-
-	try: subprocess.check_call(cmd,shell=True,executable='/bin/bash')
-	except Exception as e: sys.exit(1)
+import os,re,subprocess,sys,json
 
 def script_settings_replace(script,settings_string):
 
@@ -28,7 +19,16 @@ def script_settings_replace(script,settings_string):
 		fp.write('"""\n\n')
 		for line in lines[cutout[1]:]: fp.write(line)
 
-def concise_error(e,all=False):
+def write_wordspace(wordspace,outfile='wordspace.json'):
+
+	"""
+	In addition to saving checkpoints permanently in the log, we also drop the wordspace into a json file
+	for rapid development.
+	"""
+
+	with open(outfile,'w') as fp: json.dump(wordspace,fp)
+
+def exception_handler(e,wordspace,all=False):
 
 	"""
 	Report an error concisely to the terminal to avoid overwhelming the user.
@@ -36,9 +36,25 @@ def concise_error(e,all=False):
 
 	exc_type, exc_obj, exc_tb = sys.exc_info()
 	fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+	from amx.base.journal import report
 	report('%s in %s at line %d'%(str(exc_type),fname,exc_tb.tb_lineno),tag='error')
 	report('%s'%e,tag='error')
 	if all:
 		import traceback
-		traceback.print_exc()
+		report(re.sub('\n','\n[TRACEBACK] ',traceback.format_exc()),tag='traceback')
+	write_wordspace(wordspace)
+	sys.exit(1)
 
+def call(cmd):
+
+	"""
+	Execute a shell command.
+	Note that we don't handle any exceptions here because we assume that the commands run herein have their
+	own error-handling. Further handling would be redundant, but it's important to make sure all codes that
+	run through here are carefully excepted.
+	"""
+
+	try: subprocess.check_call(cmd,shell=True,executable='/bin/bash')
+	except: 
+		print '[STATUS] failing quietly on "%s" which must self-report its errors'%cmd
+		sys.exit(1)

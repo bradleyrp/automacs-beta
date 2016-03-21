@@ -37,19 +37,26 @@ class WordSpace(dict):
 			raise Exception("".join([
 				"[ERROR] wordspace['last'] is not defined ...",
 				"[ERROR] it is likely that you started AMX from a downstream step"]))
-		elif key not in self: raise Exception('[ERROR] "%s" not found in wordspace'%key)
+		elif key not in self:
+			if key == 'watch_file':
+				print('[ERROR] watch_file not defined yet so returning "WATCHFILE"')
+				return "WATCHFILE"
+			elif key == 'under_development': return False
 		return dict.get(self,key)
 
 class WordSpaceLook():
 	def __init__(self,d): self.__dict__ = d
 	def __getitem__(self,i): return self.__dict__[i]
 
-wordspace = WordSpace()		
+#---always import amx into globals
+#---assume these variables make it to the global scope 
+wordspace = WordSpace()
 import sys,os,importlib
 from base.functions import *
 from base.mdp import write_mdp
 from base.gmxwrap import *
 from procedures.toc import procedure_toc
+from base.metatools import *
 
 #---custom imports according to the procedure from the script that imported amx
 wordspace['script'] = os.path.abspath(os.getcwd()+'/'+sys.argv[0])
@@ -59,8 +66,7 @@ if (not script_call in ['sphinx-build','script-vmd.py'] and
 	not re.match('^script-vmd',script_call)):
 	with open(wordspace['script'],'r') as fp: original_script_lines = fp.readlines()
 	try: 
-		procedure = [re.findall('^procedure:\s*([\w,]+)',l)[0] 
-			for l in original_script_lines if re.match('^procedure:\s*([\w,]+)',l)]
+		procedure = [re.findall('^procedure:\s*([\w,]+)',l)[0] for l in original_script_lines if re.match('^procedure:\s*([\w,]+)',l)]
 		if len(procedure)!=1 and len(list(set(procedure)))>1:
 			raise Exception('[ERROR] procedure = %s'%str(procedure))
 		else: procedure = procedure[0]
@@ -68,6 +74,8 @@ if (not script_call in ['sphinx-build','script-vmd.py'] and
 	#---automatically load the correct function library
 	if procedure in procedure_toc:
 		libfile = procedure_toc[procedure]
+		#---if none then we just import common
+		if not libfile: libfile = 'common'
 		mod = importlib.import_module('amx.procedures.'+libfile)
 		globals().update(vars(mod))
 		if 'command_library' in globals(): wordspace['command_library'] = interpret_command(command_library)

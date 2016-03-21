@@ -57,14 +57,15 @@ def get_box_vectors(structure,gro=None,d=0,log='checksize'):
 	vecs_old = re.findall('\s*box vectors\s*:([^\(]+)',old_line)[0]
 	#---sometimes the numbers run together
 	try: vecs_old = [float(i) for i in vecs_old.strip(' ').split()]
-	except: vecs_old = re.findall(runon_regex,vecs_old)
+	except: vecs_old = [float(i) for i in re.findall(runon_regex,vecs_old)[0]]
 	#---repeat for new box vectors
 	new_line = [l for l in lines if re.match(box_vector_new_regex,l)][0]
 	vecs_new = re.findall('\s*box vectors\s*:([^\(]+)',new_line)[0]
 	try: vecs_new = [float(i) for i in vecs_new.strip(' ').split()]
-	except: vecs_new = re.findall(runon_regex,vecs_new)
+	except: vecs_new = [float(i) for i in re.findall(runon_regex,vecs_new)[0]]
 	#---no need to keep the output since it is a verbatim copy for diagnostic only
 	os.remove(wordspace['step']+gro+'.gro')
+	#import pdb;pdb.set_trace()
 	return vecs_old,vecs_new
 
 @narrate
@@ -77,7 +78,7 @@ def count_molecules(structure,resname):
 	gmx('make_ndx',structure=structure,ndx=structure+'-count',
 		log='make-ndx-%s-check'%structure,inpipe='q\n')
 	with open(wordspace['step']+'log-make-ndx-%s-check'%structure) as fp: lines = fp.readlines()
-	residue_regex = '^\s*[0-9]+\s+%s\s+\:\s([0-9]+)\s'%resname
+	residue_regex = '^\s*[0-9]+\s+%s\s+\:\s+([0-9]+)\s'%resname
 	count, = [int(re.findall(residue_regex,l)[0]) for l in lines if re.match(residue_regex,l)]
 	return count
 	
@@ -252,7 +253,7 @@ def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='
 		for i in ff_includes: include(i,ff=True)
 	write_top('counterions.top')
 
-def get_last_frame():
+def get_last_frame(tpr=False):
 
 	"""
 	Get the last frame of any step in this simulation.
@@ -288,4 +289,11 @@ def get_last_frame():
 		gmx_run(gmxpaths['trjconv']+' -f %s -o %s -s %s.tpr -b %f -e %f'%(
 			xtc,'system-input.gro',xtc.rstrip('.xtc'),last_time,last_time),
 			log='trjconv-last-frame',inpipe='0\n')
-
+	if tpr:
+		tpr_file = last_step+'md.part%04d.tpr'%part_num
+		if not os.path.isfile(tpr_file): raise Exception('cannot find %s'%tpr_file)
+		shutil.copyfile(tpr_file,wordspace['step']+'system-input.tpr')
+	if cpt:
+		cpt_file = last_step+'md.part%04d.cpt'%part_num
+		if not os.path.isfile(cpt_file): raise Exception('cannot find %s'%cpt_file)
+		shutil.copyfile(cpt_file,wordspace['step']+'system-input.cpt')
