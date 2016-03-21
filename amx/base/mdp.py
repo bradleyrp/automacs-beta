@@ -44,12 +44,15 @@ def write_mdp(param_file='amx/procedures/parameters.py',rootdir='./',outdir=''):
 	mdpspecs = wordspace['mdp_specs']
 
 	#---! allow overrides in inputs/parameters.py or specified in the wordspace?
+	print "OVERRIDE HERE"
 	import pdb;pdb.set_trace()
 
 	#---retrieve the master inputs file
 	mdpfile = {}
 	execfile(param_file,mdpfile)
-	mdpdefs = mdpfile['mdpdefs']		
+	mdpdefs = mdpfile['mdpdefs']
+
+	import pdb;pdb.set_trace()
 
 	#--topkeys is the root node for our parameters in mdpdict
 	mdpdefs = mdpdefs[mdpspecs['group']] if 'group' in mdpspecs else mdpdefs

@@ -253,7 +253,7 @@ def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='
 		for i in ff_includes: include(i,ff=True)
 	write_top('counterions.top')
 
-def get_last_frame(tpr=False):
+def get_last_frame(tpr=False,cpt=False):
 
 	"""
 	Get the last frame of any step in this simulation.
@@ -297,3 +297,4 @@ def get_last_frame(tpr=False):
 		cpt_file = last_step+'md.part%04d.cpt'%part_num
 		if not os.path.isfile(cpt_file): raise Exception('cannot find %s'%cpt_file)
 		shutil.copyfile(cpt_file,wordspace['step']+'system-input.cpt')
+
