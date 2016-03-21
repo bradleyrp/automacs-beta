@@ -153,6 +153,7 @@ def extract_sequence_pdb(filename,chain):
 	seqs = {c.id:[(i.id[1],i.resname) 
 		for i in c.get_residues() if i.id[0]==' '] 
 		for c in structure.get_chains()}
+	wordspace['sequence_info'] = seqs
 	return {
 		'starting_residue':zip(*seqs[chain])[0][0],
 		'sequence':''.join([aacodemap[i] for i in zip(*seqs[chain])[1]]),
@@ -232,8 +233,25 @@ def get_best_structure():
 	results = [re.findall(regex_log,l)[0] for l in lines if re.match(regex_log,l)]
 	results = [(i[0],float(i[1]),float(i[2])) for i in results]
 	best = sorted(results,key=lambda x:x[1])[0][0]
-	gmx('editconf',structure=best,gro=wordspace.target_name+'.pdb',
+	gmx('editconf',structure=best,gro=wordspace.target_name+'.basic.pdb',
 		flag='-resnr %d'%wordspace.starting_residue,log='editconf-renumber')
+	with open(wordspace.step+wordspace.target_name+'.basic.pdb') as fp: lines = fp.readlines()
+	atom_record_start = [ll for ll,l in enumerate(lines) if l[:4]=='ATOM'][0]-1
+	seqres = ""
+	for chain,details in wordspace['sequence_info'].items():
+		seq = zip(*details)[1]
+		seqlen = len(seq)
+		nrows = seqlen/13+(0 if seqlen%13==0 else 1)
+		chunks = [seq[i*13:(i+1)*13] for i in range(nrows)]
+		additions = ""
+		for cnum,chunk in enumerate(chunks):
+			additions += 'SEQRES  %-2d  %s %-4d  '%(cnum+1,chain,len(details))+' '.join(chunk)+'\n'
+		seqres += additions
+	lines.insert(atom_record_start,seqres)
+	import pdb;pdb.set_trace()
+	with open(wordspace.step+wordspace.target_name+'.pdb','w') as fp:
+		for line in lines: fp.write(line)
+	import pdb;pdb.set_trace()
 	with open(wordspace.step+'best_structure_path','w') as fp: 
 		fp.write(wordspace.target_name+'.pdb'+'\n')
 	
