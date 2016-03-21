@@ -146,6 +146,7 @@ def solvate(structure,top):
 	with open(wordspace['step']+'log-make-ndx-solvate-check','r') as fp: lines = fp.readlines()
 	nwaters = int(re.findall('\s*[0-9]+\s+Water\s+:\s+([0-9]+)\s+atoms',
 		filter(lambda x:re.match('\s*[0-9]+\s+Water',x),lines).pop()).pop())/3
+	wordspace['water_without_ions'] = nwaters
 	component('SOL',count=nwaters)
 	#---add the suffix so that water is referred to by its name in the settings
 	include(wordspace['water'],ff=True)
