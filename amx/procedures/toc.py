@@ -11,4 +11,5 @@ procedure_toc = {
 	'cgmd,protein':'cgmd_protein',
 	'homology':'homology',
 	'multiply':'multiply',
+	'modify_parameters':None,
 	}

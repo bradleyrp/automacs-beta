@@ -1,2 +1,5 @@
 *.pyc
 .pipeline_up_to_date
+inputs/externals
+inputs/*.ff
+inputs/pdbs

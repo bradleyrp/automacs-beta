@@ -44,7 +44,9 @@ def program(script,flag=False):
 	os.umask(002)
 	fn = 'amx/procedures/scripts/script-%s.py'%script
 	new_script = 'script-%s.py'%script
-	if os.path.isfile(fn) and os.path.isfile(new_script): raise Exception('[DEV_ERROR] found %s'%new_script)
+	if os.path.isfile(fn) and os.path.isfile(new_script): 
+		raise Exception('[ERROR] found %s which must be deleted before continuing '+
+			'(if this was a previous step then there was an automatic copy)'%new_script)
 	elif os.path.isfile(fn): 
 		print '[STATUS] copying %s'%fn
 		shutil.copy(fn,new_script)
@@ -63,7 +65,7 @@ def clean(sure=False):
 	if os.path.isdir('amx/docs/build'): remove_dirs.append('amx/docs/build')
 	remove_files = [i for i in filenames if i != 'config.py' and 
 		(re.match('^script-s[0-9]+',i) or re.match('^([\w-]+)\.py$',i) 
-		or re.match('^(cluster|gmxjob)',i) or i=='wordspace.pkl')]
+		or re.match('^(cluster|gmxjob)',i) or i=='wordspace.json')]
 	print '[STATUS] preparing to remove directories:'
 	for fn in remove_dirs: print '[STATUS] >> %s'%fn
 	print '[STATUS] preparing to remove files:'
@@ -229,7 +231,7 @@ def metarun(script=None,more=False):
 		except: raise Exception('[ERROR] failed to match %s with known scripts'%script)
 		execfile('inputs/%s.py'%target)
 
-def look(script=''):
+def look(script='',dump=True):
 
 	"""
 	Drop into the wordspace for a script. 
@@ -242,7 +244,8 @@ def look(script=''):
 	if not script: 
 		script = max(glob.iglob('script-*.py'),key=os.path.getctime)
 		print 'STATUS] resuming from the last step, apparently creeated by %s'%script
-	cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(init_settings=\'%s\')"'%(script,script)
+	cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(init_settings=\'%s\');%s"'%(
+		script,script,"\nwith open('wordspace.json','w') as fp:\n\tjson.dump(wordspace,fp);" if dump else '')
 	print '[STATUS] running: python -i -c '+cmd
 	os.system('python -i -c '+cmd)
 
@@ -256,7 +259,7 @@ def makeface(*arglist):
 	"""
 
 	#---stray characters
-	arglist = tuple(i for i in arglist if i not in ['w','--'])
+	arglist = tuple(i for i in arglist if i not in ['w','--','s'])
 	#---unpack arguments
 	if arglist == []: 
 		raise Exception('[ERROR] no arguments to controller')

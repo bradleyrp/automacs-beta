@@ -137,14 +137,14 @@ def ready_to_continue(sure=False):
 	Use this function at the beginning of a continuation step e.g. the multiply procedure which takes a
 	previous simulation and increases the size of the unit cell. This function checks for a previous 
 	wordspace and asks the user if they want to delete it before continuing. Note that using the add=True flag
-	to the resume function will ask AUTOMACS to retrieve the previous wordspace from a checkpoing in the log
+	to the resume function will ask AUTOMACS to retrieve the previous wordspace from a checkpoint in the log
 	file of the last step. This obviates the need to open the pickled wordspace, which is intended purely
 	for rapid development purposes and is not necessary in a production environment.
 	"""
 
-	if os.path.isfile('wordspace.pkl'):
+	if os.path.isfile('wordspace.json'):
 		msgs = [
-			"detected wordspace.pkl but this must be deleted if this is a follow-up. delete? ",
+			"detected wordspace.json but this must be deleted if this is a follow-up. delete? ",
 			"confirm"]
-		if sure or ask_user(*msgs): os.remove('wordspace.pkl')
-		else: print '[WARNING] wordspace.pkl remains despite ready_to_continue check'
+		if sure or ask_user(*msgs): os.remove('wordspace.json')
+		else: print '[WARNING] wordspace.json remains despite ready_to_continue check'

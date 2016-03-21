@@ -134,22 +134,23 @@ def checkpoint():
 	with open(wordspace['watch_file'],'a') as fp:
 		report('wordspace = '+json.dumps(wordspace),tag='checkpoint')
 
-def init(setting_string,dev=False,proceed=False):
+def init(setting_string,proceed=True):
 
 	"""
 	Automatically load settings from the python-amx script into the wordspace for safekeeping.
+	This function also detects development status.
 	"""
 
 	os.umask(002)
 	#---in development environments we first load the previous wordspace
-	if dev and os.path.isfile('wordspace.pkl'): 
-		import pickle
-		incoming_wordspace = pickle.load(open('wordspace.pkl'))
+	if os.path.isfile('wordspace.json'):
+		incoming_wordspace = json.load(open('wordspace.json'))
 		wordspace.update(incoming_wordspace)
-
+		wordspace['under_development'] = True
 	settings = yamlparse(setting_string)
 	for key,val in settings.items(): 
-		if not dev or (dev and key!='step'): wordspace[re.sub(' ','_',key)] = val
+		if not wordspace['under_development'] or (wordspace['under_development'] and key!='step'): 
+			wordspace[re.sub(' ','_',key)] = val
 	#---for convenience we automatically substitute a lone PDB file in inputs
 	#---! note that this is protein_atomistic-specific and may need to be conditional
 	if 'start_structure' in wordspace and wordspace['start_structure'] == 'inputs/STRUCTURE.pdb': 
@@ -161,5 +162,5 @@ def init(setting_string,dev=False,proceed=False):
 			if 'watch_file' not in wordspace: wordspace['watch_file'] = 'ERROR.log'
 			report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
 	#---instead of copying a single PDB for the homology run here, we do that in the homology codes
+	#---always perform the ready_to_continue test to see if there is a preexisting wordspace
 	if proceed: ready_to_continue(sure=wordspace['proceed'] if 'proceed' in wordspace else False)
-

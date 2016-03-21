@@ -16,10 +16,10 @@ many models:         5
 from amx import *
 init(settings)
 start(wordspace.step)
-# template variable may be a PDB code or a path
+#---template variable may be a PDB code or a path
 pdb_attr = get_pdb()
 wordspace.starting_residue = pdb_attr['starting_residue']
-# if point mutation figure out the right target sequence
+#---if point mutation figure out the right target sequence
 if wordspace.homology_method == 'point':
 	startres = wordspace.starting_residue
 	target_sequence = list(pdb_attr['sequence'])

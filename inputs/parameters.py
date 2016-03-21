@@ -365,7 +365,7 @@ mdpdefs = {
 				'integrator':'md',
 				'tinit':0.0,
 				'dt':0.001,
-				'nsteps':1000000,
+				'nsteps':100000,
 				'nstcomm':10,
 				},
 			'temperature':{
