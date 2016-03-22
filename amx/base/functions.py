@@ -192,13 +192,14 @@ def dircopy(src,dest):
 		if not os.path.isdir(dest+'/'+os.path.basename(folder)):
 			shutil.copytree(folder,dest+'/'+os.path.basename(folder))
 		
-def resume(init_settings='',add=False):
+def resume(init_settings='',add=False,read_only=False):
 
 	"""
 	Continue a simulation procedure that was halted by extracting the wordspace 
 	from checkpoing lines in the log file. Set add flag to remove the step from the wordspace
 	in order to load the wordspace before an additional step. 
 	Always run resume before start.
+	Use the read flag to get data from the previous wordspace without writing to the new one.
 	"""
 
 	#---preserve settings in case we are doing an additional step
@@ -211,13 +212,15 @@ def resume(init_settings='',add=False):
 	status('[STATUS] resuming from %s'%last_step)
 	with open('script-%s.log'%last_step,'r') as fp: lines = fp.readlines()
 	regex_wordspace = '^\[CHECKPOINT\]\s+wordspace\s*=\s*(.+)'
-	#---try to add the checkpoint
 	try:
 		add_wordspace = json.loads(re.findall(regex_wordspace,
 			filter(lambda x:re.search(regex_wordspace,x),lines[::-1])[0])[0])
-		for key,val in add_wordspace.items(): wordspace[key] = val
+		if not read_only:
+			for key,val in add_wordspace.items(): wordspace[key] = val
 	except: pass	
+	if read_only: return add_wordspace
 	#---override original settings if available, using code from gmxwrap.init
+	#---! does this block need to be modified for read_only?
 	if init_settings != '':
 		settings = yamlparse(init_settings)
 		for key,val in settings.items(): 
@@ -227,7 +230,7 @@ def resume(init_settings='',add=False):
 	#---...so that start makes a new directory with the correct naming scheme. this allows us to retain
 	#---...the previous wordspace on a new step
 	if add: wordspace['step'] = new_step
-		
+			
 def interpret_command(block):
 
 	"""
@@ -255,13 +258,14 @@ def write_continue_script(script='script-continue.sh',**kwargs):
 	with open(os.path.join('amx/procedures/scripts',script),'r') as fp: lines = fp.readlines()
 	#---settings required for continuation script
 	#---! get these from the proper setup
+	from amx.base.gromacs import gmxpaths
 	settings = {
 		'maxhours':24,
 		'extend':100000,
-		'tpbconv':'gmx convert-tpr',
-		'mdrun':'gmx mdrun',
-		'grompp':'gmx grompp',
 		'start_part':1,
+		'tpbconv':gmxpaths['tpbconv'],
+		'mdrun':gmxpaths['mdrun'],
+		'grompp':gmxpaths['grompp'],
 		}
 	settings.update(**kwargs)
 	setting_text = '\n'.join([
