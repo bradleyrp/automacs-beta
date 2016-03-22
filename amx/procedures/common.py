@@ -254,7 +254,7 @@ def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='
 	write_top('counterions.top')
 
 
-def get_last_frame(tpr=False,cpt=False,top=False,ndx=False):
+def get_last_frame(tpr=False,cpt=False,top=False,ndx=False,itp=False):
 
 	"""
 	Get the last frame of any step in this simulation.
@@ -300,7 +300,19 @@ def get_last_frame(tpr=False,cpt=False,top=False,ndx=False):
 	if not cpt: upstream_files.pop('cpt')
 	if not top: upstream_files.pop('top')
 	if not ndx: upstream_files.pop('ndx')
+	if itp:
+		#---the itp flag means we need to acquire the force field and itp files from the previous run
+		if wordspace['ff_includes']:
+			for fn in wordspace['ff_includes']: 
+				upstream_files[fn] = {'from':last_step+'/'+fn,'to':fn}
+		if wordspace['sources']:
+			for fn in wordspace['sources']: 
+				upstream_files[fn] = {'from':last_step+'/'+fn,'to':fn,'required':True}
+		#---! what happens in the case that there is no "ff_includes" or "sources" ... copy any ff or itp?
+		#---! ...note that it was necessary to manually add ff_includes for an older protein run 
 	for key,val in upstream_files.items():
 		if not os.path.isfile(val['from']):
 			if val['required']: raise Exception('cannot find %s'%val['to'])
-		else: shutil.copyfile(val['from'],wordspace['step']+val['to'])
+		else: 
+			if os.path.isfile(val['from']): shutil.copyfile(val['from'],wordspace['step']+val['to'])
+			else: shutil.copytree(val['from'],wordspace['step']+val['to'])

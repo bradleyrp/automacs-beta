@@ -3,3 +3,8 @@
 inputs/externals
 inputs/*.ff
 inputs/pdbs
+inputs/*.pdb
+inputs/parameters.py
+wordspace.json
+script-*
+s[0-9][0-9]-*

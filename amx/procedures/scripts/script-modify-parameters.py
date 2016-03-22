@@ -17,7 +17,7 @@ try:
 			if key in previous_wordspace: wordspace[key] = previous_wordspace[key]		
 		wordspace['last_step'],wordspace['last_part'] = detect_last()
 		start(wordspace['step'])
-		get_last_frame(tpr=True,cpt=True,ndx=True,top=True)
+		get_last_frame(tpr=True,cpt=True,ndx=True,top=True,itp=True)
 	write_continue_script(continue_extend=1000,
 		script='script-modify-parameters.sh',last_part=wordspace['last_part'])
 	write_mdp()

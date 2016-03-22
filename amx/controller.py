@@ -249,14 +249,13 @@ def look(script='',dump=True):
 	print '[STATUS] running: python -i -c '+cmd
 	os.system('python -i -c '+cmd)
 
-def delstep(number):
+def delstep(number,confident=True):
 
 	"""
 	Delete a step by number.
 	Be very careful.
 	"""
 
-	sure=False
 	target = int(number)
 	fns = glob.glob('s*%02d-*'%target)
 	assert len(fns)==3
@@ -273,7 +272,7 @@ def delstep(number):
 		if os.path.isfile(local_script): fns.append(local_script)
 	except: pass
 	print "[STATUS] preparing to remove step %d including %s"%(target,str(fns))
-	if sure or all(re.match('^(y|Y)',raw_input('[QUESTION] %s (y/N)? '%msg))!=None
+	if confident or all(re.match('^(y|Y)',raw_input('[QUESTION] %s (y/N)? '%msg))!=None
 		for msg in ['okay to remove this entire step','confirm']):
 		for fn in fns: 
 			if os.path.isfile(fn): os.remove(fn)
@@ -296,16 +295,15 @@ def makeface(*arglist):
 	args,kwargs = [],{}
 	arglist = list(arglist)
 	funcname = arglist.pop(0)
-	for arg in arglist:
+	while arglist:
+		arg = arglist.pop()
 		if re.match('^\w+\=([\w\.\/]+)',arg):
 			parname,parval = re.findall('^(\w+)\=([\w\.\/]+)$',arg)[0]
 			kwargs[parname] = parval
-			arglist.remove(arg)
 		else:
 			argspec = inspect.getargspec(globals()[funcname])
 			if arg in argspec.args: kwargs[arg] = True
 			else: args.append(arg)
-			arglist.remove(arg)
 	args = tuple(args)
 	if arglist != []: raise Exception('unprocessed arguments %s'%str(arglist))
 
