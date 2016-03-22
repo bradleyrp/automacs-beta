@@ -15,7 +15,8 @@ init(settings)
 try:
 	if not wordspace['under_development']:
 		previous_wordspace = resume(add=True,read_only=True)
-		for key in ['sources','files','ff_includes']: wordspace[key] = previous_wordspace[key]		
+		for key in ['sources','files','ff_includes']: 
+			if key in wordspace: wordspace[key] = previous_wordspace[key]		
 		wordspace['last_step'],wordspace['last_part'] = detect_last()
 		start(wordspace['step'])
 		get_last_frame(tpr=True,cpt=True,ndx=True,top=True)

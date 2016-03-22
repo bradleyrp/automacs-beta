@@ -249,6 +249,36 @@ def look(script='',dump=True):
 	print '[STATUS] running: python -i -c '+cmd
 	os.system('python -i -c '+cmd)
 
+def delstep(number):
+
+	"""
+	Delete a step by number.
+	Be very careful.
+	"""
+
+	sure=False
+	target = int(number)
+	fns = glob.glob('s*%02d-*'%target)
+	assert len(fns)==3
+	assert any([re.match('^script-s%02d-.+\.sh$'%target,i) for i in fns])
+	assert any([re.match('^script-s%02d-.+\.log$'%target,i) for i in fns])
+	assert any([re.match('^s%02d-'%target,i) for i in fns])
+	extra_delete = ['wordspace.json','WATCHFILE']
+	for fn in extra_delete:
+		if os.path.isfile(fn): fns.append('wordspace.json')
+	try:
+		#---try to identify the associated script and clear it too
+		script, = glob.glob('s%02d-*/script*.py'%target)
+		local_script = os.path.basename(script)
+		if os.path.isfile(local_script): fns.append(local_script)
+	except: pass
+	print "[STATUS] preparing to remove step %d including %s"%(target,str(fns))
+	if sure or all(re.match('^(y|Y)',raw_input('[QUESTION] %s (y/N)? '%msg))!=None
+		for msg in ['okay to remove this entire step','confirm']):
+		for fn in fns: 
+			if os.path.isfile(fn): os.remove(fn)
+			else: shutil.rmtree(fn)
+
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
 
