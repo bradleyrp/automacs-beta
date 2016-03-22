@@ -8,8 +8,6 @@ equilibration:      None
 mdp_specs:          {'group':'cgmd','input-md-in.mdp':None}
 """
 
-#cd ~/worker/automacs-bleed;rm -rf s03-more script-s03-more.* wordspace.json script-modify-parameters.py ; make program modify-parameters ; ./script-modify-parameters.py ; cd s03-more/;./script-modify-parameters.sh
-
 from amx import *
 init(settings)
 try:
