@@ -45,8 +45,8 @@ def program(script,flag=False):
 	fn = 'amx/procedures/scripts/script-%s.py'%script
 	new_script = 'script-%s.py'%script
 	if os.path.isfile(fn) and os.path.isfile(new_script): 
-		raise Exception('[ERROR] found %s which must be deleted before continuing '+
-			'(if this was a previous step then there was an automatic copy)'%new_script)
+		raise Exception('[ERROR] found %s which must be deleted before continuing '%new_script+
+			'(if this was a previous step then there was an automatic copy)')
 	elif os.path.isfile(fn): 
 		print '[STATUS] copying %s'%fn
 		shutil.copy(fn,new_script)
