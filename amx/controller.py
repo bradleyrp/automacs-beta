@@ -250,7 +250,17 @@ def look(script='',dump=True,step=None):
 	print '[STATUS] running: python -i -c '+cmd
 	os.system('python -i -c '+cmd)
 
-def delstep(number,confident=True):
+def watch():
+
+	"""
+	Tail the logfile for the latest step.
+	"""
+
+	logfile = max(glob.iglob('script-*.log'),key=os.path.getctime)
+	print '[STATUS] watching the last step, apparently written to %s'%logfile
+	os.system('cat '+logfile)	
+
+def delstep(number,confident=False):
 
 	"""
 	Delete a step by number.

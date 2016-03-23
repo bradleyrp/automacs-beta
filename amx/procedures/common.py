@@ -200,6 +200,7 @@ def equilibrate(groups=None):
 				log='grompp-%s'%name,mdp='input-md-%s-eq-in'%name,
 				flag=('' if not groups else '-n %s'%groups)+' -maxwarn 10')
 			gmx('mdrun',base='md-%s'%name,log='mdrun-%s'%name,skip=True)
+			assert os.path.isfile(wordspace['step']+'md-%s.gro'%name)
 			checkpoint()
 
 	#---first part of the equilibration/production run
@@ -210,6 +211,7 @@ def equilibrate(groups=None):
 			log='grompp-0001',mdp='input-md-in',
 			flag='' if not groups else '-n %s'%groups)
 		gmx('mdrun',base=name,log='mdrun-0001')
+		#---we don't assert that the file exists here because the user might kill it and upload
 		checkpoint()
 
 @narrate
