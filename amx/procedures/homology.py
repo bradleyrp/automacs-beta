@@ -251,7 +251,6 @@ def get_best_structure():
 	import pdb;pdb.set_trace()
 	with open(wordspace.step+wordspace.target_name+'.pdb','w') as fp:
 		for line in lines: fp.write(line)
-	import pdb;pdb.set_trace()
 	with open(wordspace.step+'best_structure_path','w') as fp: 
 		fp.write(wordspace.target_name+'.pdb'+'\n')
 	
