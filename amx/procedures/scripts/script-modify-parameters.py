@@ -2,7 +2,7 @@
 execfile('/etc/pythonstart')
 
 settings = """
-step:               more
+step:               nve
 procedure:          modify_parameters
 equilibration:      None
 mdp_specs:          {'group':'cgmd','input-md-in.mdp':None}
@@ -20,7 +20,9 @@ try:
 		get_last_frame(tpr=True,cpt=True,ndx=True,top=True,itp=True)
 	write_continue_script(continue_extend=1000,
 		script='script-modify-parameters.sh',last_part=wordspace['last_part'])
+	write_continue_script()
 	write_mdp()
+	checkpoint()
 except KeyboardInterrupt as e: exception_handler(e,wordspace,all=True)
 except Exception as e: exception_handler(e,wordspace,all=True)
 else: write_wordspace(wordspace)

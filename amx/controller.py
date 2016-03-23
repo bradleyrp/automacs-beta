@@ -98,6 +98,7 @@ def upload(sure=False,part=None):
 	if not all([os.path.isfile(fn) for fn in restart_fns]):
 		error = '[STATUS] could not find latest CPT or TPR for part%04d'%part_num
 		error += '\n[ERROR] upload only works if there is a TPR for the last CPT part'
+		print error
 		import pdb;pdb.set_trace()
 		raise Exception(error)
 	else:
@@ -231,7 +232,7 @@ def metarun(script=None,more=False):
 		except: raise Exception('[ERROR] failed to match %s with known scripts'%script)
 		execfile('inputs/%s.py'%target)
 
-def look(script='',dump=True):
+def look(script='',dump=True,step=None):
 
 	"""
 	Drop into the wordspace for a script. 
@@ -244,7 +245,7 @@ def look(script='',dump=True):
 	if not script: 
 		script = max(glob.iglob('script-*.py'),key=os.path.getctime)
 		print 'STATUS] resuming from the last step, apparently creeated by %s'%script
-	cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(init_settings=\'%s\');%s"'%(
+	cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(script_settings=\'%s\');%s"'%(
 		script,script,"\nwith open('wordspace.json','w') as fp:\n\tjson.dump(wordspace,fp);" if dump else '')
 	print '[STATUS] running: python -i -c '+cmd
 	os.system('python -i -c '+cmd)

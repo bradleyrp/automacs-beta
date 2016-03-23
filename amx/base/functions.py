@@ -192,7 +192,7 @@ def dircopy(src,dest):
 		if not os.path.isdir(dest+'/'+os.path.basename(folder)):
 			shutil.copytree(folder,dest+'/'+os.path.basename(folder))
 		
-def resume(init_settings='',add=False,read_only=False):
+def resume(script_settings='',add=False,read_only=False):
 
 	"""
 	Continue a simulation procedure that was halted by extracting the wordspace 
@@ -221,8 +221,8 @@ def resume(init_settings='',add=False,read_only=False):
 	if read_only: return add_wordspace
 	#---override original settings if available, using code from gmxwrap.init
 	#---! does this block need to be modified for read_only?
-	if init_settings != '':
-		settings = yamlparse(init_settings)
+	if script_settings != '':
+		settings = yamlparse(script_settings)
 		for key,val in settings.items(): 
 			if key not in ['step']:
 				wordspace[re.sub(' ','_',key) if key not in ['start_structure'] else key] = val
