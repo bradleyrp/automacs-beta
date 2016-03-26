@@ -101,10 +101,12 @@ dna_mapping = {
 	'GUC':'V','GUA':'V','GUG':'V','GCU':'A','GCC':'A','GCA':'A','GCG':'A','GAU':'D','GAC':'D','GAA':'E',
 	'GAG':'E','GGU':'G','GGC':'G','GGA':'G','GGG':'G',} 
 	
-aacodemap = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
+aacodemap_3to1 = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 	'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
 	'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W', 'TER':'*',
 	'ALA': 'A', 'VAL':'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M','XAA':'X'}
+
+aacodemap_1to3 = dict([(val,key) for key,val in aacodemap_3to1.items()])
 
 @narrate
 def export_modeller_settings(**kwargs):
@@ -142,27 +144,6 @@ def write_ali_file(fasta_linelen=50):
 def extract_sequence_pdb(filename,chain):
 
 	"""
-
-	"""
-
-	import Bio
-	import Bio.PDB
-	parser = Bio.PDB.PDBParser()
-	structure = parser.get_structure('this_pdb',filename)
-	#---extract residue ID and name for non HETATM elements of all chains in the PDB
-	seqs = {c.id:[(i.id[1],i.resname) 
-		for i in c.get_residues() if i.id[0]==' '] 
-		for c in structure.get_chains()}
-	wordspace['sequence_info'] = seqs
-	return {
-		'starting_residue':zip(*seqs[chain])[0][0],
-		'sequence':''.join([aacodemap[i] for i in zip(*seqs[chain])[1]]),
-		'filename':os.path.basename(filename).rstrip('.pdb')}
-	
-@narrate
-def extract_sequence_pdb_deprecated(filename,chain):
-
-	"""
 	Extract the sequence and staring residue from a PDB file.
 	This is a holdover from the original automacs.
 	"""
@@ -176,7 +157,7 @@ def extract_sequence_pdb_deprecated(filename,chain):
 	if any([re.match(regex_seqres,line) for line in lines]):
 		seqresli = [li for li,l in enumerate(lines) if re.match(regex_seqres,l)]
 		seqraw = [re.findall(regex_seqres,lines[li])[0] for li in seqresli]
-		sequence = ''.join([''.join([aacodemap[j] for j in i[1].split()]) 
+		sequence = ''.join([''.join([aacodemap_3to1[j] for j in i[1].split()]) 
 			for i in seqraw if i[0] == chain])
 		missingli = [re.findall('^REMARK\s+([0-9]+)\sMISSING RESIDUES',l)[0] for li,l in enumerate(lines) 
 			if re.match('^REMARK\s+([0-9]+)\sMISSING RESIDUES',l)]
@@ -194,7 +175,17 @@ def extract_sequence_pdb_deprecated(filename,chain):
 		sequence = ''.join(seqraw)
 		startres = int([line for line in lines if re.match('^ATOM',line)][0][22:25+1])
 	else: raise Exception('need either REMARK 300 or SEQRES in your pdb file')
-	return {'starting_residue':startres,'sequence':sequence,
+	start_residue = startres
+	if 'start_residue' in wordspace and wordspace['start_residue']: 
+		start_residue = int(wordspace['start_residue'])
+	stop_residue = len(sequence)+startres
+	if 'stop_residue' in wordspace and wordspace['stop_residue']: 
+		stop_residue = wordspace['stop_residue']
+	wordspace['sequence_info'] = {chain:zip(range(start_residue,stop_residue),
+		sequence[start_residue-startres:stop_residue-startres])}
+	return {
+		'starting_residue':start_residue,
+		'sequence':sequence[start_residue-startres:stop_residue-startres],
 		'filename':os.path.basename(filename).rstrip('.pdb')}
 
 @narrate
@@ -239,7 +230,7 @@ def get_best_structure():
 	atom_record_start = [ll for ll,l in enumerate(lines) if l[:4]=='ATOM'][0]-1
 	seqres = ""
 	for chain,details in wordspace['sequence_info'].items():
-		seq = zip(*details)[1]
+		seq = [aacodemap_1to3[i] for i in zip(*details)[1]]
 		seqlen = len(seq)
 		nrows = seqlen/13+(0 if seqlen%13==0 else 1)
 		chunks = [seq[i*13:(i+1)*13] for i in range(nrows)]
