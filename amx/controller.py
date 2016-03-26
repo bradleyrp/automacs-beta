@@ -91,7 +91,9 @@ def upload(sure=False,part=None):
 		if not re.match('.+\.pyc$',fn)!=None]
 	default_fns = [i for i in default_fns if not re.match('.+\/amx\/docs',i)]
 	last_step,part_num = detect_last()
-	if part: part_num = int(part)
+	if part: 
+		part_num = int(part)
+		last_step, = [i for i in glob.glob('s%02d-*'%part_num)]
 	if not last_step: raise Exception('\n[ERROR] no steps to upload')
 	restart_fns = [last_step+'/md.part%04d.%s'%(part_num,suf) for suf in ['cpt','tpr']]
 	restart_fns += [last_step+'/script-continue.sh']
@@ -178,6 +180,7 @@ def cluster():
 	#---get the most recent step (possibly duplicate code from base)
 	last_step,part_num = detect_last()
 	if last_step:
+		import pdb;pdb.set_trace()
 		#---code from base.functions.write_continue_script to rewrite the continue script
 		with open('amx/procedures/scripts/script-continue.sh','r') as fp: lines = fp.readlines()
 		settings = {
@@ -186,6 +189,11 @@ def cluster():
 			'tpbconv':gmxpaths['tpbconv'],
 			'mdrun':gmxpaths['mdrun'],
 			}
+		#---! how should we parse multiple modules from the machine_configuration?
+		if 'modules' in machine_configuration:
+			need_modules = machine_configuration['modules']
+			need_modules = [need_modules] if type(need_modules)==str else need_modules
+			for m in need_modules: head += "module load %s\n"%m
 		for key in ['extend','until']: 
 			if key in machine_configuration: settings[key] = machine_configuration[key]
 		#---! must intervene above to come up with the correct executables
@@ -242,11 +250,14 @@ def look(script='',dump=True,step=None):
 	Any actions you take here will continue to be recorded to the watch_file.
 	"""
 
+	#---! this is totally clumsy
 	if not script: 
 		script = max(glob.iglob('script-*.py'),key=os.path.getctime)
 		print 'STATUS] resuming from the last step, apparently creeated by %s'%script
-	cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(script_settings=\'%s\');%s"'%(
-		script,script,"\nwith open('wordspace.json','w') as fp:\n\tjson.dump(wordspace,fp);" if dump else '')
+	cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(script_settings=\'%s\',step=%s);%s"'%(
+		script,script,
+		'None' if not step else step,
+		"\nwith open('wordspace.json','w') as fp:\n\tjson.dump(wordspace,fp);" if dump else '')
 	print '[STATUS] running: python -i -c '+cmd
 	os.system('python -i -c '+cmd)
 
@@ -274,8 +285,7 @@ def delstep(number,confident=False):
 	assert any([re.match('^script-s%02d-.+\.log$'%target,i) for i in fns])
 	assert any([re.match('^s%02d-'%target,i) for i in fns])
 	extra_delete = ['wordspace.json','WATCHFILE']
-	for fn in extra_delete:
-		if os.path.isfile(fn): fns.append('wordspace.json')
+	fns.extend([fn for fn in extra_delete if os.path.isfile(fn)])
 	try:
 		#---try to identify the associated script and clear it too
 		script, = glob.glob('s%02d-*/script*.py'%target)

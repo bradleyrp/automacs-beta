@@ -39,7 +39,7 @@ gmx5paths = {
 	'trjconv':'gmx trjconv',
 	'genconf':'gmx genconf',
 	'tpbconv':'gmx convert-tpr',
-	'gmxcheck':'gmxcheck',
+	'gmxcheck':'gmx check',
 	'vmd':'vmd',
 	}
 	
@@ -101,7 +101,11 @@ if gmx_series == 5: gmxpaths = dict(gmx5paths)
 
 #---modify gmxpaths according to hardware configuration
 config = machine_configuration
-if suffix != '': gmxpaths = dict([(key,val+suffix) for key,val in gmxpaths.items()])
+if suffix != '': 
+	if gmx_series == 5:
+		for key,val in gmxpaths.items():
+			gmxpaths[key] = re.sub('gmx ','gmx%s '%suffix,val)
+	else: gmxpaths = dict([(key,val+suffix) for key,val in gmxpaths.items()])
 if 'nprocs' in config and config['nprocs'] != None: gmxpaths['mdrun'] += ' -nt %d'%config['nprocs']
 #---use mdrun_command for quirky mpi-type mdrun calls on clusters
 if 'mdrun_command' in machine_configuration: gmxpaths['mdrun'] = machine_configuration['mdrun_command']

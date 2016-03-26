@@ -306,12 +306,17 @@ def get_last_frame(tpr=False,cpt=False,top=False,ndx=False,itp=False):
 		#---the itp flag means we need to acquire the force field and itp files from the previous run
 		if wordspace['ff_includes']:
 			for fn in wordspace['ff_includes']: 
-				upstream_files[fn] = {'from':last_step+'/'+fn,'to':fn}
+				upstream_files[fn] = {'from':last_step+'/'+fn,'to':fn,'required':True}
 		if wordspace['sources']:
 			for fn in wordspace['sources']: 
 				upstream_files[fn] = {'from':last_step+'/'+fn,'to':fn,'required':True}
 		#---! what happens in the case that there is no "ff_includes" or "sources" ... copy any ff or itp?
 		#---! ...note that it was necessary to manually add ff_includes for an older protein run 
+	#---hardcoded force fields
+	if wordspace['force_field'] in ['charmm27'] or 1:
+		#---! hack to remove items which are implicit in gromacs share folder
+		for key in ['ions','tip3p','forcefield']: upstream_files.pop(key)
+	#import pdb;pdb.set_trace()
 	for key,val in upstream_files.items():
 		if not os.path.isfile(val['from']):
 			if val['required']: raise Exception('cannot find %s'%val['to'])

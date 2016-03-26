@@ -45,7 +45,7 @@ def exception_handler(e,wordspace,all=False):
 	write_wordspace(wordspace)
 	sys.exit(1)
 
-def call(cmd):
+def call(cmd,cwd='./'):
 
 	"""
 	Execute a shell command.
@@ -54,7 +54,7 @@ def call(cmd):
 	run through here are carefully excepted.
 	"""
 
-	try: subprocess.check_call(cmd,shell=True,executable='/bin/bash')
+	try: subprocess.check_call(cmd,shell=True,executable='/bin/bash',cwd=cwd)
 	except: 
 		print '[STATUS] failing quietly on "%s" which must self-report its errors'%cmd
 		sys.exit(1)
