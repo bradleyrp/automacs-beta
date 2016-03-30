@@ -144,7 +144,9 @@ def write_ali_file(fasta_linelen=50):
 def extract_sequence_backup(filename,chain):
   		  
         """
- 	Extract the sequence of a PDB file using biopython	
+ 	Extract the sequence of a PDB file using biopython
+        
+        Note that this may fail if there are missing residues - test
         """
  		
  	import Bio		
