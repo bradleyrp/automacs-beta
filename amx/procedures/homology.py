@@ -177,7 +177,7 @@ def extract_sequence_backup(filename,chain):
 	return {
 		'starting_residue':start_residue,
 		'sequence':sequence[start_residue-startres:stop_residue-startres],
-		'filename':os.path.basename(filename).rstrip('.pdb')}
+		'filename':os.path.basename(filename).split('.pdb')[0]}
  
 
 @narrate
@@ -226,7 +226,7 @@ def extract_sequence_pdb(filename,chain):
 	return {
 		'starting_residue':start_residue,
 		'sequence':sequence[start_residue-startres:stop_residue-startres],
-		'filename':os.path.basename(filename).rstrip('.pdb')}
+		'filename':os.path.basename(filename).split('.pdb')[0]}
 
 @narrate
 def get_pdb():
@@ -237,7 +237,7 @@ def get_pdb():
 
 	#---if template is a path we copy the file
 	if os.path.isfile(os.path.abspath(os.path.expanduser(wordspace.template))):
-		template = os.path.basename(wordspace.template).rstrip('.pdb')
+		template = os.path.basename(wordspace.template).split('.pdb')[0]
 		shutil.copy(wordspace.template,wordspace.step)
 	#---if template is a PDB code and a chain letter then we download it from the PDB
 	elif re.match('^[A-Z0-9]{4}$',wordspace.template):
