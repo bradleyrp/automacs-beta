@@ -8,6 +8,7 @@ from amx.base.gromacs import gmxpaths
 from amx.base.journal import *
 from amx.procedures.common import *
 
+
 """
 Protein homology modeling modules which wraps MODELLER.
 """
@@ -140,6 +141,43 @@ def write_ali_file(fasta_linelen=50):
 		chopped = [i for i in chopped if len(i) > 0]
 		for i,seg in enumerate(chopped): fp.write(seg+('\n' if i < len(chopped)-1 else '*\n'))
 
+def extract_sequence_backup(filename,chain):
+  		  
+        """
+ 	Extract the sequence of a PDB file using biopython	
+        """
+ 		
+ 	import Bio		
+ 	import Bio.PDB		
+        import warnings
+                
+
+ 	parser = Bio.PDB.PDBParser()		
+        with warnings.catch_warnings():
+                warnings.simplefilter(action="ignore")
+                structure = parser.get_structure('this_pdb',filename)		
+ 	#---extract residue ID and name for non HETATM elements of all chains in the PDB		
+ 	seqs = {c.id:[(i.id[1],i.resname) 		
+ 		for i in c.get_residues() if i.id[0]==' '] 		
+ 		for c in structure.get_chains()}		
+ 	#wordspace['sequence_info'] = seqs		
+        sequence=''.join([aacodemap_3to1[i] for i in zip(*seqs[chain])[1]])	
+        startres = int(seqs[chain][0][0])
+	start_residue = startres
+        #import pdb;pdb.set_trace()
+	if 'start_residue' in wordspace and wordspace['start_residue']: 
+		start_residue = int(wordspace['start_residue'])
+	stop_residue = len(sequence)+startres
+	if 'stop_residue' in wordspace and wordspace['stop_residue']: 
+		stop_residue = wordspace['stop_residue']
+	wordspace['sequence_info'] = {chain:zip(range(start_residue,stop_residue),
+		sequence[start_residue-startres:stop_residue-startres])}
+	return {
+		'starting_residue':start_residue,
+		'sequence':sequence[start_residue-startres:stop_residue-startres],
+		'filename':os.path.basename(filename).rstrip('.pdb')}
+ 
+
 @narrate
 def extract_sequence_pdb(filename,chain):
 
@@ -174,7 +212,7 @@ def extract_sequence_pdb(filename,chain):
 		seqraw = [re.findall(regex_remark,lines[li])[0] for li in seqresli]
 		sequence = ''.join(seqraw)
 		startres = int([line for line in lines if re.match('^ATOM',line)][0][22:25+1])
-	else: raise Exception('need either REMARK 300 or SEQRES in your pdb file')
+	else: return False #file must contain either SEQRES or REMARK 300
 	start_residue = startres
 	if 'start_residue' in wordspace and wordspace['start_residue']: 
 		start_residue = int(wordspace['start_residue'])
@@ -210,7 +248,11 @@ def get_pdb():
 		raise Exception(
 			'\n[ERROR] unable to understand template "%s"'%wordspace.template+
 			'\n[ERROR] supply a PDB,chain or a path')
-	return extract_sequence_pdb(filename=wordspace.step+template+'.pdb',chain=wordspace.template_chain)
+        sequence=extract_sequence_pdb(filename=wordspace.step+template+'.pdb',chain=wordspace.template_chain)
+        if not sequence:
+                sequence=extract_sequence_backup(
+                        filename=wordspace.step+template+'.pdb',chain=wordspace.template_chain)
+        return sequence
 
 @narrate
 def get_best_structure():
