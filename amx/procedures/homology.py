@@ -29,6 +29,8 @@ execfile('settings-homology.py')
 doalign2d = True
 if doalign2d:
 	env = environ()
+        env.io.hetatm = True
+        env.io.water = False
 	aln = alignment(env)
 	mdl = model(env,
 		file=template_struct,
@@ -254,6 +256,7 @@ def get_pdb():
         if not sequence:
                 sequence=extract_sequence_backup(
                         filename=wordspace.step+template+'.pdb',chain=wordspace.template_chain)
+        print sequence['starting_residue']
         return sequence
 
 @narrate
@@ -268,9 +271,7 @@ def get_best_structure():
 	results = [re.findall(regex_log,l)[0] for l in lines if re.match(regex_log,l)]
 	results = [(i[0],float(i[1]),float(i[2])) for i in results]
 	best = sorted(results,key=lambda x:x[1])[0][0]
-	gmx('editconf',structure=best,gro=wordspace.target_name+'.basic.pdb',
-		flag='-resnr %d'%wordspace.starting_residue,log='editconf-renumber')
-	with open(wordspace.step+wordspace.target_name+'.basic.pdb') as fp: lines = fp.readlines()
+	with open(wordspace.step+best) as fp: lines = fp.readlines()
 	atom_record_start = [ll for ll,l in enumerate(lines) if l[:4]=='ATOM'][0]-1
 	seqres = ""
 	for chain,details in wordspace['sequence_info'].items():

@@ -11,6 +11,7 @@ target name:         egfr_E710R
 point mutation:      E710R
 target sequence:     none
 many models:         5
+number HETATMs:      0
 """
 
 from amx import *
@@ -22,7 +23,7 @@ wordspace.starting_residue = pdb_attr['starting_residue']
 #---if point mutation figure out the right target sequence
 if wordspace.homology_method == 'point':
 	startres = wordspace.starting_residue
-	target_sequence = list(pdb_attr['sequence'])
+	target_sequence = list(pdb_attr['sequence']+'.'*wordspace.number_HETATMs)
 	from_mutation,mutation_location,to_mutation = re.findall('([A-Z])([0-9]+)([A-Z])',
 		wordspace.point_mutation)[0]
 	mutation_location = int(mutation_location)
@@ -38,7 +39,8 @@ export_modeller_settings(
 	template_struct=pdb_attr['filename'],
 	template_struct_chain=wordspace.template_chain,
 	target_seq=wordspace.target_name,
-	n_models=wordspace.many_models)
+	n_models=wordspace.many_models,
+        starting_residue=pdb_attr['starting_residue'])
 write_ali_file()
 with open(wordspace.step+'script-single.py','w') as fp: fp.write(script_single)
 bash(wordspace.modeller_path+' '+'script-single.py',cwd=wordspace.step)
