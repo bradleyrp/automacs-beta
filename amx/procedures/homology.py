@@ -26,6 +26,10 @@ from modeller.automodel import *
 import sys
 
 execfile('settings-homology.py')
+class mymodel(automodel):
+        def special_patches(self, aln):
+                self.rename_segments(segment_ids=[template_struct_chain],
+                                     renumber_residues=[starting_residue])
 doalign2d = True
 if doalign2d:
 	env = environ()
@@ -47,7 +51,7 @@ else:
 	env = environ()
 	aln = alignment(env)
 	afile = 'align2d-custom.ali'
-a = automodel(env,
+a = mymodel(env,
 	alnfile=afile,
 	knowns=template_struct+template_struct_chain,
 	sequence=target_seq,
@@ -164,11 +168,11 @@ def extract_sequence_backup(filename,chain):
  	seqs = {c.id:[(i.id[1],i.resname) 		
  		for i in c.get_residues() if i.id[0]==' '] 		
  		for c in structure.get_chains()}		
- 	#wordspace['sequence_info'] = seqs		
+
         sequence=''.join([aacodemap_3to1[i] for i in zip(*seqs[chain])[1]])	
         startres = int(seqs[chain][0][0])
 	start_residue = startres
-        #import pdb;pdb.set_trace()
+
 	if 'start_residue' in wordspace and wordspace['start_residue']: 
 		start_residue = int(wordspace['start_residue'])
 	stop_residue = len(sequence)+startres
