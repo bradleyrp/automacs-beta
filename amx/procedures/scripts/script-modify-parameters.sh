@@ -16,7 +16,7 @@ echo "[STATUS] running ... "
 PARTNUM=$(($LAST_PART+1))
 if [[ -f system-groups.ndx ]]; then HAS_GROUPS="-n system-groups.ndx"; else HAS_GROUSP=""; fi
 log="grompp-change"
-cmd="$GROMPP -f input-md-in.mdp -c system-input.tpr -o system-input-modify.tpr -t system-input.cpt -p system.top $EXTEND_FLAG -po system-input-new.mdp"
+cmd="$GROMPP -f input-md-in.mdp -c system-input.tpr -o system-input-modify.tpr -t system-input.cpt -p system.top $EXTEND_FLAG -po system-input-new.mdp -maxwarn $MAXWARN"
 cmdexec=$cmd" &> log-$log"
 echo "[FUNCTION] gmx_run ('"$cmd"',) {'skip': False, 'log': '$log', 'inpipe': None}" >> $metalog
 eval $cmdexec

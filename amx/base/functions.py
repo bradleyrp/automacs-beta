@@ -192,7 +192,7 @@ def dircopy(src,dest):
 		if not os.path.isdir(dest+'/'+os.path.basename(folder)):
 			shutil.copytree(folder,dest+'/'+os.path.basename(folder))
 		
-def resume(script_settings='',add=False,read_only=False):
+def resume(script_settings='',add=False,read_only=False,step=None):
 
 	"""
 	Continue a simulation procedure that was halted by extracting the wordspace 
@@ -204,15 +204,18 @@ def resume(script_settings='',add=False,read_only=False):
 
 	#---preserve settings in case we are doing an additional step
 	if add: new_step = wordspace['step']
-	last_step_num = max(map(
-		lambda z:int(z),map(
-		lambda y:re.findall('^s([0-9]+)',y).pop(),filter(
-		lambda x:re.match('^s[0-9]+-\w+$',x),glob.glob('s*-*')))))
+	if not step:
+		last_step_num = max(map(
+			lambda z:int(z),map(
+			lambda y:re.findall('^s([0-9]+)',y).pop(),filter(
+			lambda x:re.match('^s[0-9]+-\w+$',x),glob.glob('s*-*')))))
+	else: last_step_num = step
 	last_step = filter(lambda x:re.match('^s%02d'%last_step_num,x),glob.glob('s*-*')).pop()
 	status('[STATUS] resuming from %s'%last_step)
 	with open('script-%s.log'%last_step,'r') as fp: lines = fp.readlines()
 	regex_wordspace = '^\[CHECKPOINT\]\s+wordspace\s*=\s*(.+)'
 	try:
+		add_wordspace = {}
 		add_wordspace = json.loads(re.findall(regex_wordspace,
 			filter(lambda x:re.search(regex_wordspace,x),lines[::-1])[0])[0])
 		if not read_only:
@@ -221,7 +224,8 @@ def resume(script_settings='',add=False,read_only=False):
 	if read_only: return add_wordspace
 	#---override original settings if available, using code from gmxwrap.init
 	#---! does this block need to be modified for read_only?
-	if script_settings != '':
+	#---note that step overrides script_settings
+	if script_settings != '' and not step:
 		settings = yamlparse(script_settings)
 		for key,val in settings.items(): 
 			if key not in ['step']:
