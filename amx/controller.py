@@ -98,10 +98,9 @@ def upload(sure=False,part=None):
 	restart_fns = [last_step+'/md.part%04d.%s'%(part_num,suf) for suf in ['cpt','tpr']]
 	restart_fns += [last_step+'/script-continue.sh']
 	if not all([os.path.isfile(fn) for fn in restart_fns]):
-		error = '[STATUS] could not find latest CPT or TPR for part%04d'%part_num
+		error = '[STATUS] could not find necessary upload files (part number %04d)'%part_num
 		error += '\n[ERROR] upload only works if there is a TPR for the last CPT part'
-		print error
-		import pdb;pdb.set_trace()
+		error += "\n[ERROR] missing: %s"%str([fn for fn in restart_fns if not os.path.isfile(fn)])
 		raise Exception(error)
 	else:
 		with open('uploads.txt','w') as fp:
