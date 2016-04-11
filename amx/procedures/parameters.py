@@ -283,13 +283,13 @@ mdpdefs = {
 			'blank':{},
 			},
 		'output':{
-		 	'nstxout':10000,
-			'nstvout':10000,
+		 	'nstxout':-1,
+			'nstvout':-1,
 			'nstfout':0,
 			'nstlog':2000,
 			'nstenergy':2000,
-			'nstxtcout':2000,
-			'xtc_precision':100,
+			'nstxtcout':10000,
+			'xtc_precision':1000,
 			},
 		'temperature':{
 			'none':{
@@ -323,8 +323,8 @@ mdpdefs = {
 				'nstcomm':100,
 				},		
 			'output':{
-			 	'nstxout':10000,
-				'nstvout':10000,
+			 	'nstxout':-1,
+				'nstvout':-1,
 				'nstfout':0,
 				'nstlog':100,
 				'nstenergy':100,

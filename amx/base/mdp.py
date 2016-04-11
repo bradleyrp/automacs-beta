@@ -51,6 +51,7 @@ def write_mdp(param_file=None,rootdir='./',outdir=''):
 		else: 
 			param_file = 'amx/procedures/parameters.py'
 			report('using amx/procedures/parameters.py for mdp parameters',tag='status')
+
 	#---retrieve the master inputs file
 	mdpfile = {}
 	execfile(param_file,mdpfile)
@@ -99,6 +100,10 @@ def write_mdp(param_file=None,rootdir='./',outdir=''):
 							raise Exception(
 								'cannot comprehend one of your overrides: '+
 								str(key)+' '+str(val))
+		#---completely remove some items if they are set to -1, specifically the flags for trr files
+		for key in ['nstxout','nstvout']:
+			for heading,subset in settings.items():
+				if key in subset and subset[key] == -1: subset.pop(key)
 		#---always write to the step directory
 		with open(rootdir+'/'+wordspace['step']+'/'+mdpname,'w') as fp:
 			for heading,subset in settings.items():
