@@ -8,6 +8,7 @@ from amx.base.gromacs import gmxpaths
 from amx.base.journal import *
 from amx.procedures.common import *
 
+
 """
 Protein homology modeling modules which wraps MODELLER.
 """
@@ -25,9 +26,15 @@ from modeller.automodel import *
 import sys
 
 execfile('settings-homology.py')
+class mymodel(automodel):
+        def special_patches(self, aln):
+                self.rename_segments(segment_ids=[template_struct_chain],
+                                     renumber_residues=[starting_residue])
 doalign2d = True
 if doalign2d:
 	env = environ()
+        env.io.hetatm = True
+        env.io.water = False
 	aln = alignment(env)
 	mdl = model(env,
 		file=template_struct,
@@ -44,7 +51,7 @@ else:
 	env = environ()
 	aln = alignment(env)
 	afile = 'align2d-custom.ali'
-a = automodel(env,
+a = mymodel(env,
 	alnfile=afile,
 	knowns=template_struct+template_struct_chain,
 	sequence=target_seq,
@@ -101,10 +108,12 @@ dna_mapping = {
 	'GUC':'V','GUA':'V','GUG':'V','GCU':'A','GCC':'A','GCA':'A','GCG':'A','GAU':'D','GAC':'D','GAA':'E',
 	'GAG':'E','GGU':'G','GGC':'G','GGA':'G','GGG':'G',} 
 	
-aacodemap = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
+aacodemap_3to1 = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
 	'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
 	'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W', 'TER':'*',
 	'ALA': 'A', 'VAL':'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M','XAA':'X'}
+
+aacodemap_1to3 = dict([(val,key) for key,val in aacodemap_3to1.items()])
 
 @narrate
 def export_modeller_settings(**kwargs):
@@ -138,6 +147,45 @@ def write_ali_file(fasta_linelen=50):
 		chopped = [i for i in chopped if len(i) > 0]
 		for i,seg in enumerate(chopped): fp.write(seg+('\n' if i < len(chopped)-1 else '*\n'))
 
+def extract_sequence_backup(filename,chain):
+  		  
+        """
+ 	Extract the sequence of a PDB file using biopython
+        
+        Note that this may fail if there are missing residues - test
+        """
+ 		
+ 	import Bio		
+ 	import Bio.PDB		
+        import warnings
+                
+
+ 	parser = Bio.PDB.PDBParser()		
+        with warnings.catch_warnings():
+                warnings.simplefilter(action="ignore")
+                structure = parser.get_structure('this_pdb',filename)		
+ 	#---extract residue ID and name for non HETATM elements of all chains in the PDB		
+ 	seqs = {c.id:[(i.id[1],i.resname) 		
+ 		for i in c.get_residues() if i.id[0]==' '] 		
+ 		for c in structure.get_chains()}		
+
+        sequence=''.join([aacodemap_3to1[i] for i in zip(*seqs[chain])[1]])	
+        startres = int(seqs[chain][0][0])
+	start_residue = startres
+
+	if 'start_residue' in wordspace and wordspace['start_residue']: 
+		start_residue = int(wordspace['start_residue'])
+	stop_residue = len(sequence)+startres
+	if 'stop_residue' in wordspace and wordspace['stop_residue']: 
+		stop_residue = wordspace['stop_residue']
+	wordspace['sequence_info'] = {chain:zip(range(start_residue,stop_residue),
+		sequence[start_residue-startres:stop_residue-startres])}
+	return {
+		'starting_residue':start_residue,
+		'sequence':sequence[start_residue-startres:stop_residue-startres],
+		'filename':os.path.basename(filename).split('.pdb')[0]}
+ 
+
 @narrate
 def extract_sequence_pdb(filename,chain):
 
@@ -155,7 +203,7 @@ def extract_sequence_pdb(filename,chain):
 	if any([re.match(regex_seqres,line) for line in lines]):
 		seqresli = [li for li,l in enumerate(lines) if re.match(regex_seqres,l)]
 		seqraw = [re.findall(regex_seqres,lines[li])[0] for li in seqresli]
-		sequence = ''.join([''.join([aacodemap[j] for j in i[1].split()]) 
+		sequence = ''.join([''.join([aacodemap_3to1[j] for j in i[1].split()]) 
 			for i in seqraw if i[0] == chain])
 		missingli = [re.findall('^REMARK\s+([0-9]+)\sMISSING RESIDUES',l)[0] for li,l in enumerate(lines) 
 			if re.match('^REMARK\s+([0-9]+)\sMISSING RESIDUES',l)]
@@ -172,9 +220,19 @@ def extract_sequence_pdb(filename,chain):
 		seqraw = [re.findall(regex_remark,lines[li])[0] for li in seqresli]
 		sequence = ''.join(seqraw)
 		startres = int([line for line in lines if re.match('^ATOM',line)][0][22:25+1])
-	else: raise Exception('need either REMARK 300 or SEQRES in your pdb file')
-	return {'starting_residue':startres,'sequence':sequence,
-		'filename':os.path.basename(filename).rstrip('.pdb')}
+	else: return False #file must contain either SEQRES or REMARK 300
+	start_residue = startres
+	if 'start_residue' in wordspace and wordspace['start_residue']: 
+		start_residue = int(wordspace['start_residue'])
+	stop_residue = len(sequence)+startres
+	if 'stop_residue' in wordspace and wordspace['stop_residue']: 
+		stop_residue = wordspace['stop_residue']
+	wordspace['sequence_info'] = {chain:zip(range(start_residue,stop_residue),
+		sequence[start_residue-startres:stop_residue-startres])}
+	return {
+		'starting_residue':start_residue,
+		'sequence':sequence[start_residue-startres:stop_residue-startres],
+		'filename':os.path.basename(filename).split('.pdb')[0]}
 
 @narrate
 def get_pdb():
@@ -185,7 +243,7 @@ def get_pdb():
 
 	#---if template is a path we copy the file
 	if os.path.isfile(os.path.abspath(os.path.expanduser(wordspace.template))):
-		template = os.path.basename(wordspace.template).rstrip('.pdb')
+		template = os.path.basename(wordspace.template).split('.pdb')[0]
 		shutil.copy(wordspace.template,wordspace.step)
 	#---if template is a PDB code and a chain letter then we download it from the PDB
 	elif re.match('^[A-Z0-9]{4}$',wordspace.template):
@@ -198,7 +256,12 @@ def get_pdb():
 		raise Exception(
 			'\n[ERROR] unable to understand template "%s"'%wordspace.template+
 			'\n[ERROR] supply a PDB,chain or a path')
-	return extract_sequence_pdb(filename=wordspace.step+template+'.pdb',chain=wordspace.template_chain)
+        sequence=extract_sequence_pdb(filename=wordspace.step+template+'.pdb',chain=wordspace.template_chain)
+        if not sequence:
+                sequence=extract_sequence_backup(
+                        filename=wordspace.step+template+'.pdb',chain=wordspace.template_chain)
+        print sequence['starting_residue']
+        return sequence
 
 @narrate
 def get_best_structure():
@@ -212,8 +275,21 @@ def get_best_structure():
 	results = [re.findall(regex_log,l)[0] for l in lines if re.match(regex_log,l)]
 	results = [(i[0],float(i[1]),float(i[2])) for i in results]
 	best = sorted(results,key=lambda x:x[1])[0][0]
-	gmx('editconf',structure=best,gro=wordspace.target_name+'.pdb',
-		flag='-resnr %d'%wordspace.starting_residue,log='editconf-renumber')
+	with open(wordspace.step+best) as fp: lines = fp.readlines()
+	atom_record_start = [ll for ll,l in enumerate(lines) if l[:4]=='ATOM'][0]-1
+	seqres = ""
+	for chain,details in wordspace['sequence_info'].items():
+		seq = [aacodemap_1to3[i] for i in zip(*details)[1]]
+		seqlen = len(seq)
+		nrows = seqlen/13+(0 if seqlen%13==0 else 1)
+		chunks = [seq[i*13:(i+1)*13] for i in range(nrows)]
+		additions = ""
+		for cnum,chunk in enumerate(chunks):
+			additions += 'SEQRES  %-2d  %s %-4d  '%(cnum+1,chain,len(details))+' '.join(chunk)+'\n'
+		seqres += additions
+	lines.insert(atom_record_start,seqres)
+	with open(wordspace.step+wordspace.target_name+'.pdb','w') as fp:
+		for line in lines: fp.write(line)
 	with open(wordspace.step+'best_structure_path','w') as fp: 
 		fp.write(wordspace.target_name+'.pdb'+'\n')
 	

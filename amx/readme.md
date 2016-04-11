@@ -26,6 +26,8 @@ make clean............reset the project by deleting all steps
 make cluster..........prepare batch scripts for use on a cluster
 make upload...........upload the checkpoint files for an in-progress
                       simulation to a cluster to continue production
+make delstep <N>......roll back a step (be careful)
+make look.............drop into a shell with the "wordspace"
 
 PROCEDURES:
 
@@ -33,4 +35,13 @@ protein...............prepares scripts for atomistic protein
                       simulations with settings found in
                       script-protein.py which the user should
                       modify before running ./script-protein.py
+homology..............build a homology model using MODELLER or
+                      or mutate a protein from the PDB
+cgmd-bilayer..........a coarse-grained bilayer, possibly with 
+                      adhered proteins
+multiply..............copy (replicate) a simulation in any of three 
+                      directions to build a larger system
+modify-parameters.....change MDP parameteters for an ongoing 
+                      simulation (try making a custom parameters.py
+                      inside inputs)
 

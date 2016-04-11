@@ -134,20 +134,32 @@ def checkpoint():
 	with open(wordspace['watch_file'],'a') as fp:
 		report('wordspace = '+json.dumps(wordspace),tag='checkpoint')
 
-def init(setting_string,proceed=True):
+def init(setting_string,proceed=False):
 
 	"""
 	Automatically load settings from the python-amx script into the wordspace for safekeeping.
 	This function also detects development status.
 	"""
 
+	#---sequence is important: read the settings and check for proceed, do ready_to_continue, then load json
+	settings = yamlparse(setting_string)
+	#---always perform the ready_to_continue test to see if there is a preexisting wordspace
+	#---! clusmy naming here: proceed means that this is a follow-up step
+	#---! ryan reset the default to false for development on protein_atomistic
+	#---! ...so note that the modify-parametes and multiply procedures will need to consider this
+	if proceed or 'proceed' in settings and settings['proceed']:
+		sure = (settings['proceed'] or (wordspace['proceed'] if 'proceed' in wordspace else False))
+		ready_to_continue(sure=sure)
 	os.umask(002)
 	#---in development environments we first load the previous wordspace
 	if os.path.isfile('wordspace.json'):
+		if 'watch_file' in wordspace:
+			report('loading wordspace.json and setting under_development = True',tag='status')
+		else: print "[WARNING] loading wordspace.json without reporting to a log (no watch_file yet)"
 		incoming_wordspace = json.load(open('wordspace.json'))
 		wordspace.update(incoming_wordspace)
 		wordspace['under_development'] = True
-	settings = yamlparse(setting_string)
+	#---load settings into wordspace
 	for key,val in settings.items(): 
 		if not wordspace['under_development'] or (wordspace['under_development'] and key!='step'): 
 			wordspace[re.sub(' ','_',key)] = val
@@ -157,10 +169,8 @@ def init(setting_string,proceed=True):
 		pdbs = glob.glob('inputs/*.pdb')
 		if len(pdbs)==1: 
 			wordspace['start_structure'] = pdbs[0]
-			wordspace['system_name'] = re.findall('^inputs/(\w+)\.pdb$',pdbs[0])[0]
+			wordspace['system_name'] = re.findall('^inputs/([\w\.]+)\.pdb$',pdbs[0])[0]
 		else: 
 			if 'watch_file' not in wordspace: wordspace['watch_file'] = 'ERROR.log'
 			report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
 	#---instead of copying a single PDB for the homology run here, we do that in the homology codes
-	#---always perform the ready_to_continue test to see if there is a preexisting wordspace
-	if proceed: ready_to_continue(sure=wordspace['proceed'] if 'proceed' in wordspace else False)

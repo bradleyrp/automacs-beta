@@ -8,7 +8,7 @@ from amx.base.journal import *
 def delve(o,*k): return delve(o[k[0]],*k[1:]) if len(k)>1 else o[k[0]]
 
 @narrate
-def write_mdp(param_file=None,rootdir='./',outdir=''):
+def write_mdp(param_file=None,rootdir='./',outdir='',extras=None):
 
 	"""
 	Universal MDP file writer which creates input files based on a unified dictionary.
@@ -41,7 +41,7 @@ def write_mdp(param_file=None,rootdir='./',outdir=''):
 	pair in the defaults.
 	"""
 
-	mdpspecs = wordspace['mdp_specs']
+	mdpspecs = wordspace['mdp_specs'] if not extras else extras
 
 	if not param_file:
 		custom_mdp_parameters = 'inputs/parameters.py'

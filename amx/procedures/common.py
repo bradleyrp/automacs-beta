@@ -158,6 +158,23 @@ def write_top(topfile):
 		fp.write('[ system ]\n%s\n\n[ molecules ]\n'%wordspace['system_name'])
 		for key,val in wordspace['composition']: fp.write('%s %d\n'%(key,val))
 
+@narrate
+def read_top(topfile):
+
+	"""
+	Read a topology file to get the composition of the system.
+	Note that the topfile path must be relative to the top level in case it's in inputs.
+	"""
+
+	with open(topfile,'r') as f: lines = f.read()
+	chains = {}
+	startline = [ii for ii,i in enumerate(lines.split('\n')) 
+		if re.match('^(\s+)?\[(\s+)?molecules(\s+)?\]',i)][0]
+	count_regex = '^(\w+)\s+([0-9]+)'
+	components = [re.findall(count_regex,line).pop()
+		for line in lines.split('\n')[startline:] if re.match(count_regex,line)]		
+	for name,count in components: component(name,count=int(count))
+
 def include(name,ff=False):
 
 	"""
@@ -200,6 +217,7 @@ def equilibrate(groups=None):
 				log='grompp-%s'%name,mdp='input-md-%s-eq-in'%name,
 				flag=('' if not groups else '-n %s'%groups)+' -maxwarn 10')
 			gmx('mdrun',base='md-%s'%name,log='mdrun-%s'%name,skip=True)
+			assert os.path.isfile(wordspace['step']+'md-%s.gro'%name)
 			checkpoint()
 
 	#---first part of the equilibration/production run
@@ -210,6 +228,7 @@ def equilibrate(groups=None):
 			log='grompp-0001',mdp='input-md-in',
 			flag='' if not groups else '-n %s'%groups)
 		gmx('mdrun',base=name,log='mdrun-0001')
+		#---we don't assert that the file exists here because the user might kill it and upload
 		checkpoint()
 
 @narrate
@@ -225,7 +244,7 @@ def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='
 	for key in ['cation','anion','sol']:
 		try: wordspace['composition'].pop(zip(*wordspace['composition'])[0].index(wordspace[key]))
 		except: pass
-	component('W',count=wordspace['water_without_ions'])
+	component(resname,count=wordspace['water_without_ions'])
 	#---write the topology file as of the solvate step instead of copying them (genion overwrites top)
 	write_top('counterions.top')
 	gmx('grompp',base='genion',structure=structure,
@@ -253,7 +272,7 @@ def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='
 		for i in ff_includes: include(i,ff=True)
 	write_top('counterions.top')
 
-def get_last_frame(tpr=False,cpt=False,top=False,ndx=False):
+def get_last_frame(tpr=False,cpt=False,top=False,ndx=False,itp=False):
 
 	"""
 	Get the last frame of any step in this simulation.
@@ -299,7 +318,38 @@ def get_last_frame(tpr=False,cpt=False,top=False,ndx=False):
 	if not cpt: upstream_files.pop('cpt')
 	if not top: upstream_files.pop('top')
 	if not ndx: upstream_files.pop('ndx')
+	if itp:
+		#---the itp flag means we need to acquire the force field and itp files from the previous run
+		if wordspace['ff_includes']:
+			for fn in wordspace['ff_includes']: 
+				upstream_files[fn] = {'from':last_step+'/'+fn,'to':fn,'required':True}
+		if wordspace['sources']:
+			for fn in wordspace['sources']: 
+				upstream_files[fn] = {'from':last_step+'/'+fn,'to':fn,'required':True}
+		#---! what happens in the case that there is no "ff_includes" or "sources" ... copy any ff or itp?
+		#---! ...note that it was necessary to manually add ff_includes for an older protein run 
+	#---hardcoded force fields
+	if wordspace['force_field'] in ['charmm27'] or 1:
+		#---! hack to remove items which are implicit in gromacs share folder
+		for key in ['ions','tip3p','forcefield']: upstream_files.pop(key)
 	for key,val in upstream_files.items():
 		if not os.path.isfile(val['from']):
 			if val['required']: raise Exception('cannot find %s'%val['to'])
-		else: shutil.copyfile(val['from'],wordspace['step']+val['to'])
+		else: 
+			if os.path.isfile(val['from']): shutil.copyfile(val['from'],wordspace['step']+val['to'])
+			else: shutil.copytree(val['from'],wordspace['step']+val['to'])
+
+@narrate
+def read_gro(gro):
+
+	"""
+	Read a GRO file and return its XYZ coordinates and atomnames. 
+	!Note that this is highly redundant with a cgmd_bilayer.read_molecule so you might replace that one.
+	"""
+
+	import numpy as np
+	with open(wordspace.step+gro,'r') as fp: lines = fp.readlines()
+	pts = np.array([[float(j) for j in i.strip('\n')[20:].split()] for i in lines[2:-1]])
+	pts -= np.mean(pts,axis=0)
+	atomnames = np.array([i.strip('\n')[10:15].strip(' ') for i in lines[2:-1]])
+	return pts,atomnames,lines

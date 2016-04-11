@@ -12,4 +12,5 @@ procedure_toc = {
 	'homology':'homology',
 	'multiply':'multiply',
 	'modify_parameters':None,
+	'reionize':'reionize',
 	}
