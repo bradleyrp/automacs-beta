@@ -7,7 +7,7 @@ procedure:          reionize
 equilibration:      npt
 system name:        bilayer
 sources:            ['charmm36.ff','lipids-tops']
-files:              ['system.top','md.part0018.gro','input-md-in.mdp']
+files:              ['system.top','md.part0051.gro','input-md-in.mdp']
 reionize specify:   {'some_divalents':{'Cal':{'quantity':10,'from':'NA','also_delete':10}}}
 all ion names:      ['NA','Cal','MG','CL']
 force field:        charmm36
@@ -30,6 +30,8 @@ try:
 		gro='system-input')
 	name = 'md.part0001'
 	groups = None
+	checkpoint()
+	write_continue_script()
 	gmx('grompp',base=name,top='system',
 		structure='system-input',
 		log='grompp-0001',mdp='input-md-in',
