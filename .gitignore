@@ -9,3 +9,4 @@ wordspace.json
 ./script-*
 s[0-9][0-9]-*
 serial-*
+./log
