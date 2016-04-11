@@ -158,6 +158,23 @@ def write_top(topfile):
 		fp.write('[ system ]\n%s\n\n[ molecules ]\n'%wordspace['system_name'])
 		for key,val in wordspace['composition']: fp.write('%s %d\n'%(key,val))
 
+@narrate
+def read_top(topfile):
+
+	"""
+	Read a topology file to get the composition of the system.
+	Note that the topfile path must be relative to the top level in case it's in inputs.
+	"""
+
+	with open(topfile,'r') as f: lines = f.read()
+	chains = {}
+	startline = [ii for ii,i in enumerate(lines.split('\n')) 
+		if re.match('^(\s+)?\[(\s+)?molecules(\s+)?\]',i)][0]
+	count_regex = '^(\w+)\s+([0-9]+)'
+	components = [re.findall(count_regex,line).pop()
+		for line in lines.split('\n')[startline:] if re.match(count_regex,line)]		
+	for name,count in components: component(name,count=int(count))
+
 def include(name,ff=False):
 
 	"""
@@ -318,3 +335,18 @@ def get_last_frame(tpr=False,cpt=False,top=False,ndx=False,itp=False):
 		else: 
 			if os.path.isfile(val['from']): shutil.copyfile(val['from'],wordspace['step']+val['to'])
 			else: shutil.copytree(val['from'],wordspace['step']+val['to'])
+
+@narrate
+def read_gro(gro):
+
+	"""
+	Read a GRO file and return its XYZ coordinates and atomnames. 
+	!Note that this is highly redundant with a cgmd_bilayer.read_molecule so you might replace that one.
+	"""
+
+	import numpy as np
+	with open(wordspace.step+gro,'r') as fp: lines = fp.readlines()
+	pts = np.array([[float(j) for j in i.strip('\n')[20:].split()] for i in lines[2:-1]])
+	pts -= np.mean(pts,axis=0)
+	atomnames = np.array([i.strip('\n')[10:15].strip(' ') for i in lines[2:-1]])
+	return pts,atomnames,lines
