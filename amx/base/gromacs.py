@@ -128,8 +128,6 @@ def prepare_gmxpaths(machine_configuration,override=False,gmx_series=False):
 
 #---load machine configuration and gmxpaths into globals
 machine_configuration = prepare_machine_configuration()
-gmxpaths = prepare_gmxpaths(machine_configuration)
-
 #---load environment modules from python to setup GROMACS if necessary/desired
 try:
 	#---modules in LOCAL configuration must be loaded before checking version
@@ -149,3 +147,4 @@ try:
 			module('load',mod)
 		del mod
 except: print '[STATUS] failed to use importlib to load modules'
+gmxpaths = prepare_gmxpaths(machine_configuration)
