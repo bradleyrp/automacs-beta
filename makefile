@@ -17,7 +17,7 @@ checkfile=.pipeline_up_to_date
 
 #---filter and evaluate
 RUN_ARGS_UNFILTER := $(wordlist 1,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-RUN_ARGS := $(filter-out banner docs help scrub,$(RUN_ARGS_UNFILTER))
+RUN_ARGS := $(filter-out banner help,$(RUN_ARGS_UNFILTER))
 $(eval $(RUN_ARGS):;@:)
 
 #---valid function names from the python script
@@ -53,12 +53,3 @@ ifeq (,$(findstring push,${RUN_ARGS}))
 	@echo -n "[STATUS] printing readme: "
 	more amx/readme.md
 endif
-
-#---redirect docs to a custom script
-#docs:
-#ifeq (,$(findstring push,${RUN_ARGS}))
-#	@echo -e "[STATUS] building documentation "
-#	@bash amx/docs/source/boostrap_docs.sh ${RUN_ARGS};
-#	@if [ -d amx/docs/build ]; then { echo "[STATUS] done"; exit 0; } else { bash amx/docs/source/boostrap_docs.sh; } fi
-#endif
-

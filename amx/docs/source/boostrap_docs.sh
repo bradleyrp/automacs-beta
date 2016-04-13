@@ -5,7 +5,6 @@
 <<notes
 notes
 
-
 here=$(pwd)
 codeback=../../../amx
 docsdir=amx/docs/build
