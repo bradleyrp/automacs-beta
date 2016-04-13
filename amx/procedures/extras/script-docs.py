@@ -20,7 +20,7 @@ def docs(clean=False):
 		subprocess.call('sphinx-apidoc -F -o . ../../../amx',shell=True,cwd=docs_dn,
 			stdout=open('amx/docs/build/log-docs-build','w'),stderr=subprocess.PIPE)
 		shutil.copy(source_dn+'conf.py',docs_dn)
-		shutil.copy(source_dn+'style.css',docs_dn+'/_static/')
+		shutil.copy(source_dn+'style.css',docs_dn+'/_static')
 		for fn in glob.glob(source_dn+'*.png'): shutil.copy(fn,docs_dn)
 		for fn in glob.glob(source_dn+'*.rst'): shutil.copy(fn,docs_dn)
 		subprocess.call('make html',shell=True,cwd=docs_dn,

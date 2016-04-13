@@ -13,7 +13,7 @@ nnodes:             1
 from amx import *
 init(settings)
 from amx.base.gromacs import prepare_machine_configuration,prepare_gmxpaths
-machine_configuration = prepare_machine_configuration(hostname=wordspace.hostname)
+machine_configuration,this_machine = prepare_machine_configuration(hostname=wordspace.hostname)
 machine_configuration['walltime'] = wordspace.walltime
 gmxpaths = prepare_gmxpaths(machine_configuration,override=True)
 assert wordspace.hostname!='LOCAL'

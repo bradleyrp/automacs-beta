@@ -77,7 +77,7 @@ def prepare_machine_configuration(hostname=None):
 	if ('nnodes' in machine_configuration and 'ppn' in machine_configuration 
 		and not 'nprocs' in machine_configuration):
 		machine_configuration['nprocs'] = machine_configuration['nnodes']*machine_configuration['ppn']
-	return machine_configuration
+	return machine_configuration,this_machine
 
 def prepare_gmxpaths(machine_configuration,override=False,gmx_series=False):
 
@@ -96,6 +96,7 @@ def prepare_gmxpaths(machine_configuration,override=False,gmx_series=False):
 		else:
 			check_mdrun = ' '.join(subprocess.Popen('mdrun%s -g /tmp/md.log'%suffix,shell=True,
 				executable='/bin/bash',stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate())
+			
 			if re.search('VERSION 4',check_mdrun): gmx_series = 4
 			elif not override: raise Exception('gromacs is absent')
 			else: print '[NOTE] preparing gmxpaths with override'
@@ -127,7 +128,7 @@ def prepare_gmxpaths(machine_configuration,override=False,gmx_series=False):
 	return gmxpaths
 
 #---load machine configuration and gmxpaths into globals
-machine_configuration = prepare_machine_configuration()
+machine_configuration,this_machine = prepare_machine_configuration()
 #---load environment modules from python to setup GROMACS if necessary/desired
 try:
 	#---modules in LOCAL configuration must be loaded before checking version
@@ -136,8 +137,9 @@ try:
 		import importlib
 		print '[STATUS] found modules in %s configuration'%this_machine
 		if 'module_path' in machine_configuration: module_path = machine_configuration['module_path']
-		try: execfile(module_path)
-		except: raise Exception('could not execute %s'%module_path)
+		execfile(module_path)
+		#try: execfile(module_path)
+		#except: raise Exception('could not execute %s'%module_path)
 		print '[STATUS] unloading GROMACS'
 		#---note that modules that rely on dynamically-linked C-code must use EnvironmentModules
 		modlist = machine_configuration['modules']
