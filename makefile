@@ -21,11 +21,22 @@ RUN_ARGS := $(filter-out banner docs help scrub,$(RUN_ARGS_UNFILTER))
 $(eval $(RUN_ARGS):;@:)
 
 #---valid function names from the python script
-TARGETS := $(shell perl -n -e '@parts = /^def\s+[a-z,_]+/g; $$\ = "\n"; print for @parts;' \ amx/controller.py | awk '{print $$2}')
+TARGETS := $(shell perl -n -e '@parts = /^def\s+[a-z,_]+/g; $$\ = "\n"; print for @parts;' amx/controller.py amx/procedures/extras/*.py | awk '{print $$2}')
 
 #---hit all of the targets
 default: $(checkfile)
 $(TARGETS): $(checkfile)
+
+#---exit if target not found
+controller_function = $(word 1,$(RUN_ARGS))
+ifneq ($(controller_function),)
+ifeq ($(filter $(controller_function),$(TARGETS)),)
+    $(info [ERROR] "$(controller_function)" is not a valid make target)
+    $(info [ERROR] targets are python function names in omni/controller.py or calcs/scripts/*.py)
+    $(info [ERROR] valid targets include: $(TARGETS))
+    $(error [ERROR] exiting)
+endif
+endif
 
 #---run the controller
 $(checkfile): $(scripts) banner
@@ -43,23 +54,11 @@ ifeq (,$(findstring push,${RUN_ARGS}))
 	more amx/readme.md
 endif
 
-#---clean before push
-scrub:
-	@echo -e "[STATUS] cleaning: "
-	rm -f ./amx/docs/build || true
-	rm -rf ./config.py || true
-	python amx/controller.py clean sure
-
-#---wrap git push
-push: scrub
-	bash ./amx/base/push.sh ${RUN_ARGS}
-	@if [ false ]; then { echo "[STATUS] done"; exit 0; } else true; fi
-
 #---redirect docs to a custom script
-docs:
-ifeq (,$(findstring push,${RUN_ARGS}))
-	@echo -e "[STATUS] building documentation "
-	@bash amx/docs/source/boostrap_docs.sh ${RUN_ARGS};
-	@if [ -d amx/docs/build ]; then { echo "[STATUS] done"; exit 0; } else { bash amx/docs/source/boostrap_docs.sh; } fi
-endif
+#docs:
+#ifeq (,$(findstring push,${RUN_ARGS}))
+#	@echo -e "[STATUS] building documentation "
+#	@bash amx/docs/source/boostrap_docs.sh ${RUN_ARGS};
+#	@if [ -d amx/docs/build ]; then { echo "[STATUS] done"; exit 0; } else { bash amx/docs/source/boostrap_docs.sh; } fi
+#endif
 

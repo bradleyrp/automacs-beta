@@ -341,4 +341,12 @@ def makeface(*arglist):
 #---MAIN
 #-------------------------------------------------------------------------------------------------------------
 
-if __name__ == "__main__": makeface(*sys.argv[1:])
+if __name__ == "__main__": 
+
+	#---if the function is not above check extra scripts
+	if sys.argv[1] not in globals(): 
+		#---execute instead of importing for simplicity
+		for fn in glob.glob('./amx/procedures/extras/*.py'): execfile(fn)
+		#---assume the target is in one of the extras
+		globals()[sys.argv[1]](*sys.argv[2:])
+	else: makeface(*sys.argv[1:])
