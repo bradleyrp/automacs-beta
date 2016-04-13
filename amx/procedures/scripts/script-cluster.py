@@ -58,7 +58,6 @@ for key,val in script_settings.items(): head = re.sub(key.upper(),str(val),head)
 for key,val in machine_configuration.items(): head = re.sub(key.upper(),str(val),head)
 cluster_script = head+continue_script
 with open(cluster_continue,'w') as fp: fp.write(cluster_script)
-assert 'submit_command' in [wordspace,machine_configuration]
 submit_command = False
 if 'submit_command' in wordspace: submit_command = wordspace.submit_command
 elif 'submit_command' in machine_configuration: submit_command = machine_configuration['submit_command']
