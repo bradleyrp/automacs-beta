@@ -54,6 +54,8 @@ def bootstrap_configuration(local=False):
 	Create a new configuration from the default and explain to the user.
 	"""
 
+	#---read the default configuration from the standard location
+	with open('amx/base/default_configuration.py') as fp: default_configuration = fp.read()
 	#---we skip the bootstrap if we are only making docs from its subfolder
 	if re.match('.+\/docs\/build$',os.getcwd()): return
 	print "[STATUS] bootstrapping a configuration now"
