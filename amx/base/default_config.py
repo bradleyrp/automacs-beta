@@ -43,7 +43,6 @@ gordon_header = """#!/bin/bash
 #PBS -N gmxjob
 #PBS -j eo
 #PBS -A upa124
-#PBS -M bradleyrp@gmail.com
 #PBS -m abe
 #PBS -V
 cd $PBS_O_WORKDIR
