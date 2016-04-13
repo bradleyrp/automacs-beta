@@ -40,7 +40,7 @@ gordon_header = """#!/bin/bash
 #PBS -q normal
 #PBS -l nodes=NNODES:ppn=PPN:native
 #PBS -l walltime=WALLTIME:00
-#PBS -N v538
+#PBS -N gmxjob
 #PBS -j eo
 #PBS -A upa124
 #PBS -M bradleyrp@gmail.com
@@ -53,7 +53,7 @@ module load gromacs
 
 comet_header = """#!/bin/bash     
 #SBATCH --job-name="v651"  
-#SBATCH --output="v651.%j.%N.out"  
+#SBATCH --output="gmxjob.%j.%N.out"  
 #SBATCH --partition=compute  
 #SBATCH --nodes=NNODES
 #SBATCH --ntasks-per-node=PPN 
@@ -64,7 +64,20 @@ module purge
 module load gnutools
 module load openmpi_ib
 module load gromacs
-#---override mismatch with: export GMX_ALLOW_CPT_MISMATCH=`1`
+"""
+
+stampede_header = """#!/bin/bash
+#SBATCH -A ALLOCATION
+#SBATCH -J gmx.gmxjob
+#SBATCH -o gmx.gmxjob.o%j
+#SBATCH -e gmx.gmxjob.e%j
+#SBATCH -n NPROCS 
+#SBATCH -p normal
+#SBATCH -t WALLTIME:00 
+set -x
+module load boost
+module load cxx11
+module load gromacs
 """
 
 #---AUTOMACS selects a subdictionary below depending on your system
@@ -73,6 +86,16 @@ machine_configuration = {
 	#---the "LOCAL" machine is default, protected
 	'LOCAL':dict(
 		gpu_flag = 'auto',
+		),
+	'stampede':dict(
+		gmx_series = 5,
+		cluster_header = stampede_header,
+		ppn = 16,
+		walltime = "24:00",
+		nnodes = 1,
+		suffix = '',
+		mdrun_command = '$(echo "ibrun -n NPROCS -o 0 mdrun_mpi")',
+		allocation = 'ALLOCATION_CODE_HERE',
 		),
 	'gordon':dict(
 		gmx_series = 5,
