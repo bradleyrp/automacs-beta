@@ -68,4 +68,4 @@ else:
 	if os.path.isfile(batch_script):
 		with open(batch_script,'a') as fp: 
 			fp.write('cd %s\n%s cluster-continue-%s.sh\ncd ..\n'%(
-				last_step,wordspace.submit_command,wordspace.hostname))
+				last_step,submit_command,wordspace.hostname))
