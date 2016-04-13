@@ -117,7 +117,7 @@ machine_configuration = {
 		walltime = "24:00",
 		nnodes = 1,
 		suffix = '_mpi',
-		mdrun_command = '$(echo "ibrun -n NPROCS -o 0 gmx_mpi mdrun")'
+		mdrun_command = '$(echo "ibrun -n NPROCS -o 0 gmx_mpi mdrun")',
 		submit_command = 'sbatch',
 		),
 	'compbio':dict(
