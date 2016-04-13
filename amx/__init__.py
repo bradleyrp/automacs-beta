@@ -51,7 +51,7 @@ class WordSpaceLook():
 #---always import amx into globals
 #---assume these variables make it to the global scope 
 wordspace = WordSpace()
-import sys,os,importlib
+import sys,os
 from base.functions import *
 from base.mdp import write_mdp
 from base.gmxwrap import *
@@ -66,18 +66,23 @@ if (not script_call in ['sphinx-build','script-vmd.py'] and
 	not re.match('^script-vmd',script_call)):
 	with open(wordspace['script'],'r') as fp: original_script_lines = fp.readlines()
 	try: 
-		procedure = [re.findall('^procedure:\s*([\w,]+)',l)[0] for l in original_script_lines if re.match('^procedure:\s*([\w,]+)',l)]
+		procedure = [re.findall('^procedure:\s*([\w,]+)',l)[0] 
+			for l in original_script_lines if re.match('^procedure:\s*([\w,]+)',l)]
 		if len(procedure)!=1 and len(list(set(procedure)))>1:
 			raise Exception('[ERROR] procedure = %s'%str(procedure))
 		else: procedure = procedure[0]
 	except: raise Exception('[ERROR] could not find "procedure: <name>" in the script')
-	#---automatically load the correct function library
-	if procedure in procedure_toc:
-		libfile = procedure_toc[procedure]
-		#---if none then we just import common
-		if not libfile: libfile = 'common'
-		mod = importlib.import_module('amx.procedures.'+libfile)
-		globals().update(vars(mod))
-		if 'command_library' in globals(): wordspace['command_library'] = interpret_command(command_library)
-		if 'mdp_specs' in globals(): wordspace['mdp_specs'] = mdp_specs
-	else: raise Exception('[ERROR] unclear procedure "%s" see procedures.toc'%procedure)
+	try:
+		#---automatically load the correct function library
+		import importlib
+		if procedure in procedure_toc:
+			libfile = procedure_toc[procedure]
+			#---if none then we just import common
+			if not libfile: libfile = 'common'
+			mod = importlib.import_module('amx.procedures.'+libfile)
+			globals().update(vars(mod))
+			if 'command_library' in globals(): 
+				wordspace['command_library'] = interpret_command(command_library)
+			if 'mdp_specs' in globals(): wordspace['mdp_specs'] = mdp_specs
+		else: raise Exception('[ERROR] unclear procedure "%s" see procedures.toc'%procedure)
+	except: print '[STATUS] importlib failed when importing function libraries but they might be irrelevant'

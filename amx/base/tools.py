@@ -88,7 +88,7 @@ def detect_last():
 	Find the last step number and part number (if available).
 	"""
 
-	step_regex = '^s([0-9]+)-\w+$'
+	step_regex = '^s([0-9]+)-[\w-]+$'
 	part_regex = '^[^\/]+\/md\.part([0-9]{4})\.cpt' 
 	possible_steps = [i for i in glob.glob('s*-*') if os.path.isdir(i)]
 	try:

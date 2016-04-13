@@ -11,6 +11,8 @@ procedure_toc = {
 	'cgmd,protein':'cgmd_protein',
 	'homology':'homology',
 	'multiply':'multiply',
+	'cluster':None,
+	'continue':None,
 	'modify_parameters':None,
 	'reionize':'reionize',
 	}

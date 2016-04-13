@@ -54,18 +54,26 @@ def program(script,flag=False):
 		print '[STATUS] check the settings and run via: "./%s"'%new_script
 	else: raise Exception('[ERROR] cannot find script at %s'%fn)
 	
-def clean(sure=False):
+def clean(sure=False,docs=False):
 
 	"""
 	Erases everything to reset the project.
 	"""
 
+	docs_dn = 'amx/docs/build'
 	for root,dirnames,filenames in os.walk('./'): break
 	remove_dirs = [i for i in dirnames if re.match('^s[0-9]+-\w+',i)]
-	if os.path.isdir('amx/docs/build'): remove_dirs.append('amx/docs/build')
+	if os.path.isdir(docs_dn): remove_dirs.append(docs_dn)
 	remove_files = [i for i in filenames if i != 'config.py' and 
-		(re.match('^script-s[0-9]+',i) or re.match('^([\w-]+)\.py$',i) 
-		or re.match('^(cluster|gmxjob)',i) or i=='wordspace.json')]
+		(re.match('^script-s[0-9]+',i) or re.match('^([\w-]+)\.py$',i) or re.match('^serial',i)
+		or re.match('^(cluster|gmxjob)',i) or i in [
+			'wordspace.json','script-batch-submit.sh'
+			])]
+	if docs: 
+		print '[STATUS] cleaning docs only'
+		remove_dirs,remove_files = [],[]
+		if os.path.isdir(docs_dn): remove_dirs.append(docs_dn)
+		sure = True
 	print '[STATUS] preparing to remove directories:'
 	for fn in remove_dirs: print '[STATUS] >> %s'%fn
 	print '[STATUS] preparing to remove files:'
@@ -162,7 +170,7 @@ def download():
 		print "[NOTE] find the data on the remote machine via \"find ./ -name serial-%s\""%serial_number()
 		sys.exit(1)
 
-def cluster():
+def cluster(**kwargs):
 
 	"""
 	Write a cluster header according to the machine configuration.
@@ -177,9 +185,9 @@ def cluster():
 	with open('cluster-header.sh','w') as fp: fp.write(head)
 	print '[STATUS] wrote cluster-header.sh'
 	#---get the most recent step (possibly duplicate code from base)
+	import pdb;pdb.set_trace()
 	last_step,part_num = detect_last()
 	if last_step:
-		import pdb;pdb.set_trace()
 		#---code from base.functions.write_continue_script to rewrite the continue script
 		with open('amx/procedures/scripts/script-continue.sh','r') as fp: lines = fp.readlines()
 		settings = {

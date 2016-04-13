@@ -144,7 +144,8 @@ def start(name):
 			next(i for i in stepdirs if int(re.findall('^s([0-9]+)-',i)[0])==last_step),'')
 	wordspace['step'] = os.path.join(step_name,'')
 	wordspace['watch_file'] = 'script-'+step_name+'.log'
-	wordspace['bash_log'] = 'script-'+step_name+'.sh'
+	#---write the bash log inside each step
+	wordspace['bash_log'] = os.path.join(wordspace['step'],'script-'+step_name+'.sh')
 	logfile = wordspace['watch_file']
 	#---disabled the following so that we could route error logs here from tasks.py by inferring the log
 	#---....if os.path.isfile(logfile): raise Exception('logfile %s exists'%logfile)
