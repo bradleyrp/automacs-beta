@@ -43,7 +43,6 @@ gordon_header = """#!/bin/bash
 #PBS -N gmxjob
 #PBS -j eo
 #PBS -A upa124
-#PBS -M bradleyrp@gmail.com
 #PBS -m abe
 #PBS -V
 cd $PBS_O_WORKDIR
@@ -96,6 +95,7 @@ machine_configuration = {
 		suffix = '',
 		mdrun_command = '$(echo "ibrun -n NPROCS -o 0 mdrun_mpi")',
 		allocation = 'ALLOCATION_CODE_HERE',
+		submit_command = 'sbatch',
 		),
 	'gordon':dict(
 		gmx_series = 5,
@@ -107,6 +107,7 @@ machine_configuration = {
 		mdrun_command = \
 			'$(echo "mpirun_rsh -np NPROCS -hostfile '+\
 			'$PBS_NODEFILE GMX_ALLOW_CPT_MISMATCH=1 $(which mdrun_mpi)")',
+		submit_command = 'qsub',
 		),
 	'comet':dict(
 		gmx_series = 5,
@@ -115,7 +116,8 @@ machine_configuration = {
 		walltime = "24:00",
 		nnodes = 1,
 		suffix = '_mpi',
-		mdrun_command = '$(echo "ibrun -n NPROCS -o 0 gmx_mpi mdrun")'
+		mdrun_command = '$(echo "ibrun -n NPROCS -o 0 gmx_mpi mdrun")',
+		submit_command = 'sbatch',
 		),
 	'compbio':dict(
 		nnodes = 1,
@@ -124,5 +126,6 @@ machine_configuration = {
 		modules = 'gromacs/gromacs-4.6.3',
 		cluster_header = compbio_cluster_header,
 		walltime = 24,
+		submit_command = 'qsub',
 		),
 	}

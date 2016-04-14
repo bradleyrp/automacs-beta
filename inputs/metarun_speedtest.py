@@ -10,7 +10,6 @@ procedure:          continue
 hostname:           gordon
 walltime:           00:30
 nnodes:             NNODES
-submit command:     qsub
 """
 
 #---loop over number of nodes

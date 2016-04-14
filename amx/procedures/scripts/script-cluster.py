@@ -6,7 +6,6 @@ system name:        system
 procedure:          continue
 hostname:           kraken
 walltime:           24:00
-submit command:     qsub
 nnodes:             1
 """
 
@@ -59,9 +58,14 @@ for key,val in script_settings.items(): head = re.sub(key.upper(),str(val),head)
 for key,val in machine_configuration.items(): head = re.sub(key.upper(),str(val),head)
 cluster_script = head+continue_script
 with open(cluster_continue,'w') as fp: fp.write(cluster_script)
-#---add this cluster to the batch list if it exists
-batch_script = 'script-batch-submit.sh'
-if os.path.isfile(batch_script):
-	with open(batch_script,'a') as fp: 
-		fp.write('cd %s\n%s cluster-continue-%s.sh\ncd ..\n'%(
-			last_step,wordspace.submit_command,wordspace.hostname))
+submit_command = False
+if 'submit_command' in wordspace: submit_command = wordspace.submit_command
+elif 'submit_command' in machine_configuration: submit_command = machine_configuration['submit_command']
+if not submit_command: print '[STATUS] cannot infer the submit command so you must submit manually'
+else:
+	#---add this cluster to the batch list if it exists
+	batch_script = 'script-batch-submit.sh'
+	if os.path.isfile(batch_script):
+		with open(batch_script,'a') as fp: 
+			fp.write('cd %s\n%s cluster-continue-%s.sh\ncd ..\n'%(
+				last_step,submit_command,wordspace.hostname))
