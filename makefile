@@ -41,9 +41,9 @@ endif
 #---run the controller
 $(checkfile): $(scripts) banner
 ifeq (,$(findstring push,${RUN_ARGS}))
-	@echo -n "[STATUS] touching: "
+	@/bin/echo -n "[STATUS] touching: "
 	touch $(checkfile)
-	@echo "[STATUS] calling controller: python amx/controller.py ${RUN_ARGS} ${MAKEFLAGS}"
+	@/bin/echo "[STATUS] calling controller: python amx/controller.py ${RUN_ARGS} ${MAKEFLAGS}"
 	@python amx/controller.py ${RUN_ARGS} ${MAKEFLAGS} && echo "[STATUS] done" || { echo "[STATUS] fail"; }
 endif
 
