@@ -348,5 +348,5 @@ if __name__ == "__main__":
 		#---execute instead of importing for simplicity
 		for fn in glob.glob('./amx/procedures/extras/*.py'): execfile(fn)
 		#---assume the target is in one of the extras
-		globals()[sys.argv[1]](*sys.argv[2:])
+		globals()[sys.argv[1]](*[i for i in sys.argv[2:] if i not in ['w','--','s']])
 	else: makeface(*sys.argv[1:])

@@ -6,8 +6,8 @@ def docs(clean=False):
 	Make or delete the documentation.
 	"""
 
-	docs_dn = 'amx/docs/build'
-	source_dn = 'amx/docs/source/'
+	docs_dn = os.path.join(os.getcwd(),'amx/docs/build')
+	source_dn = os.path.join(os.getcwd(),'amx/docs/source/')
 	import subprocess
 	import shutil
 	import glob
