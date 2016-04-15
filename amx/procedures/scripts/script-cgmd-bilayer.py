@@ -4,7 +4,7 @@ execfile('/etc/pythonstart')
 settings = """
 system name:        CGMD BILAYER
 lipid structures:   inputs/cgmd-inputs/cgmd-lipid-structures
-step:               bilayer
+step:               cgmd-bilayer
 procedure:          cgmd,bilayer
 shape:              flat
 height:             6
@@ -24,7 +24,7 @@ anion:              CL-
 ionic strength:     0.150
 sol:                W
 ff includes:        ['martini-v2.2','martini-v2.0-lipids','martini-v2.2-aminoacids','martini-v2.0-ions']
-files:              ['inputs/cgmd-inputs/martini-water.gro']
+files:              ['cgmd-inputs/martini-water.gro']
 sources:            ['martini.ff']
 equilibration:      npt-bilayer
 """
