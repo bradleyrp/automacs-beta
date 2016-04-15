@@ -7,7 +7,7 @@ from functools import wraps
 #---always print to stdout without a buffer
 unbuffered = os.fdopen(sys.stdout.fileno(),'w',0)
 #---! the following was painful. fails on OSX without this.
-os.dup2(unbuffered,sys.stderr.fileno())
+# os.dup2(unbuffered,sys.stderr.fileno())
 
 def report(text,tag='status',newline=False,newline_trail=False,watch_file=None):
 
