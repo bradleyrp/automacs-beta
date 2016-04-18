@@ -2,7 +2,7 @@
 
 settings = """
 system name:        CGMD BILAYER
-lipid structures:   inputs/cgmd-inputs/cgmd-lipid-structures
+lipid structures:   inputs/cgmd-inputs/
 step:               cgmd-bilayer
 procedure:          cgmd,bilayer
 shape:              flat
