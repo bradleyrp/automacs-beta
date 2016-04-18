@@ -31,10 +31,10 @@ gmx4paths = {
 gmx5paths = {
 	'grompp':'gmx grompp',
 	'mdrun':'gmx mdrun',
-	'pdb2gmx':'pdb2gmx',
-	'editconf':'editconf',
+	'pdb2gmx':'gmx pdb2gmx',
+	'editconf':'gmx editconf',
 	'genbox':'gmx solvate',
-	'make_ndx':'make_ndx',
+	'make_ndx':'gmx make_ndx',
 	'genion':'gmx genion',
 	'trjconv':'gmx trjconv',
 	'genconf':'gmx genconf',

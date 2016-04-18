@@ -308,7 +308,7 @@ mdpdefs = {
 		'pressure':{
 			'Pcoupl':'parrinello-rahman',
 			'Pcoupltype':'semiisotropic',
-			'tau_p':'12.0 12.0',
+			'tau_p':12.0,
 			'compressibility':'3e-4 3e-4',
 			'ref_p':'1.0 1.0',
 			},
@@ -378,7 +378,7 @@ mdpdefs = {
 			'pressure':{
 				'Pcoupl':'Berendsen',
 				'Pcoupltype':'semiisotropic',
-				'tau_p':'0.5 0.5',
+				'tau_p':0.5,
 				'compressibility':'3e-4 0',
 				'ref_p':'1.0 1.0',
 				},

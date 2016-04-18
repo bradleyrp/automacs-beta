@@ -4,7 +4,10 @@ from numpy import *
 import scipy
 import scipy.spatial
 import scipy.interpolate
-from sklearn import manifold
+
+#---sklearn is causing problems on OSX
+#import sklearn
+#from sklearn import manifold
 
 #---geometry functions
 triarea = lambda a : linalg.norm(cross(a[1]-a[0],a[2]-a[0]))/2.

@@ -72,17 +72,18 @@ if (not script_call in ['sphinx-build','script-vmd.py'] and
 			raise Exception('[ERROR] procedure = %s'%str(procedure))
 		else: procedure = procedure[0]
 	except: raise Exception('[ERROR] could not find "procedure: <name>" in the script')
-	try:
-		#---automatically load the correct function library
-		import importlib
-		if procedure in procedure_toc:
-			libfile = procedure_toc[procedure]
-			#---if none then we just import common
-			if not libfile: libfile = 'common'
-			mod = importlib.import_module('amx.procedures.'+libfile)
-			globals().update(vars(mod))
-			if 'command_library' in globals(): 
-				wordspace['command_library'] = interpret_command(command_library)
-			if 'mdp_specs' in globals(): wordspace['mdp_specs'] = mdp_specs
+	importlib_avail = True
+	try: import importlib
+	except: 
+		importlib_avail = False
+		report('cannot import importlib so you are on an old system and we will '+
+			'skip loading procedure codes',tag='warning')
+	if importlib_avail:
+		if procedure in procedure_toc: libfile = procedure_toc[procedure]
 		else: raise Exception('[ERROR] unclear procedure "%s" see procedures.toc'%procedure)
-	except: print '[STATUS] importlib failed when importing function libraries but they might be irrelevant'
+		if not libfile: libfile = 'common'
+		mod = importlib.import_module('amx.procedures.'+libfile)
+		globals().update(vars(mod))
+	if 'command_library' in globals(): 
+		wordspace['command_library'] = interpret_command(command_library)
+	if 'mdp_specs' in globals(): wordspace['mdp_specs'] = mdp_specs

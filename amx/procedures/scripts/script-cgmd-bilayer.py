@@ -1,5 +1,4 @@
 #!/usr/bin/python
-execfile('/etc/pythonstart')
 
 settings = """
 system name:        CGMD BILAYER
