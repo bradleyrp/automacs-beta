@@ -185,7 +185,6 @@ def cluster(**kwargs):
 	with open('cluster-header.sh','w') as fp: fp.write(head)
 	print '[STATUS] wrote cluster-header.sh'
 	#---get the most recent step (possibly duplicate code from base)
-	import pdb;pdb.set_trace()
 	last_step,part_num = detect_last()
 	if last_step:
 		#---code from base.functions.write_continue_script to rewrite the continue script
