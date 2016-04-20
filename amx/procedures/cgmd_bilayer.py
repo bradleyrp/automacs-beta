@@ -327,7 +327,7 @@ def adhere_protein_cgmd_bilayer(bilayer,combo,protein_complex=None):
 	else: raise Exception('unclear lattice type: %s'%lattice_type)
 	grid_space = array([(horz*i+j%2.0*offset,vert*j) for i,j in array(grid).astype(float)])
 	focii = concatenate((grid_space.T,[zeros(total_proteins)])).T
-	if 0: meshpoints(focii)
+	if False: meshpoints(focii)
 
 	#---read the protein and bilayer
 	combined,combined_points = read_gro(bilayer,cwd=wordspace['step'])
@@ -351,8 +351,10 @@ def adhere_protein_cgmd_bilayer(bilayer,combo,protein_complex=None):
 	#---! this is a hack to find the only PIP2 after it's been added to the combined list
 	lipid_center = mean(combined_points[array([ii for ii,i in enumerate(combined) 
 		if i['resname']=='PIP2 '])],axis=0)
+	#---! hack to specify which lipid to replace with PIP2
+	replacement_lipid = 'DOPC'
 	#---get absolute indices of the standard lipids
-	indices = array([ii for ii,i in enumerate(combined) if i['resname']=='DOPC'.ljust(5)]) 
+	indices = array([ii for ii,i in enumerate(combined) if i['resname']==replacement_lipid.ljust(5)]) 
 	#---group indices by resid
 	resids = array([int(combined[i]['resid']) for i in indices])
 	#---centroids of the standard lipids
@@ -360,10 +362,11 @@ def adhere_protein_cgmd_bilayer(bilayer,combo,protein_complex=None):
 	nearest = argmin(linalg.norm(cogs-lipid_center,axis=1))
 	nearest_resid = unique(resids)[nearest]
 	excise = array([ii for ii,i in enumerate(combined) if i['resid']=='%5s'%nearest_resid 
-		and i['resname']=='DOPC'.ljust(5)])
+		and i['resname']==replacement_lipid.ljust(5)])
 	combined = [i for ii,i in enumerate(combined) if ii not in excise]
 	combined_points = [i for ii,i in enumerate(combined_points) if ii not in excise]
-	component(wordspace['lipid'],count=component(wordspace['lipid'])-1)
+	#---remove lipids in the composition
+	component(replacement_lipid,count=component(replacement_lipid)-total_proteins)
 
 	#---renumber residues and atoms
 	if 0:

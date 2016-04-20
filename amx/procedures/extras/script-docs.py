@@ -17,13 +17,15 @@ def docs(clean=False):
 	else:
 		print '[STATUS] building docs and logging to amx/docs/build/log-docs-build'
 		if not os.path.isdir(docs_dn): os.mkdir(docs_dn)
+		docslog = 'amx/docs/build/log-docs-build'
 		subprocess.call('sphinx-apidoc -F -o . ../../../amx',shell=True,cwd=docs_dn,
-			stdout=open('amx/docs/build/log-docs-build','w'),stderr=subprocess.PIPE)
+			stdout=open(docslog,'w'),stderr=subprocess.PIPE)
 		shutil.copy(source_dn+'conf.py',docs_dn)
 		shutil.copy(source_dn+'style.css',docs_dn+'/_static')
 		for fn in glob.glob(source_dn+'*.png'): shutil.copy(fn,docs_dn)
 		for fn in glob.glob(source_dn+'*.rst'): shutil.copy(fn,docs_dn)
 		subprocess.call('make html',shell=True,cwd=docs_dn,
-			stdout=open('amx/docs/build/log-docs-build','a'),stderr=subprocess.PIPE)
-		print '[STATUS] docs are ready at "file://%s"'%os.path.join(
-			os.path.abspath(os.getcwd()),'amx/docs/build/_build/html/index.html')
+			stdout=open(docslog,'a'),stderr=subprocess.PIPE)
+		index_fn = os.path.join(os.path.abspath(os.getcwd()),'amx/docs/build/_build/html/index.html')
+		if not os.path.isfile(index_fn): raise Exception('\n[ERROR] failed to make docs. see "%s"'%docslog)
+		print '[STATUS] docs are ready at "file://%s"'%index_fn
