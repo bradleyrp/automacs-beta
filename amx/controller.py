@@ -8,7 +8,7 @@ from base.tools import detect_last,serial_number
 #---CONFIGURE
 #-------------------------------------------------------------------------------------------------------------
 
-def config(global=False):
+def config(central=False):
 
 	"""
 	Load configuration from a central location.
@@ -17,14 +17,14 @@ def config(global=False):
 	config_file = os.environ['HOME']+'/.automacs.py'
 	config_file_local = './config.py'
 	if os.path.isfile(config_file_local): local = True
-	if local and not os.path.isfile(config_file_local): 
+	if not central and not os.path.isfile(config_file_local): 
 		print '[STATUS] cannot find configuration at %s'%config_file_local
 		bootstrap_configuration(local=True)
-	elif not local and not os.path.isfile(config_file):
+	elif central and not os.path.isfile(config_file):
 		print '[STATUS] cannot find configuration at %s'%config_file
 		bootstrap_configuration()
 	else: 
-		print '[STATUS] reading configuration from %s'%(config_file_local if local else config_file)
+		print '[STATUS] reading configuration from %s'%(config_file_local if not central else config_file)
 		print '[STATUS] edit the file manually to change settings'
 
 #---configure unless cleaning or configuring
