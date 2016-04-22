@@ -60,7 +60,7 @@ def plot_benchmarks():
 
 	config_fn = os.path.expanduser('~/.automacs.py') if os.path.isfile('~/.automacs.py') else 'config.py'
 	if not os.path.isfile(config_fn): 
-		raise Exception('cannot find a configuration so run "make config local"')
+		raise Exception('cannot find a configuration so run "make config"')
 	config = {}
 	execfile(config_fn,config)
 	performance = {}

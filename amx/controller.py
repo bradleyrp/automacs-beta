@@ -8,7 +8,7 @@ from base.tools import detect_last,serial_number
 #---CONFIGURE
 #-------------------------------------------------------------------------------------------------------------
 
-def config(local=False):
+def config(global=False):
 
 	"""
 	Load configuration from a central location.
