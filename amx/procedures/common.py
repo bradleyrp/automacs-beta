@@ -276,7 +276,7 @@ def get_last_frame(tpr=False,cpt=False,top=False,ndx=False,itp=False):
 
 	"""
 	Get the last frame of any step in this simulation.
-	NOT NARRATED because the watch file is typically not ready until the new step 
+	This function is not narrated because the watch file is typically not ready until the new step 
 	directory is created at which point you cannot use detect_last to get the last frame easily.
 	"""
 
@@ -308,6 +308,7 @@ def get_last_frame(tpr=False,cpt=False,top=False,ndx=False,itp=False):
 		gmx_run(gmxpaths['trjconv']+' -f %s -o %s -s %s.tpr -b %f -e %f'%(
 			xtc,'system-input.gro',xtc.rstrip('.xtc'),last_time,last_time),
 			log='trjconv-last-frame',inpipe='0\n')
+	#---list of files we must retrieve
 	upstream_files = {
 		'tpr':{'from':last_step+'md.part%04d.tpr'%part_num,'to':'system-input.tpr','required':True},
 		'cpt':{'from':last_step+'md.part%04d.cpt'%part_num,'to':'system-input.cpt','required':True},
@@ -320,22 +321,26 @@ def get_last_frame(tpr=False,cpt=False,top=False,ndx=False,itp=False):
 	if not ndx: upstream_files.pop('ndx')
 	if itp:
 		#---the itp flag means we need to acquire the force field and itp files from the previous run
-		if wordspace['ff_includes']:
-			for fn in wordspace['ff_includes']: 
+		#---note that we are skipping the ff_includes here because they should be in a sources folder
+		#---note that it was necessary to manually add ff_includes for an older protein run 
+		if wordspace['itp']:
+			for fn in wordspace['itp']: 
 				upstream_files[fn] = {'from':last_step+'/'+fn,'to':fn,'required':True}
 		if wordspace['sources']:
 			for fn in wordspace['sources']: 
 				upstream_files[fn] = {'from':last_step+'/'+fn,'to':fn,'required':True}
-		#---! what happens in the case that there is no "ff_includes" or "sources" ... copy any ff or itp?
-		#---! ...note that it was necessary to manually add ff_includes for an older protein run 
-	#---hardcoded force fields
-	if wordspace['force_field'] in ['charmm27'] or 1:
-		#---! hack to remove items which are implicit in gromacs share folder
-		for key in ['ions','tip3p','forcefield']: upstream_files.pop(key)
+	#---! hardcoded force field options here but consider making this more general
+	#---! why is this hacked below? with "or 1" (removed for testing)
+	if wordspace['force_field'] in ['charmm27']:
+		#---remove items which are always available in the GROMACS share folder
+		for key in ['ions','tip3p','forcefield']: 
+			if key in upstream_files: upstream_files.pop(key)
+	#---copy files
 	for key,val in upstream_files.items():
-		if not os.path.isfile(val['from']):
+		dest = wordspace['step']+val['to']
+		if not os.path.isfile(val['from']) and not os.path.isdir(val['from']):
 			if val['required']: raise Exception('cannot find %s'%val['to'])
-		else: 
+		elif not os.path.isfile(dest) and not os.path.isdir(dest): 
 			if os.path.isfile(val['from']): shutil.copyfile(val['from'],wordspace['step']+val['to'])
 			else: shutil.copytree(val['from'],wordspace['step']+val['to'])
 

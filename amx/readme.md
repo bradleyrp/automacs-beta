@@ -16,6 +16,7 @@ AUTOMACS (amx) makefile provides the following functions
 COMMANDS:
 
 make help.............show this help
+make <tab>............show all make targets (if autocomplete)
 make docs.............build HTML documentation with sphinx
 make program <name>...prepare scripts for a procedure (below)
 make config...........set up paths and hardware settings 

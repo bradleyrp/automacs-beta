@@ -45,7 +45,7 @@ ifeq (,$(findstring push,${RUN_ARGS}))
 	@/bin/echo -n "[STATUS] touching: "
 	touch $(checkfile)
 	@/bin/echo "[STATUS] calling controller: python amx/controller.py ${RUN_ARGS} ${MAKEFLAGS}"
-	@python amx/controller.py ${RUN_ARGS} ${MAKEFLAGS} && echo "[STATUS] done" || { echo "[STATUS] fail"; }
+	@python amx/controller.py ${RUN_ARGS} ${MAKEFLAGS} && echo "[STATUS] done" || { echo "[STATUS] fail"; exit 1; }
 endif
 
 #---print the readme

@@ -145,6 +145,8 @@ try:
 		modlist = machine_configuration['modules']
 		if type(modlist)==str: modlist = modlist.split(',')
 		for mod in modlist:
+			#---always unload gromacs to ensure correct version
+			module('unload','gromacs')
 			print '[STATUS] module load %s'%mod
 			module('load',mod)
 		del mod

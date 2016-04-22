@@ -89,12 +89,12 @@ def write_mdp(param_file=None,rootdir='./',outdir='',extras=None):
 					for key2,val2 in refinecode.items():
 						#---if the rule is in the top level of mdpdefs then it selects groups of settings
 						if key2 in mdpdefs.keys(): 
-							print 'using MDP override collection: '+key2+': '+str(val2)
+							report('using MDP override collection: '+key2+': '+str(val2),tag='note')
 							settings[key2] = deepcopy(mdpdefs[key2][val2])
 						#---if not, then we assume the rule is meant to override a native MDP parameter
 						#---...so we check to make sure it's already in settings and then we override
 						elif key2 in [j for k in [settings[i].keys() for i in settings] for j in k]:
-							print 'overriding MDP parameter: '+key2+': '+str(val2)
+							report('overriding MDP parameter: '+key2+': '+str(val2),tag='note')
 							for sub in settings:
 								if key2 in settings[sub]: settings[sub][key2] = deepcopy(val2)
 						else: 

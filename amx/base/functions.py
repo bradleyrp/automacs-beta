@@ -253,7 +253,7 @@ def interpret_command(block):
 	return commands
 
 @narrate
-def write_continue_script(script='script-continue.sh',**kwargs):
+def write_continue_script(script='script-continue.sh',machine_configuration=None,**kwargs):
 
 	"""
 	Uses a template in amx/procedures to write a bash continuation script.
@@ -263,7 +263,7 @@ def write_continue_script(script='script-continue.sh',**kwargs):
 	with open(os.path.join('amx/procedures/scripts',script),'r') as fp: lines = fp.readlines()
 	#---settings required for continuation script
 	#---! get these from the proper setup
-	from amx.base.gromacs import gmxpaths
+	from amx.base.gromacs import gmxpaths,machine_configuration
 	settings = {
 		'maxhours':24,
 		'extend':100000,
@@ -273,10 +273,18 @@ def write_continue_script(script='script-continue.sh',**kwargs):
 		'grompp':gmxpaths['grompp'],
 		'maxwarn':0,
 		}
+
 	settings.update(**kwargs)
 	setting_text = '\n'.join([
 		str(key.upper())+'='+('"' if type(val)==str else '')+str(val)+('"' if type(val)==str else '') 
 		for key,val in settings.items()])
+	modules = machine_configuration.get('modules',None)
+	if modules:
+		modules = [modules] if type(modules)==str else modules
+		#---if gromacs is in any of the modules we try to unload gromacs
+		if any([re.search('gromacs',i) for i in modules]):
+			setting_text += '\nmodule unload gromacs'
+		for m in modules: setting_text += '\nmodule load %s'%m
 	lines = map(lambda x: re.sub('#---SETTINGS OVERRIDES HERE$',setting_text,x),lines)
 	wordspace['continuation_script'] = script_fn = script
 	with open(wordspace['step']+script_fn,'w') as fp:

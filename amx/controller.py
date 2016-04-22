@@ -8,7 +8,7 @@ from base.tools import detect_last,serial_number
 #---CONFIGURE
 #-------------------------------------------------------------------------------------------------------------
 
-def config(central=False):
+def config(local=False):
 
 	"""
 	Load configuration from a central location.
@@ -17,14 +17,14 @@ def config(central=False):
 	config_file = os.environ['HOME']+'/.automacs.py'
 	config_file_local = './config.py'
 	if os.path.isfile(config_file_local): local = True
-	if not central and not os.path.isfile(config_file_local): 
+	if local and not os.path.isfile(config_file_local): 
 		print '[STATUS] cannot find configuration at %s'%config_file_local
 		bootstrap_configuration(local=True)
-	elif central and not os.path.isfile(config_file):
+	elif not local and not os.path.isfile(config_file):
 		print '[STATUS] cannot find configuration at %s'%config_file
 		bootstrap_configuration()
 	else: 
-		print '[STATUS] reading configuration from %s'%(config_file_local if not central else config_file)
+		print '[STATUS] reading configuration from %s'%(config_file_local if local else config_file)
 		print '[STATUS] edit the file manually to change settings'
 
 #---configure unless cleaning or configuring
@@ -267,7 +267,7 @@ def look(script='',dump=True,step=None):
 	cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(script_settings=\'%s\',step=%s);%s"'%(
 		script,script,
 		'None' if not step else step,
-		"\nwith open('wordspace.json','w') as fp:\n\tjson.dump(wordspace,fp);" if dump else '')
+		"\nwith open('wordspace.json','w') as fp: json.dump(wordspace,fp);" if dump else '')
 	print '[STATUS] running: python -i -c '+cmd
 	os.system('python -i -c '+cmd)
 
@@ -290,6 +290,9 @@ def delstep(number,confident=False):
 
 	target = int(number)
 	fns = glob.glob('s*%02d-*'%target)
+	if not fns: 
+		print "[STATUS] cannot find step %d to delete"%target
+		return
 	assert len(fns)==2
 	assert any([re.match('^script-s%02d-.+\.log$'%target,i) for i in fns])
 	assert any([re.match('^s%02d-'%target,i) for i in fns])

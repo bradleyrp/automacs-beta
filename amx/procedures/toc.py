@@ -2,7 +2,6 @@
 
 """
 Table of contents for available procedures. 
-Note that this should be implemented more carefully with a dictionary which is read by amx/__init__.py
 """
 
 procedure_toc = {
@@ -12,8 +11,4 @@ procedure_toc = {
 	'homology':'homology',
 	'multiply':'multiply',
 	'reionize':'reionize',
-	'modify_parameters':None,
-	'cluster':None,
-	'continue':None,
-	'restart':None,
 	}

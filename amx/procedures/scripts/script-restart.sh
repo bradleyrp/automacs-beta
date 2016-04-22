@@ -15,8 +15,9 @@ echo "[STATUS] running ... "
 #---we send the cpt to grompp (not mdrun) as per instructions from gromacs
 PARTNUM=$(($LAST_PART+1))
 if [[ -f system-groups.ndx ]]; then HAS_GROUPS="-n system-groups.ndx"; else HAS_GROUPS=""; fi
+if [[ -f system-input.cpt ]]; then HAS_CPT="-t system-input.cpt"; else HAS_CPT=""; fi
 log="grompp-change"
-cmd="$GROMPP -f input-md-in.mdp -c system-input.tpr -o system-input-modify.tpr -t system-input.cpt -p system.top $EXTEND_FLAG -po system-input-new.mdp -maxwarn $MAXWARN"
+cmd="$GROMPP -f input-md-in.mdp -c system-input.tpr -o system-input-modify.tpr $HAS_CPT -p system.top $EXTEND_FLAG -po system-input-new.mdp -maxwarn $MAXWARN $HAS_GROUPS"
 cmdexec=$cmd" &> log-$log"
 echo "[FUNCTION] gmx_run ('"$cmd"',) {'skip': False, 'log': '$log', 'inpipe': None}" >> $metalog
 eval $cmdexec

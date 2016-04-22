@@ -79,8 +79,11 @@ if (not script_call in ['sphinx-build','script-vmd.py'] and
 		report('cannot import importlib so you are on an old system and we will '+
 			'skip loading procedure codes',tag='warning')
 	if importlib_avail:
+		libfile = False
 		if procedure in procedure_toc: libfile = procedure_toc[procedure]
-		else: raise Exception('[ERROR] unclear procedure "%s" see procedures.toc'%procedure)
+		#---pass if you only find scripts without warning the user
+		elif any(glob.glob('amx/procedures/scripts/script-%s*'%procedure)): pass
+		else: raise Exception('[ERROR] unclear procedure "%s" with no corresponding scripts'%procedure)
 		if not libfile: libfile = 'common'
 		mod = importlib.import_module('amx.procedures.'+libfile)
 		globals().update(vars(mod))
