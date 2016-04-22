@@ -85,5 +85,6 @@ if (not script_call in ['sphinx-build','script-vmd.py'] and
 		mod = importlib.import_module('amx.procedures.'+libfile)
 		globals().update(vars(mod))
 	if 'command_library' in globals(): 
-		wordspace['command_library'] = interpret_command(command_library)
+		if 'command_library' not in wordspace:
+			wordspace['command_library'] = interpret_command(command_library)
 	if 'mdp_specs' in globals(): wordspace['mdp_specs'] = mdp_specs

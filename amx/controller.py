@@ -85,7 +85,7 @@ def clean(sure=False,docs=False):
 		for fn in remove_dirs: shutil.rmtree(fn)
 	else: print '[STATUS] doing nothing'
 
-def upload(sure=False,part=None):
+def upload(sure=False,part=None,bulk=False):
 
 	"""
 	Upload the most recent CPT and TPR file to a cluster for continuation.
@@ -102,38 +102,42 @@ def upload(sure=False,part=None):
 	if part: 
 		part_num = int(part)
 		last_step, = [i for i in glob.glob('s%02d-*'%part_num)]
-	if not last_step: raise Exception('\n[ERROR] no steps to upload')
-	restart_fns = [last_step+'/md.part%04d.%s'%(part_num,suf) for suf in ['cpt','tpr']]
-	restart_fns += [last_step+'/script-continue.sh']
-	if not all([os.path.isfile(fn) for fn in restart_fns]):
-		error = '[STATUS] could not find necessary upload files (part number %04d)'%part_num
-		error += '\n[ERROR] upload only works if there is a TPR for the last CPT part'
-		error += "\n[ERROR] missing: %s"%str([fn for fn in restart_fns if not os.path.isfile(fn)])
-		raise Exception(error)
-	else:
-		with open('uploads.txt','w') as fp:
+	if not last_step and not bulk: raise Exception('\n[ERROR] no steps to upload')
+	elif last_step and not bulk:
+		restart_fns = [last_step+'/md.part%04d.%s'%(part_num,suf) for suf in ['cpt','tpr']]
+		restart_fns += [last_step+'/script-continue.sh']
+		if not all([os.path.isfile(fn) for fn in restart_fns]):
+			error = '[STATUS] could not find necessary upload files (part number %04d)'%part_num
+			error += '\n[ERROR] upload only works if there is a TPR for the last CPT part'
+			error += "\n[ERROR] missing: %s"%str([fn for fn in restart_fns if not os.path.isfile(fn)])
+			raise Exception(error)
+		with open('uploads.txt','w') as fp: 
 			for fn in restart_fns+default_fns: fp.write(fn+'\n')
-		sshname = raw_input('[QUESTION] enter ssh alias for destination machine: ')
-		subfolder = raw_input('[QUESTION] enter subfolder on remote machine (default is ~/): ')
-		cwd = os.path.basename(os.path.abspath(os.getcwd()))
-		if not sure:
-			cmd = 'rsync -%s --files-from=uploads.txt ../%s %s:~/%s/%s'%('avin',cwd,sshname,subfolder,cwd)
-			p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()),executable='/bin/bash')
-			log = p.communicate()
-		if sure or raw_input('\n[QUESTION] continue [y/N]? ')[:1] not in 'nN':
-			cmd = 'rsync -%s --files-from=uploads.txt ../%s %s:~/%s/%s'%('avi',cwd,sshname,subfolder,cwd)
-			p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()),executable='/bin/bash')
-			log = p.communicate()
-			os.remove('uploads.txt')
-		if p.returncode == 0:
-			with open('script-%s.log'%last_step.rstrip('/'),'a') as fp:
-				destination = '%s:~/%s/%s'%(sshname,subfolder,cwd)
-				ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y.%m.%d.%H%M')
-				fp.write("[FUNCTION] upload () {'destination': '%s', 'time': '%s', 'sure': %s}\n"%(
-					destination,ts,str(sure)))
-		else: 
-			print "[STATUS] upload failure (not logged)"
-			sys.exit(1)
+	sshname = raw_input('[QUESTION] enter ssh alias for destination machine: ')
+	subfolder = raw_input('[QUESTION] enter subfolder on remote machine (default is ~/): ')
+	cwd = os.path.basename(os.path.abspath(os.getcwd()))
+	if not sure:
+		cmd = 'rsync -%s%s ../%s %s:~/%s/%s'%(
+			'avin',' --files-from=uploads.txt' if not bulk else ' --exclude=.git',cwd,
+			sshname,subfolder,cwd if not bulk else '')
+		p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()),executable='/bin/bash')
+		log = p.communicate()
+	if sure or raw_input('\n[QUESTION] continue [y/N]? ')[:1] not in 'nN':
+		cmd = 'rsync -%s%s ../%s %s:~/%s/%s'%(
+			'avi',' --files-from=uploads.txt' if not bulk else ' --exclude=.git',cwd,
+			sshname,subfolder,cwd if not bulk else '')
+		p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()),executable='/bin/bash')
+		log = p.communicate()
+		if not bulk: os.remove('uploads.txt')
+	if p.returncode == 0:
+		with open('script-%s.log'%last_step.rstrip('/'),'a') as fp:
+			destination = '%s:~/%s/%s'%(sshname,subfolder,cwd)
+			ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y.%m.%d.%H%M')
+			fp.write("[FUNCTION] upload () {'destination': '%s', 'time': '%s', 'sure': %s}\n"%(
+				destination,ts,str(sure)))
+	else: 
+		print "[STATUS] upload failure (not logged)"
+		sys.exit(1)
 
 def download():
 
@@ -286,8 +290,7 @@ def delstep(number,confident=False):
 
 	target = int(number)
 	fns = glob.glob('s*%02d-*'%target)
-	assert len(fns)==3
-	assert any([re.match('^script-s%02d-.+\.sh$'%target,i) for i in fns])
+	assert len(fns)==2
 	assert any([re.match('^script-s%02d-.+\.log$'%target,i) for i in fns])
 	assert any([re.match('^s%02d-'%target,i) for i in fns])
 	extra_delete = ['wordspace.json','WATCHFILE']

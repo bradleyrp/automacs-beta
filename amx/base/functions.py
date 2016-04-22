@@ -271,6 +271,7 @@ def write_continue_script(script='script-continue.sh',**kwargs):
 		'tpbconv':gmxpaths['tpbconv'],
 		'mdrun':gmxpaths['mdrun'],
 		'grompp':gmxpaths['grompp'],
+		'maxwarn':0,
 		}
 	settings.update(**kwargs)
 	setting_text = '\n'.join([
@@ -292,3 +293,20 @@ def continuation():
 	write_continue_script()
 	bash('./'+wordspace['continuation_script'])
 	
+def get_last_wordspace(step,*args):
+
+	"""
+	Retrieve the last wordspace from a previous step.
+	"""
+
+	caught = {}
+	for arg in args:
+		regex_catch = '>>>([^\s]+)'
+		cmd = 'make look step=%d'%int(re.findall('s([0-9]+)',step)[0])
+		proc = subprocess.Popen(cmd,cwd='./',shell=True,
+			stdout=subprocess.PIPE,stderr=subprocess.PIPE,stdin=subprocess.PIPE)
+		catch = '\n'.join(proc.communicate(input="print '>>>'+str(wordspace['%s'])\n"%arg))
+		values = [re.findall(regex_catch,i)[0] for i in catch.split('\n') if re.match(regex_catch,i)][0]
+		caught[arg] = values
+	import pdb;pdb.set_trace()
+	return values
