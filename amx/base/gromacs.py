@@ -96,7 +96,6 @@ def prepare_gmxpaths(machine_configuration,override=False,gmx_series=False):
 		else:
 			check_mdrun = ' '.join(subprocess.Popen('mdrun%s -g /tmp/md.log'%suffix,shell=True,
 				executable='/bin/bash',stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate())
-			
 			if re.search('VERSION 4',check_mdrun): gmx_series = 4
 			elif not override: raise Exception('gromacs is absent')
 			else: print '[NOTE] preparing gmxpaths with override'

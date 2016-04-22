@@ -7,7 +7,7 @@ equilibration:       nvt,npt
 start structure:     inputs/STRUCTURE.pdb
 run part two:        no
 system name:         SYSTEM
-protein water gap:   3.0
+protein water gap:   0.0
 water:               tip3p
 force field:         charmm27
 water buffer:        1.2
