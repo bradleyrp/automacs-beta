@@ -21,7 +21,8 @@ RUN_ARGS := $(filter-out banner help,$(RUN_ARGS_UNFILTER))
 $(eval $(RUN_ARGS):;@:)
 
 #---valid function names from the python script
-TARGETS := $(shell perl -n -e '@parts = /^def\s+[a-z,_]+/g; $$\ = "\n"; print for @parts;' amx/controller.py amx/procedures/extras/*.py | awk '{print $$2}')
+TARGETS := $(shell perl -n -e '@parts = /^def\s+[a-z,_]+/g; $$\ = "\n"; \
+print for @parts;' amx/controller.py amx/procedures/extras/*.py | awk '{print $$2}')
 
 #---hit all of the targets
 default: $(checkfile)
