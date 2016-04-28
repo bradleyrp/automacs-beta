@@ -245,14 +245,14 @@ def metarun(script=None,more=False):
 	"""
 
 	valid_meta_globs = glob.glob('inputs/meta*')+glob.glob('inputs/proj*/meta*')
-	candidates = [re.findall('^(.+)\.py',os.path.basename(i))[0] for i in valid_meta_globs]
+	candidates = [(i,re.findall('^(.+)\.py',os.path.basename(i))[0]) for i in valid_meta_globs]
 	if not script:
 		print "[USAGE] make metarun <script>"
-		print "[USAGE] available scripts: \n > "+'\n > '.join(candidates)
+		print "[USAGE] available scripts: \n > "+'\n > '.join(zip(*candidates)[1])
 	else:
-		try: target, = [i for i in candidates if re.search(script,i)]
+		try: target, = [ii for ii,i in enumerate(zip(*candidates)[1]) if re.search(script,i)]
 		except: raise Exception('[ERROR] failed to match %s with known scripts'%script)
-		execfile('inputs/%s.py'%target)
+		execfile(candidates[target][0])
 
 def look(script='',dump=True,step=None):
 
