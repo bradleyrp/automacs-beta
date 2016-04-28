@@ -101,7 +101,7 @@ def gmxscript(script_file):
 	wordspace['local_script'] = script_file
 	
 @narrate
-def bash(command,log=None,cwd=None):
+def bash(command,log=None,cwd=None,inpipe=None):
 
 	"""
 	Run a bash command
@@ -109,13 +109,18 @@ def bash(command,log=None,cwd=None):
 	
 	cwd = wordspace['step'] if cwd == None else cwd
 	if log == None: 
-		subprocess.call(command,cwd=cwd,shell=True,executable='/bin/bash',
+		if inpipe: raise Exception('under development')
+		kwargs = dict(cwd=cwd,shell=True,executable='/bin/bash',
 			stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		subprocess.call(command,**kwargs)
 	else:
 		output = open(cwd+'log-'+log,'w')
-		proc = subprocess.Popen(command,cwd=cwd,shell=True,executable='/bin/bash',
+		kwargs = dict(cwd=cwd,shell=True,executable='/bin/bash',
 			stdout=output,stderr=output)
-		proc.communicate()
+		if inpipe: kwargs['stdin'] = subprocess.PIPE
+		proc = subprocess.Popen(command,**kwargs)
+		if not inpipe: proc.communicate()
+		else: proc.communicate(input=inpipe)
 
 @narrate
 def checkpoint():

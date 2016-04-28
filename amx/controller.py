@@ -147,7 +147,9 @@ def download():
 
 	regex_upload = '^\[FUNCTION]\s+upload\s+\(\)\s+(\{[^\}]+\})'
 	last_step,part_num = detect_last()
-	last_log = 'script-%s.log'%last_step
+	#----infer the log from the number of the last step
+	last_step_code = re.search('^([a-z][0-9]+)-',last_step).group(1)
+	last_log = [f for f in glob.glob('script-%s-*'%last_step_code)][0]
 	with open(last_log) as fp: loglines = fp.readlines()
 	upload_records = [i for i in loglines if re.match('^\[FUNCTION]\s+upload',i)]
 	if upload_records == []: raise Exception("\n[ERROR] cannot download that which has not been uploaded")
@@ -156,12 +158,13 @@ def download():
 	destination = upload_dict['destination']
 	print "[STATUS] log at %s says that this simulation is located at %s"%(last_log,destination)
 	try:
-		cmd = 'rsync -avin --progress %s ./'%destination
+		cmd = 'rsync -avin --progress %s/* ./'%destination
+		print '[STATUS] running: "%s"'%cmd
 		p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()))
 		log = p.communicate()
 		if p.returncode != 0: raise
 		if raw_input('\n[QUESTION] continue [y/N]? ')[:1] not in 'nN':
-			cmd = 'rsync -avi --progress %s:%s/ ./'%(sshname,subfolder)
+			cmd = 'rsync -avi --progress %s/* ./'%destination
 			print '[STATUS] running "%s"'%cmd
 			p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()))
 			log = p.communicate()
@@ -241,7 +244,8 @@ def metarun(script=None,more=False):
 	May be deprecated due to execution problems and "moving to directory" weirdness.
 	"""
 
-	candidates = [re.findall('^(.+)\.py',os.path.basename(i))[0] for i in glob.glob('inputs/meta*')]
+	valid_meta_globs = glob.glob('inputs/meta*')+glob.glob('inputs/proj*/meta*')
+	candidates = [re.findall('^(.+)\.py',os.path.basename(i))[0] for i in valid_meta_globs]
 	if not script:
 		print "[USAGE] make metarun <script>"
 		print "[USAGE] available scripts: \n > "+'\n > '.join(candidates)

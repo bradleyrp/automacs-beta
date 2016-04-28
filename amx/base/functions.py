@@ -117,7 +117,7 @@ def detect_root_directory():
 	if 'root_directory' not in wordspace:
 		wordspace['root_directory'] = os.path.abspath('.')+'/'
 
-def start(name):
+def start(name,prefix='s'):
 
 	"""
 	Start a new step and register it.
@@ -130,18 +130,18 @@ def start(name):
 	detect_root_directory()
 	#---get the most recent step number
 	for root,dirnames,filenames in os.walk(os.path.abspath('.')): break
-	stepdirs = [d for d in dirnames if re.match('^s[0-9]+',d)]
+	stepdirs = [d for d in dirnames if re.match('^%s[0-9]+'%prefix,d)]
 	if stepdirs == []: last_step = 0
-	else: last_step = max([int(re.findall('^s([0-9]+)',d).pop()) for d in stepdirs])
+	else: last_step = max([int(re.findall('^%s([0-9]+)'%prefix,d).pop()) for d in stepdirs])
 	#---make the new step directory
-	step_name = 's%02d-%s'%(last_step+1,name)
+	step_name = '%s%02d-%s'%(prefix,last_step+1,name)
 	if os.path.exists(step_name): raise Exception('step directory %s already exists'%step_name)
 	os.mkdir(step_name)
 	os.chmod(step_name,0o2775)
 	#---register the step directory in the namespace
 	if stepdirs != []: 
 		wordspace['last'] = os.path.join(
-			next(i for i in stepdirs if int(re.findall('^s([0-9]+)-',i)[0])==last_step),'')
+			next(i for i in stepdirs if int(re.findall('^%s([0-9]+)-'%prefix,i)[0])==last_step),'')
 	wordspace['step'] = os.path.join(step_name,'')
 	wordspace['watch_file'] = 'script-'+step_name+'.log'
 	#---write the bash log inside each step

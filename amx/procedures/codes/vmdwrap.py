@@ -23,6 +23,10 @@ mol new GRO
 animate delete beg 0 end 0 skip 0 0
 mol addfile XTC FRAMES step STEP waitfor all 
 """,
+'load_structure':
+"""
+mol new GRO
+""",
 'ortho':
 """
 display projection Orthographic
@@ -58,16 +62,23 @@ rotate x by -90
 mouse stoprotation
 rotate z to 180
 """,
+'align_backbone':
+"""
+set reference [atomselect top "name CA" frame 0]
+set compare [atomselect top "name CA"]
+set num_steps [molinfo top get numframes]
+for {set frame 0} {$frame < $num_steps} {incr frame} {
+	$compare frame $frame
+	set trans_mat [measure fit $compare $reference]
+	$compare move $trans_mat
+}
+"""
 }
 
 #---FUNCTIONS
 #-------------------------------------------------------------------------------------------------------------
 
 class VMDWrap:
-
-	"""
-	Interface with VMD to make videos and execute common rendering functions.
-	"""
 
 	commons = copy.deepcopy(commons)
 	draw_defaults = {
@@ -111,7 +122,11 @@ class VMDWrap:
 
 	def __init__(self,name='vmd',**kwargs):
 
-		#---not that we previously mixed instance variables and kept track of substitutions
+		"""
+		Interface with VMD to make videos and execute common rendering functions.
+		"""
+
+		#---note that we previously mixed instance variables and kept track of substitutions
 		#---...in a single list called subs. we have since converted subs to a dictionary
 		#---...instead of using the self.__dict__ to track them. 
 		self.subs = {}
@@ -134,23 +149,30 @@ class VMDWrap:
 		self.selections = {}
 		self.selection_order = []
 		self.video_script_ready = False
-		
-		#---root directory for subfolders holding the snapshots
-		self.rootdir = os.getcwd() if 'output' not in kwargs else os.path.abspath(kwargs['output'])
 
-		#---make a temporary folder unless subdir is specified
-		if 'subdir' not in kwargs: self.cwd = tempfile.mkdtemp(dir=self.rootdir) 
-		elif not kwargs['subdir']: self.cwd = './'
-		else: 
-			self.cwd = self.rootdir+'/'+kwargs['subdir']
-			os.mkdir(self.cwd)
+		"""
+		note that previous iterations of vmdwrap.py/lipidlook.py had convoluted paths
+		previous iterations of the code used the following paths
+			self.rootdir : where to render mp4, holds the subdir which becomes self.cwd
+			self.cwd : a subdir of self.rootdir which is either specified or created as a tempdir for snaps
+		here we will streamline those paths using the following convention
+		paths conventions
+			VMDWrap has two paths:
+				1. root directory specified by kwargs "output" in the constructor to hold the final mp4
+				2. sub-directory 
+		"""
+
+		#---root directory for subfolders holding the snapshots
+		self.rootdir = os.getcwd() if 'site' not in kwargs else os.path.abspath(kwargs['site'])
+		self.cwd = tempfile.mkdtemp(dir=self.rootdir)
 
 		self.molnum = 0 if 'molnum' not in kwargs else kwargs['molnum']
 		if 'last' in kwargs and 'frames' not in kwargs: 
 			self.subs['frames'] = '' if kwargs['last']==None else 'last %d'%kwargs['last']
 		elif 'last' in kwargs: raise Exception('cannot define both LAST and FRAMES')
 		#---special kwargs that become substitutions stored in self.__dict__
-		for key in ['root','gro','xtc','tpr','frames','step']:
+		#---! note that we removed "root" from the following list because it is not used as a substitution
+		for key in ['gro','xtc','tpr','frames','step']:
 			if key in kwargs: self.subs[key] = kwargs[key]
 		self.script_fn = 'script-%s.tcl'%name
 		self.snapshot = False
@@ -178,7 +200,7 @@ class VMDWrap:
 		Write the script.
 		"""
 
-		with open(self.cwd+'/'+self.script_fn,'w') as fp:
+		with open(self.rootdir+'/'+self.script_fn,'w') as fp:
 			for line in self.script: fp.write(line+'\n')
 
 	def review(self,prompt=True):
@@ -195,7 +217,7 @@ class VMDWrap:
 	def command(self,text): self.script.append(text)
 
 	#---interface with the command line
-	def call(self,command): subprocess.check_call(command,shell=True,cwd=self.cwd)
+	def call(self,command): subprocess.check_call(command,shell=True,cwd=self.rootdir)
 
 	def select(self,**kwargs):
 
@@ -231,7 +253,7 @@ class VMDWrap:
 					self.script += [instruct]
 			else: raise Exception('missing extra setting: %s'%extra)
 
-	def video(self,traces=None,snapshot=False,pause=False):
+	def video(self,traces=None,snapshot=False,pause=False,cwd=''):
 
 		"""
 		Prepare to render a video by writing an add-on script.
@@ -257,7 +279,8 @@ class VMDWrap:
 		#---snapshot is the cheap/fast method otherwise we render
 		if not snapshot:
 			video_lines.extend([
-				'    set filename snap.[format "%04d" $i]',
+				'    set filename '+(os.path.join(os.path.basename(self.cwd),'') 
+					if self.cwd else '')+'snap.[format "%04d" $i]',
 				'    render TachyonInternal $filename.tga' if False else
 				'    render Tachyon $filename "/usr/local/lib/vmd/tachyon_LINUXAMD64"'+\
 				' -aasamples 12 %s -format TARGA -o %s.tga -res '+str(self.resx)+' '+str(self.resy),
@@ -267,15 +290,16 @@ class VMDWrap:
 				])
 		else:
 			video_lines.extend([
-				'    set filename snap.[format "%04d" $i]',
+				'    set filename '+(os.path.join(os.path.basename(self.cwd),'') 
+					if self.cwd else '')+'snap.[format "%04d" $i]',
 				'    render snapshot $filename.ppm',
 				'}',
 				])
 			self.snapshot = True
 		#---write script-video.tcl which will be sourced by script-vmd.tcl
-		with open(self.cwd+'/script-video.tcl','w') as fp:
+		with open(self.rootdir+'/script-video.tcl','w') as fp:
 			for line in video_lines: fp.write(line+'\n')
-		if not pause: self.script.append('source script-video.tcl')
+		if not pause: self.script.append('source %sscript-video.tcl'%os.path.join(cwd,''))
 		#---let show know that there is a video ready to render
 		self.video_script_ready = True
 
@@ -292,16 +316,19 @@ class VMDWrap:
 		#---review the script and wait for the go-ahead if prompt
 		self.review(prompt=prompt)		
 		if quit == False:
-			os.system('vmd %s -e %s/%s'%('-dispdev text' if text else '',self.cwd,self.script_fn))
-		else: self.call('vmd %s -e %s/%s'%('-dispdev text' if text else '',self.cwd,self.script_fn))
+			os.system('cd %s && vmd %s -e %s'%(self.rootdir,'-dispdev text' if text else '',
+			self.script_fn))
+		else: self.call('vmd %s -e %s'%('-dispdev text' if text else '',self.script_fn))
 		print '[STATUS] time = %.2f minutes'%((float(time.time())-self.start_time)/60.)
 
 		#---render snapshots if there is a video script
 		#---! figure out a default rate/speed-up factor for rendered videos
 		if render != '' and not self.snapshot and self.video_script_ready:
-			self.call(r"ffmpeg -i snap.%04d.png -vcodec mpeg4 -q 0  "+"-filter:v 'setpts=%.1f*PTS' "%rate+
+			self.call(r"ffmpeg -i "+self.cwd+
+				"/snap.%04d.png -vcodec mpeg4 -q 0  "+"-filter:v 'setpts=%.1f*PTS' "%rate+
 				self.rootdir+'/'+render+".mp4")
 		elif render != '' and self.video_script_ready:
-			self.call(r"ffmpeg -i snap.%04d.ppm -vcodec mpeg4 -q 0  -filter:v 'setpts=%.1f*PTS' "%rate+
+			self.call(r"ffmpeg -i "+self.cwd+
+				"snap.%04d.ppm -vcodec mpeg4 -q 0  -filter:v 'setpts=%.1f*PTS' "%rate+
 				self.rootdir+'/'+render+".mp4")
 		if clean: shutil.rmtree(self.cwd)
