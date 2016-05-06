@@ -21,7 +21,7 @@ def build_cgmd_protein():
 	assert os.path.isfile(wordspace['martinize_path'])
 	cmd = 'python ../'+wordspace['martinize_path']+' -v -p backbone '
 	cmd += ' -f protein-start.pdb -o %s.top -x %s.pdb'%(name,name)
-	if 'dssp' in wordspace: cmd += ' -dssp %s'%wordspace['dssp']
+	if 'dssp' in wordspace: cmd += ' -dssp %s'%os.path.abspath(wordspace['dssp'])
 	if 'martinize_ff' in wordspace: cmd += ' -ff %s'%wordspace['martinize_ff']
 	if 'martinize_flags' in wordspace: cmd += ' '+wordspace['martinize_flags']
 	bash(cmd,cwd=wordspace['step'],log='martinize')

@@ -451,7 +451,10 @@ def add_proteins():
 	"""
 
 	#---assume that cgmd-protein step named the itp as follows
-	filecopy(wordspace['last']+"Protein.itp",wordspace['step'])
+	#---! assumes only a single protein ITP for now (needs further development)
+	protein_itp_path, = glob.glob(wordspace['last']+'/Protein*.itp')
+	protein_itp_fn = os.path.basename(protein_itp_path)
+	filecopy(wordspace['last']+protein_itp_fn,wordspace['step'])
 	filecopy(wordspace['last']+wordspace['protein_ready'],wordspace['step'])
 	filecopy(wordspace['last']+wordspace['lipid_ready'],wordspace['step'])
 	gro_combinator(wordspace['protein_ready'],wordspace['lipid_ready'],
@@ -459,10 +462,10 @@ def add_proteins():
 	adhere_protein_cgmd_bilayer(bilayer='vacuum-bilayer.gro',
 		protein_complex='protein-lipid.gro',combo='vacuum.gro')
 	#---assume inclusion of a partner lipid here
-	include('Protein.itp')
+	include(protein_itp_fn)
 	include('PIP2.itp')
 	component('PIP2',count=wordspace['total_proteins'],top=True)
-	component('Protein',count=wordspace['total_proteins'],top=True)
+	component(re.findall('^(.+)\.itp$',protein_itp_fn)[0],count=wordspace['total_proteins'],top=True)
 	#---custom additions to the mdp_specs to allow for protein groups
 	for key in ['groups','temperature']:
 		wordspace['mdp_specs']['input-md-npt-bilayer-eq-in.mdp'].append({key:'protein'})
