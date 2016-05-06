@@ -52,6 +52,12 @@ mouse stoprotation
 rotate x to -90
 rotate y by -90
 """,
+'isoview':
+"""
+mouse stoprotation
+rotate z to -45
+rotate x by -60
+""",
 'yview':
 """
 rotate z to 180
@@ -164,7 +170,9 @@ class VMDWrap:
 
 		#---root directory for subfolders holding the snapshots
 		self.rootdir = os.getcwd() if 'site' not in kwargs else os.path.abspath(kwargs['site'])
-		self.cwd = tempfile.mkdtemp(dir=self.rootdir)
+		if 'subdir' not in kwargs: self.cwd = tempfile.mkdtemp(dir=self.rootdir)
+		elif not kwargs['subdir']: self.cwd = self.rootdir
+		else: self.cwd = kwargs['subdir']
 
 		self.molnum = 0 if 'molnum' not in kwargs else kwargs['molnum']
 		if 'last' in kwargs and 'frames' not in kwargs: 

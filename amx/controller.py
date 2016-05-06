@@ -45,7 +45,7 @@ def program(script,flag=False):
 	fn = 'amx/procedures/scripts/script-%s.py'%script
 	new_script = 'script-%s.py'%script
 	if os.path.isfile(fn) and os.path.isfile(new_script): 
-		raise Exception('[ERROR] found %s which must be deleted before continuing '%new_script+
+		raise Exception('\n[ERROR] found %s which must be deleted before continuing '%new_script+
 			'(if this was a previous step then there was an automatic copy)')
 	elif os.path.isfile(fn): 
 		print '[STATUS] copying %s'%fn
@@ -244,11 +244,12 @@ def metarun(script=None,more=False):
 	May be deprecated due to execution problems and "moving to directory" weirdness.
 	"""
 
-	valid_meta_globs = glob.glob('inputs/meta*')+glob.glob('inputs/proj*/meta*')
+	valid_meta_globs = glob.glob('inputs/meta*')+glob.glob('inputs/*/meta*')+\
+		glob.glob('inputs/*/proc*')
 	candidates = [(i,re.findall('^(.+)\.py',os.path.basename(i))[0]) for i in valid_meta_globs]
 	if not script:
 		print "[USAGE] make metarun <script>"
-		print "[USAGE] available scripts: \n > "+'\n > '.join(zip(*candidates)[1])
+		print "[USAGE] available scripts: \n > "+'\n > '.join(candidates)
 	else:
 		try: target, = [ii for ii,i in enumerate(zip(*candidates)[1]) if re.search(script,i)]
 		except: raise Exception('[ERROR] failed to match %s with known scripts'%script)
@@ -285,7 +286,7 @@ def watch():
 	print '[STATUS] watching the last step, apparently written to %s'%logfile
 	os.system('cat '+logfile)	
 
-def delstep(number,confident=False):
+def delstep(number,confident=False,prefix='s'):
 
 	"""
 	Delete a step by number.
@@ -293,18 +294,18 @@ def delstep(number,confident=False):
 	"""
 
 	target = int(number)
-	fns = glob.glob('s*%02d-*'%target)
+	fns = glob.glob('*%s%02d*'%(prefix,target))
 	if not fns: 
 		print "[STATUS] cannot find step %d to delete"%target
 		return
 	assert len(fns)==2
-	assert any([re.match('^script-s%02d-.+\.log$'%target,i) for i in fns])
-	assert any([re.match('^s%02d-'%target,i) for i in fns])
+	assert any([re.match('^script-%s%02d-.+\.log$'%(prefix,target),i) for i in fns])
+	assert any([re.match('^%s%02d-'%(prefix,target),i) for i in fns])
 	extra_delete = ['wordspace.json','WATCHFILE']
 	fns.extend([fn for fn in extra_delete if os.path.isfile(fn)])
 	try:
 		#---try to identify the associated script and clear it too
-		script, = glob.glob('s%02d-*/script*.py'%target)
+		script, = glob.glob('%s%02d-*/script*.py'%(prefix,target))
 		local_script = os.path.basename(script)
 		if os.path.isfile(local_script): fns.append(local_script)
 	except: pass
