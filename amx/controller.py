@@ -249,7 +249,7 @@ def metarun(script=None,more=False):
 	candidates = [(i,re.findall('^(.+)\.py',os.path.basename(i))[0]) for i in valid_meta_globs]
 	if not script:
 		print "[USAGE] make metarun <script>"
-		print "[USAGE] available scripts: \n > "+'\n > '.join(candidates)
+		print "[USAGE] available scripts: \n > "+'\n > '.join(zip(*candidates)[1])
 	else:
 		try: target, = [ii for ii,i in enumerate(zip(*candidates)[1]) if re.search(script,i)]
 		except: raise Exception('[ERROR] failed to match %s with known scripts'%script)
