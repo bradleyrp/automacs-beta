@@ -84,13 +84,14 @@ def count_molecules(structure,resname):
 	
 @narrate
 def trim_waters(structure='solvate-dense',gro='solvate',
-	gap=3,boxvecs=None,method='aamd',boxcut=True,use_vmd=False):
+	gap=3,boxvecs=None,method='aamd',boxcut=True):
 
 	"""
 	trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None)
 	Remove waters within a certain number of Angstroms of the protein.
 	"""
 
+	use_vmd = wordspace.get('use_vmd',False)
 	if gap != 0.0 and use_vmd:
 		if method == 'aamd': watersel = "water"
 		elif method == 'cgmd': watersel = "resname W"

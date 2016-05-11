@@ -15,6 +15,7 @@ solvent:             spc216
 ionic strength:      0.150
 cation:              NA
 anion:               CL
+use vmd:             False
 """
 
 from amx import *
