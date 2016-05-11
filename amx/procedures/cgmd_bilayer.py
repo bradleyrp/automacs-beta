@@ -65,6 +65,7 @@ def read_molecule(gro):
 
 	"""
 	Read a molecule in GRO form and return its XYZ coordinates and atomnames.
+	!REPLACE WITH common.read_gro
 	"""
 
 	with open(wordspace['lipid_structures']+'/'+gro+'.gro','r') as fp: rawgro = fp.readlines()

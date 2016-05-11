@@ -84,20 +84,21 @@ def count_molecules(structure,resname):
 	
 @narrate
 def trim_waters(structure='solvate-dense',gro='solvate',
-	gap=3,boxvecs=None,method='aamd',boxcut=True):
+	gap=3,boxvecs=None,method='aamd',boxcut=True,use_vmd=False):
 
 	"""
 	trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None)
 	Remove waters within a certain number of Angstroms of the protein.
 	"""
 
-	if gap != 0.0:
+	if gap != 0.0 and use_vmd:
 		if method == 'aamd': watersel = "water"
 		elif method == 'cgmd': watersel = "resname W"
 		else: raise Exception("\n[ERROR] unclear method %s"%method)
+		if 'sol' in wordspace: watersel = "resname %s"%wordspace.sol
 		vmdtrim = [
 			'package require pbctools',
-			'mol new solvate-dense.gro',
+			'mol new %s.gro'%structure,
 			'set sel [atomselect top \"(all not ('+\
 			'%s and (same residue as %s and within '%(watersel,watersel)+str(gap)+\
 			' of not %s)))'%watersel]
@@ -119,6 +120,38 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 			fp.write(gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl &> log-script-vmd-trim\n')
 		gmx_run(gmxpaths['editconf']+' -f solvate-vmd.pdb -o solvate.gro -resnr 1',
 			log='editconf-convert-vmd')
+	#---scipy is more reliable than VMD
+	elif gap != 0.0:
+		import scipy
+		import scipy.spatial
+		import numpy as np
+		#---if "sol" is not in the wordspace we assume this is atomistic and use the standard "SOL"
+		watersel = wordspace.get('sol','SOL')
+		incoming = read_gro(structure+'.gro')
+		#---remove waters that are near not-waters
+		is_water = np.array(incoming['residue_names'])==watersel
+		is_not_water = np.array(incoming['residue_names'])!=watersel
+		water_inds = np.where(is_water)[0]
+		not_water_inds = np.where(np.array(incoming['residue_names'])!=watersel)[0]
+		points = np.array(incoming['points'])
+		dists = scipy.spatial.distance.cdist(points[water_inds],points[not_water_inds])
+		residue_indices = np.array(incoming['residue_indices'])
+		#---list of residue indices in is_water that have at least one atom with an overlap
+		excludes = np.array(incoming['residue_indices'])[is_water][
+			np.where(np.any(dists<=gap/10.0,axis=1))[0]]
+		#---collect waters not found in the excludes list of residues that overlap with not-water
+		#---note that this command fails on redundant residues
+		surviving_water = np.all((np.all((
+			np.tile(excludes,(len(residue_indices),1))!=np.tile(residue_indices,(len(excludes),1)).T),
+			axis=1),is_water),axis=0)
+		#---remove waters that lie outside the box
+		insiders = np.all([np.all((points[:,ii]>=0,points[:,ii]<=i),axis=0) 
+			for ii,i in enumerate(boxvecs)],axis=0)
+		surviving_indices = np.any((is_not_water,surviving_water,insiders),axis=0)
+		lines = incoming['lines']
+		lines = lines[:2]+list(np.array(incoming['lines'][2:-1])[surviving_indices])+lines[-1:]
+		xyzs = list(points[surviving_indices])
+		write_gro(lines=lines,xyzs=xyzs,output_file=wordspace.step+'solvate.gro')
 	else: filecopy(wordspace['step']+'solvate-dense.gro',wordspace['step']+'solvate.gro')
 
 @narrate
@@ -345,16 +378,46 @@ def get_last_frame(tpr=False,cpt=False,top=False,ndx=False,itp=False):
 			else: shutil.copytree(val['from'],wordspace['step']+val['to'])
 
 @narrate
-def read_gro(gro):
+def read_gro(gro,**kwargs):
 
 	"""
 	Read a GRO file and return its XYZ coordinates and atomnames. 
 	!Note that this is highly redundant with a cgmd_bilayer.read_molecule so you might replace that one.
+	!RE-ADD NUMPY AND CENTER FOR reionize/cgmd_bilayer
 	"""
 
-	import numpy as np
-	with open(wordspace.step+gro,'r') as fp: lines = fp.readlines()
-	pts = np.array([[float(j) for j in i.strip('\n')[20:].split()] for i in lines[2:-1]])
-	pts -= np.mean(pts,axis=0)
-	atomnames = np.array([i.strip('\n')[10:15].strip(' ') for i in lines[2:-1]])
-	return pts,atomnames,lines
+	step = kwargs.get('step',wordspace.step)
+	center = kwargs.get('center',False)
+	with open(step+gro,'r') as fp: lines = fp.readlines()
+	if center:
+		import numpy as np
+		pts = np.array([[float(j) for j in i.strip('\n')[20:].split()] for i in lines[2:-1]])
+		pts -= np.mean(pts,axis=0)
+		atom_names = np.array([i.strip('\n')[10:15].strip(' ') for i in lines[2:-1]])
+	else:
+		pts = [[float(j) for j in i.strip('\n')[20:].split()] for i in lines[2:-1]]
+		atom_names = [i.strip('\n')[10:15].strip(' ') for i in lines[2:-1]]
+	residue_names = [i[5:10].strip() for i in lines[2:-1]]
+	residue_indices = [int(i[0:5].strip()) for i in lines[2:-1]]
+	outgoing = {'points':pts,'atom_names':atom_names,'lines':lines,
+		'residue_names':residue_names,'residue_indices':residue_indices}
+	return outgoing
+
+def write_gro(**kwargs):
+
+	"""
+	Write a GRO file with new coordinates.
+	"""
+
+	dotplace = lambda n: re.compile(r'(\d)0+$').sub(r'\1',"%8.3f"%float(n)).ljust(8)	
+	input_file = kwargs.get('input_file',None)
+	output_file = kwargs.get('output_file',None)
+	if input_file:
+		with open(incoming,'r') as fp: lines = fp.readlines()
+	else: lines = kwargs.get('lines')
+	xyzs = kwargs.get('xyzs')
+	lines[1] = re.sub('^\s*([0-9]+)','%d'%(len(lines)-3),lines[1])
+	for lnum,line in enumerate(lines[2:-1]):
+		lines[2+lnum] = line[:20] + ''.join([dotplace(x) for x in xyzs[lnum]])+'\n'
+	with open(output_file,'w') as fp: 
+		for line in lines: fp.write(line)
