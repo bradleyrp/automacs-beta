@@ -6,8 +6,6 @@ from functools import wraps
 
 #---always print to stdout without a buffer
 unbuffered = os.fdopen(sys.stdout.fileno(),'w',0)
-#---! the following was painful. fails on OSX without this.
-# os.dup2(unbuffered,sys.stderr.fileno())
 
 def report(text,**kwargs):
 
@@ -19,12 +17,9 @@ def report(text,**kwargs):
 	newline = kwargs.get('newline',False)
 	newline_trail = kwargs.get('newline_trail',False)
 	watch_file = kwargs.get('watch_file',None)
-
-	#unbuffered = os.fdopen(sys.stdout.fileno(),'ab+',0)
 	message = ('\n' if newline else '')+'[%s] %s'%(tag.upper(),text)+('\n' if newline_trail else '')
 	with open(wordspace['watch_file'],'a') as fp: fp.write(message+'\n')
 	print(message)
-	#unbuffered.write(message+'\n')
 
 def status(string,i=0,looplen=None,bar_character=None,width=25,tag='',start=None):
 

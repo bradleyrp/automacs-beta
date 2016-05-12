@@ -316,6 +316,31 @@ def delstep(number,confident=False,prefix='s'):
 			if os.path.isfile(fn): os.remove(fn)
 			else: shutil.rmtree(fn)
 
+def back(term):
+
+	"""
+	Run a prepared script in the background.
+	"""
+
+	finds = [i for i in glob.glob('script-*.py') if re.search(term,i)]
+	if len(finds)!=1: print '[STATUS] useage: "make back <name>" '+\
+		'where the name is a unique search for the script you want to run in the background'
+	else: 
+		cmd = "nohup ./%s > log-back 2>&1 &"%finds[0]
+		print '[STATUS] running the background via "%s"'%cmd
+		job = subprocess.Popen(cmd,shell=True,cwd='./',preexec_fn=os.setsid)
+		ask = subprocess.Popen('ps xao pid,ppid,pgid,sid,comm',
+			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		ret = '\n'.join(ask.communicate()).split('\n')
+		bare_script_name = re.findall('^(.+)\.py$',finds[0])
+		pgid = next(int(i.split()[2]) for i in ret if re.match('^\s*%d\s'%job.pid,i))
+		kill_script = 'script-stop-job.sh'
+		term_command = 'pkill -TERM -g %d'%pgid
+		with open(kill_script,'w') as fp: fp.write(term_command+'\n')
+		os.chmod(kill_script,0744)
+		print '[STATUS] if you want to terminate the job, run "%s" or "./%s"'%(term_command,kill_script)
+		job.communicate()
+
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
 
