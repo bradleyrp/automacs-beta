@@ -348,17 +348,16 @@ def review(path):
 	"""
 
 	dn = os.path.expanduser(os.path.abspath(path))
-	if not os.path.isdir(dn) or not os.path.isdir(os.path.join(dn,'.git')):
-		print "[ERROR] incorrect usage"
-		print '[USAGE] "make review <path_to_git_repo_for_inputs>"'
-		return
-	else:
+	try:
 		cmds = ['git init',
 			'git remote add origin %s'%dn,
 			'git fetch',
 			'git checkout -t origin/master']
 		for cmd in cmds: subprocess.call(cmd,cwd='./inputs',shell=True,executable='/bin/bash')
 		print '[STATUS] loaded inputs with %s'%dn
+	except:
+		print '[ERROR] failed to clone the git repository at "%s"'%dn
+		print '[USAGE] "make review <path_to_git_repo_for_inputs>"'
 
 def help_review():
 
