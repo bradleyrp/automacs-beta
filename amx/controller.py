@@ -341,6 +341,32 @@ def back(term):
 		print '[STATUS] if you want to terminate the job, run "%s" or "./%s"'%(term_command,kill_script)
 		job.communicate()
 
+def review(path):
+
+	"""
+	Retrieve a git repository designed for "inputs".
+	"""
+
+	dn = os.path.expanduser(os.path.abspath(path))
+	if not os.path.isdir(dn) or not os.path.isdir(os.path.join(dn,'.git')):
+		print "[ERROR] incorrect usage"
+		print '[USAGE] "make review <path_to_git_repo_for_inputs>"'
+		return
+	else:
+		cmds = ['git init',
+			'git remote add origin %s'%dn,
+			'git fetch',
+			'git checkout -t origin/master']
+		for cmd in cmds: subprocess.call(cmd,cwd='./inputs',shell=True,executable='/bin/bash')
+		print '[STATUS] loaded inputs with %s'%dn
+
+def help_review():
+
+	print "[USAGE] make an inputs git repository via:"
+	cmds = ['git init',"git commit -m 'initial commit'",'<add,commit files>',
+		'git clone . --bare <path_to_new_bare_repo>']
+	for cmd in cmds: print '[USAGE] "%s"'%cmd
+
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
 
