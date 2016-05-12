@@ -155,6 +155,7 @@ class VMDWrap:
 		self.selections = {}
 		self.selection_order = []
 		self.video_script_ready = False
+		self.vmd_prepend = "VMDNOCUDA=1"
 
 		"""
 		note that previous iterations of vmdwrap.py/lipidlook.py had convoluted paths
@@ -324,9 +325,9 @@ class VMDWrap:
 		#---review the script and wait for the go-ahead if prompt
 		self.review(prompt=prompt)		
 		if quit == False:
-			os.system('cd %s && vmd %s -e %s'%(self.rootdir,'-dispdev text' if text else '',
-			self.script_fn))
-		else: self.call('vmd %s -e %s'%('-dispdev text' if text else '',self.script_fn))
+			os.system('cd %s && %s vmd %s -e %s'%(self.rootdir,self.vmd_prepend,
+				'-dispdev text' if text else '',self.script_fn))
+		else: self.call('%s vmd %s -e %s'%(self.vmd_prepend,'-dispdev text' if text else '',self.script_fn))
 		print '[STATUS] time = %.2f minutes'%((float(time.time())-self.start_time)/60.)
 
 		#---render snapshots if there is a video script

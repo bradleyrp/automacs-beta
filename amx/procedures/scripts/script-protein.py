@@ -46,4 +46,3 @@ try:
 	else: write_continue_script()
 except KeyboardInterrupt as e: exception_handler(e,wordspace,all=True)
 except Exception as e: exception_handler(e,wordspace,all=True)
-else: write_wordspace(wordspace)
