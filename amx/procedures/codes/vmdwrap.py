@@ -332,12 +332,22 @@ class VMDWrap:
 
 		#---render snapshots if there is a video script
 		#---! figure out a default rate/speed-up factor for rendered videos
-		if render != '' and not self.snapshot and self.video_script_ready:
-			self.call(r"ffmpeg -i "+self.cwd+
-				"/snap.%04d.png -vcodec mpeg4 -q 0  "+"-filter:v 'setpts=%.1f*PTS' "%rate+
-				self.rootdir+'/'+render+".mp4")
-		elif render != '' and self.video_script_ready:
-			self.call(r"ffmpeg -i "+self.cwd+
-				"snap.%04d.ppm -vcodec mpeg4 -q 0  -filter:v 'setpts=%.1f*PTS' "%rate+
-				self.rootdir+'/'+render+".mp4")
+                try:
+                        if render != '' and not self.snapshot and self.video_script_ready:
+                                self.call(r"ffmpeg -i "+self.cwd+
+                                          "/snap.%04d.png -vcodec mpeg4 -q 0  "+
+                                          "-filter:v 'setpts=%.1f*PTS' "%rate+
+                                          self.rootdir+'/'+render+".mp4")
+                        elif render != '' and self.video_script_ready:
+                                self.call(r"ffmpeg -i "+self.cwd+
+                                          "snap.%04d.ppm -vcodec mpeg4 -q 0"+
+                                          "-filter:v 'setpts=%.1f*PTS' "%rate+
+                                          self.rootdir+'/'+render+".mp4")
+                except:
+                        if render != '' and not self.snapshot and self.video_script_ready:
+                                self.call(r"avconv -r %.1f -i "%(rate*4)+self.cwd+
+                                          "/snap.%04d.png "+self.rootdir+'/'+render+".mp4")
+                        elif render != '' and self.video_script_ready:
+                                self.call(r"avconv -r %.1f -i "%(rate*4)+self.cwd+
+                                          "/snap.%04d.png "+self.rootdir+'/'+render+".mp4")                   
 		if clean: shutil.rmtree(self.cwd)
