@@ -341,7 +341,7 @@ def back(term):
 		print '[STATUS] if you want to terminate the job, run "%s" or "./%s"'%(term_command,kill_script)
 		job.communicate()
 
-def review(path):
+def review(source):
 
 	"""
 	Retrieve a git repository designed for "inputs".
@@ -349,14 +349,14 @@ def review(path):
 
 	try:
 		cmds = ['git init',
-			'git remote add origin %s'%path,
+			'git remote add origin %s'%source,
 			'git fetch',
 			'git checkout -t origin/master']
 		for cmd in cmds: subprocess.call(cmd,
 			cwd='./inputs',shell=True,executable='/bin/bash',stdin=subprocess.PIPE)
-		print '[STATUS] loaded inputs with %s'%dn
+		print '[STATUS] loaded inputs with %s'%source
 	except:
-		print '[ERROR] failed to clone the git repository at "%s"'%dn
+		print '[ERROR] failed to clone the git repository at "%s"'%source
 		print '[USAGE] "make review <path_to_git_repo_for_inputs>"'
 
 def help_review():
@@ -385,8 +385,9 @@ def makeface(*arglist):
 	funcname = arglist.pop(0)
 	while arglist:
 		arg = arglist.pop()
-		if re.match('^\w+\=([\w\.\/]+)',arg):
-			parname,parval = re.findall('^(\w+)\=([\w\.\/]+)$',arg)[0]
+		#---note that it is crucuial that the following group contains all incoming 
+		if re.match('^\w+\=([\w:\-\.\/]+)',arg):
+			parname,parval = re.findall('^(\w+)\="?([\w:\-\.\/]+)"?$',arg)[0]
 			kwargs[parname] = parval
 		else:
 			argspec = inspect.getargspec(globals()[funcname])
