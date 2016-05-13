@@ -347,13 +347,13 @@ def review(path):
 	Retrieve a git repository designed for "inputs".
 	"""
 
-	dn = os.path.expanduser(os.path.abspath(path))
 	try:
 		cmds = ['git init',
-			'git remote add origin %s'%dn,
+			'git remote add origin %s'%path,
 			'git fetch',
 			'git checkout -t origin/master']
-		for cmd in cmds: subprocess.call(cmd,cwd='./inputs',shell=True,executable='/bin/bash')
+		for cmd in cmds: subprocess.call(cmd,
+			cwd='./inputs',shell=True,executable='/bin/bash',stdin=subprocess.PIPE)
 		print '[STATUS] loaded inputs with %s'%dn
 	except:
 		print '[ERROR] failed to clone the git repository at "%s"'%dn
