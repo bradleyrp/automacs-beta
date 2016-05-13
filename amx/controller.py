@@ -62,10 +62,10 @@ def clean(sure=False,docs=False):
 
 	docs_dn = 'amx/docs/build'
 	for root,dirnames,filenames in os.walk('./'): break
-	remove_dirs = [i for i in dirnames if re.match('^s[0-9]+-\w+',i)]
+	remove_dirs = [i for i in dirnames if re.match('^[sv][0-9]+-\w+',i)]
 	if os.path.isdir(docs_dn): remove_dirs.append(docs_dn)
 	remove_files = [i for i in filenames if i != 'config.py' and 
-		(re.match('^script-s[0-9]+',i) or re.match('^([\w-]+)\.py$',i) or re.match('^serial',i)
+		(re.match('^script-[sv][0-9]+',i) or re.match('^([\w-]+)\.py$',i) or re.match('^serial',i)
 		or re.match('^(cluster|gmxjob)',i) or i in [
 			'wordspace.json','script-batch-submit.sh'
 			])]
