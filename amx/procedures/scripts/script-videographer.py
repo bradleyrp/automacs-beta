@@ -34,7 +34,7 @@ try:
 		xtc = wordspace['last_step']+'md.part%04d.xtc'%wordspace['last_part']
 		from amx.procedures.codes.vmdwrap import *
 	if 'video_script' in wordspace: execfile(wordspace.video_script)
-	if wordspace.style == 'video':
+	elif wordspace.style == 'video':
 		#---select the right number of frames
 		import MDAnalysis
 		uni = MDAnalysis.Universe(gro,xtc)
