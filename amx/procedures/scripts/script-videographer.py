@@ -52,7 +52,7 @@ try:
 			)
 		v.do(*'load standard bonder xview'.split())
 		v.command('scale by 2.5')
-		v.select(lipids='not resname W and not resname ION',smooth=True,
+		v.select(lipids='not resname W and not resname ION and not water and not ions',smooth=True,
 			style='Licorice 2.0 12.0 12.0',goodsell=True)
 		v.video()
 		v.show(text=True,quit=True,render='video',clean=True)
