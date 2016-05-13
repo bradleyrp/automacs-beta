@@ -29,10 +29,11 @@ try:
 			' -f %s -s %s -o %s -pbc mol'%(
 			'system-input.gro','system-input.tpr','system-input.pbcmol.gro'),
 			log='trjconv-pbcmol-gro',cwd=wordspace['step'],inpipe='0\n')
-	gro = wordspace['step']+'system-input.gro'
-	tpr = wordspace['step']+'system-input.tpr'
-	xtc = wordspace['last_step']+'md.part%04d.xtc'%wordspace['last_part']
-	from amx.procedures.codes.vmdwrap import *
+		gro = wordspace['step']+'system-input.gro'
+		tpr = wordspace['step']+'system-input.tpr'
+		xtc = wordspace['last_step']+'md.part%04d.xtc'%wordspace['last_part']
+		from amx.procedures.codes.vmdwrap import *
+	if 'video_script' in wordspace: execfile(wordspace.video_script)
 	if wordspace.style == 'video':
 		#---select the right number of frames
 		import MDAnalysis
