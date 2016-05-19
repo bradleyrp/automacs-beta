@@ -316,30 +316,37 @@ def delstep(number,confident=False,prefix='s'):
 			if os.path.isfile(fn): os.remove(fn)
 			else: shutil.rmtree(fn)
 
-def back(term):
+def back(term=None,command=None):
 
 	"""
 	Run a prepared script in the background.
 	"""
 
-	finds = [i for i in glob.glob('script-*.py') if re.search(term,i)]
-	if len(finds)!=1: print '[STATUS] useage: "make back <name>" '+\
-		'where the name is a unique search for the script you want to run in the background'
-	else: 
-		cmd = "nohup ./%s > log-back 2>&1 &"%finds[0]
-		print '[STATUS] running the background via "%s"'%cmd
-		job = subprocess.Popen(cmd,shell=True,cwd='./',preexec_fn=os.setsid)
-		ask = subprocess.Popen('ps xao pid,ppid,pgid,sid,comm',
-			shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-		ret = '\n'.join(ask.communicate()).split('\n')
-		bare_script_name = re.findall('^(.+)\.py$',finds[0])
-		pgid = next(int(i.split()[2]) for i in ret if re.match('^\s*%d\s'%job.pid,i))
-		kill_script = 'script-stop-job.sh'
-		term_command = 'pkill -TERM -g %d'%pgid
-		with open(kill_script,'w') as fp: fp.write(term_command+'\n')
-		os.chmod(kill_script,0744)
-		print '[STATUS] if you want to terminate the job, run "%s" or "./%s"'%(term_command,kill_script)
-		job.communicate()
+	if not term and not command:
+		print '[STATUS] useage: "make back <name> or command="make metarun <key>" '+\
+			'where you supply either the name of a script or a full command'
+		return 1
+	if term:
+		if command: 
+			print '[ERROR] you can only supply a name or a command when using "make back"'
+			return 1
+		finds = [i for i in glob.glob('script-*.py') if re.search(term,i)]
+		if len(finds)!=1: print '[STATUS] useage: "make back <name>" '+\
+			'where the name is a unique search for the script you want to run in the background'
+		else: command = './'+finds[0]
+	cmd = "nohup %s > log-back 2>&1 &"%command
+	print '[STATUS] running the background via "%s"'%cmd
+	job = subprocess.Popen(cmd,shell=True,cwd='./',preexec_fn=os.setsid)
+	ask = subprocess.Popen('ps xao pid,ppid,pgid,sid,comm',
+		shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	ret = '\n'.join(ask.communicate()).split('\n')
+	pgid = next(int(i.split()[2]) for i in ret if re.match('^\s*%d\s'%job.pid,i))
+	kill_script = 'script-stop-job.sh'
+	term_command = 'pkill -TERM -g %d'%pgid
+	with open(kill_script,'w') as fp: fp.write(term_command+'\n')
+	os.chmod(kill_script,0744)
+	print '[STATUS] if you want to terminate the job, run "%s" or "./%s"'%(term_command,kill_script)
+	job.communicate()
 
 def review(source):
 
@@ -387,7 +394,11 @@ def makeface(*arglist):
 		arg = arglist.pop()
 		#---note that it is crucuial that the following group contains all incoming 
 		if re.match('^\w+\=([\w:\-\.\/]+)',arg):
-			parname,parval = re.findall('^(\w+)\="?([\w:\-\.\/]+)"?$',arg)[0]
+			try:
+				parname,parval = re.findall('^(\w+)\="?([\w:\-\.\/]+)"?$',arg)[0]
+			except:
+				#---only use spaces if necessary (untested)
+				parname,parval = re.findall('^(\w+)\="?([\w:\-\.\/\s]+)"?$',arg)[0]
 			kwargs[parname] = parval
 		else:
 			argspec = inspect.getargspec(globals()[funcname])
