@@ -397,7 +397,7 @@ def makeface(*arglist):
 			try:
 				parname,parval = re.findall('^(\w+)\="?([\w:\-\.\/]+)"?$',arg)[0]
 			except:
-				#---only use spaces if necessary (untested)
+				#---! add spaces for strings in quotes (need to streamline regexes here)
 				parname,parval = re.findall('^(\w+)\="?([\w:\-\.\/\s]+)"?$',arg)[0]
 			kwargs[parname] = parval
 		else:
@@ -406,6 +406,9 @@ def makeface(*arglist):
 			else: args.append(arg)
 	args = tuple(args)
 	if arglist != []: raise Exception('unprocessed arguments %s'%str(arglist))
+
+	#---"command" is a protected keyword
+	if funcname != 'back' and 'command' in kwargs: kwargs.pop('command')
 
 	#---call the function
 	globals()[funcname](*args,**kwargs)
