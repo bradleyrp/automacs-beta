@@ -2,6 +2,9 @@
 
 import os,re,subprocess,sys,json
 
+#---we often require imports from inputs from the root
+if 'inputs' not in sys.path: sys.path.insert(0,'inputs')
+
 def script_settings_replace(script,settings_string):
 
 	"""
