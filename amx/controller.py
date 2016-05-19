@@ -390,15 +390,14 @@ def makeface(*arglist):
 	args,kwargs = [],{}
 	arglist = list(arglist)
 	funcname = arglist.pop(0)
+	#---regex for kwargs. note that the makefile organizes the flags for us
+	regex_kwargs = '^(\w+)\="?([\w:\-\.\/\s]+)"?$'
 	while arglist:
 		arg = arglist.pop()
-		#---note that it is crucuial that the following group contains all incoming 
-		if re.match('^\w+\=([\w:\-\.\/]+)',arg):
-			try:
-				parname,parval = re.findall('^(\w+)\="?([\w:\-\.\/]+)"?$',arg)[0]
-			except:
-				#---! add spaces for strings in quotes (need to streamline regexes here)
-				parname,parval = re.findall('^(\w+)\="?([\w:\-\.\/\s]+)"?$',arg)[0]
+		#---note that it is crucial that the following group contains all incoming 
+		if re.match(regex_kwargs,arg):
+			parname,parval = re.findall(regex_kwargs,arg)[0]
+			parname,parval = re.findall('^(\w+)\="?([\w:\-\.\/\s]+)"?$',arg)[0]
 			kwargs[parname] = parval
 		else:
 			argspec = inspect.getargspec(globals()[funcname])
