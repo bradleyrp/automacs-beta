@@ -13,6 +13,7 @@ from amx.procedures.cgmd_bilayer import command_library
 from amx.procedures.cgmd_bilayer import mdp_specs
 from amx.procedures.cgmd_bilayer import bilayer_sorter
 
+@narrate
 def multiply(nx=1,ny=1,nz=1,quirky_ions=True):
 
 	"""
@@ -22,28 +23,45 @@ def multiply(nx=1,ny=1,nz=1,quirky_ions=True):
 	factor = nx*ny*nz
 	#---update the composition
 	wordspace['new_composition'] = [[name,count*factor] for name,count in wordspace['composition']]
+	kwargs = {}
+	if 'buffer' in wordspace: kwargs['flag'] = ' -dist %.2f %.2f %.2f'%tuple(wordspace['buffer'])
 	gmx('genconf',structure='system-input',gro='system-multiply',
-		nbox="%d %d %d"%(nx,ny,nz),log='genconf-multiply')
+		nbox="%d %d %d"%(nx,ny,nz),log='genconf-multiply',**kwargs)
+	#---copy ITP files
+	for itp in wordspace.itp:
+		filecopy(wordspace.last_step+itp,wordspace.step+itp)
 	#---reorder the GRO for convenience
 	with open(wordspace['step']+'system-multiply.gro') as fp: lines = fp.readlines()
-	
 	#---collect all unique resiue/atom combinations
 	combos = list(set([l[5:15] for l in lines]))
-
 	#---for each element in the composition, extract all of the residues for that element
 	lines_reorder = []
 	lines_reorder.extend(lines[:2])
-	#---due to ion naming quirks we create a custom keylist
-	if quirky_ions:
-		keylist = []
-		for key,count in wordspace['new_composition']:
-			if key in [wordspace[i] for i in ['anion','cation']]:
-				keylist.append((('ION',key),slice(5,15),'\s*%s\s*%s\s*'))
-			else: keylist.append((key,slice(5,10),'\s*%s\s*'))
-	else: keylist = [(i,slice(5,10),'\s*%s\s*') for i in zip(*wordspace['new_composition'])[0]]
-	for key,sl,regex in keylist:
-		#---! account for ions?
-		lines_reorder.extend([l for l in lines[2:-1] if re.match(regex%key,l[sl])])
+	#---develop a list of filtering rules
+	keylist = {}
+	for key,count in wordspace['new_composition']:
+		if key in [wordspace[i] for i in ['anion','cation']]:
+			keylist[key] = 'regex',(('ION',key),slice(5,15),'\s*%s\s*%s\s*')
+		elif re.match('^(p|P)rotein',key) and key+'.itp' in wordspace.itp:
+			#---custom procedure for finding proteins which have variegated residue numbers
+			itp = read_itp(wordspace.step+key+'.itp')
+			residues_starts = []
+			seq = list(zip(*itp['atoms'])[3])
+			residues = [i[5:10].strip() for i in lines]
+			for i in range(len(residues)-len(seq)):
+				#---minor speed up by checking the first one
+				if seq[0]==residues[i] and residues[i:i+len(seq)]==seq: 
+					residues_starts.append(i)
+			keylist[key] = 'slices',[slice(i,i+len(seq)) for i in residues_starts]
+		else: keylist[key] = 'regex',(key,slice(5,10),'\s*%s\s*')
+	for key,count in wordspace['new_composition']:
+		method,details = keylist[key]
+		if method == 'regex':
+			key,sl,regex = details
+			lines_reorder.extend([l for l in lines[2:-1] if re.match(regex%key,l[sl])])	
+		elif method == 'slices':
+			for sl in details: lines_reorder.extend(lines[sl])	
+		else: raise
 	lines_reorder.extend([lines[-1]])
 	with open(wordspace['step']+'system-multiply-reorder.gro','w') as fp: 
 		for line in lines_reorder: fp.write(line)

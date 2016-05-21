@@ -235,7 +235,7 @@ def equilibrate_check(name):
 	return found
 
 @narrate
-def equilibrate(groups=None):
+def equilibrate(groups=None,structure='system'):
 
 	"""
 	equilibrate()
@@ -247,7 +247,7 @@ def equilibrate(groups=None):
 	for eqnum,name in enumerate(seq):
 		if not equilibrate_check(name):
 			gmx('grompp',base='md-%s'%name,top='system',
-				structure='system' if eqnum == 0 else 'md-%s'%seq[eqnum-1],
+				structure=structure if eqnum == 0 else 'md-%s'%seq[eqnum-1],
 				log='grompp-%s'%name,mdp='input-md-%s-eq-in'%name,
 				flag=('' if not groups else '-n %s'%groups)+' -maxwarn 10')
 			gmx('mdrun',base='md-%s'%name,log='mdrun-%s'%name,skip=True)
@@ -422,3 +422,41 @@ def write_gro(**kwargs):
 		lines[2+lnum] = line[:20] + ''.join([dotplace(x) for x in xyzs[lnum]])+'\n'
 	with open(output_file,'w') as fp: 
 		for line in lines: fp.write(line)
+
+def linesnip(lines,*regex):
+
+	"""
+	Custom function for choosing sections of the (text) file for specific processing rules.
+	Bogarted from cassette.
+	"""
+
+	if len(regex)==1:
+		#---a single regex will return the line numbers for all matches
+		line_nos = [ii for ii,i in enumerate(lines) if re.match(regex[0],i)]
+	else:
+		#---if multiple regexes then we return the line number for first match for each kind
+		line_nos = []
+		for reg in regex:
+			sub_lines = lines[(slice(None,None) if len(line_nos)==0 else slice(line_nos[-1]+1,None))]
+			new_lineno = [ii+(1 if len(line_nos)==0 else line_nos[-1]) 
+				for ii,i in enumerate(sub_lines) if re.match(reg,i)]
+			new_lineno = len(lines)-1 if new_lineno == [] else new_lineno[0]
+			line_nos.append(new_lineno)
+	#---if there are exactly two regexes we assume this is ending in a slice object so we move the end
+	if len(line_nos)==2: line_nos[1] += 1
+	return line_nos
+
+@narrate
+def read_itp(fn):
+
+	"""
+	Read an ITP file into a useful data structure.
+	UNDER DEVELOPMENT.
+	"""
+
+	with open(fn) as fp: lines = fp.readlines()
+	l = linesnip(lines,*['^\s*\[\s*%s\s*\]'%k for k in ['atoms','bonds']])
+	records = filter(lambda x:re.match('^\s*[0-9]+',x),lines[slice(*l)])
+	atoms = map(lambda y:re.findall('^([^;]+)',y)[0].split(),records)
+	atoms_header = ['nr', 'type', 'resnr', 'residu', 'atom', 'cgnr', 'charge']
+	return {'atoms_header':atoms_header,'atoms':atoms}

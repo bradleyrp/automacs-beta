@@ -303,12 +303,12 @@ def delstep(number,confident=False,prefix='s'):
 	assert any([re.match('^%s%02d-'%(prefix,target),i) for i in fns])
 	extra_delete = ['wordspace.json','WATCHFILE']
 	fns.extend([fn for fn in extra_delete if os.path.isfile(fn)])
-	try:
+	#---previously we cleared the associated script but this was not robust
+	if False:
 		#---try to identify the associated script and clear it too
 		script, = glob.glob('%s%02d-*/script*.py'%(prefix,target))
 		local_script = os.path.basename(script)
 		if os.path.isfile(local_script): fns.append(local_script)
-	except: pass
 	print "[STATUS] preparing to remove step %d including %s"%(target,str(fns))
 	if confident or all(re.match('^(y|Y)',raw_input('[QUESTION] %s (y/N)? '%msg))!=None
 		for msg in ['okay to remove this entire step','confirm']):
