@@ -5,8 +5,10 @@ step:               large
 procedure:          multiply
 equilibration:      npt-bilayer
 proceed:            True
-nx:                 5
-ny:                 5
+minimize:           True
+buffer:             [0.1,0.1,0.1]
+nx:                 2
+ny:                 2
 """
 
 from amx import *
@@ -21,6 +23,10 @@ try:
 	write_mdp()
 	write_top('system.top')
 	bilayer_sorter(structure='system',ndx='system-groups')
-	equilibrate(groups='system-groups')
-except KeyboardInterrupt as e: exception_handler(e,all=True)
-except Exception as e: exception_handler(e,all=True)
+	structure = 'system'
+	if 'minimize' in wordspace and wordspace.minimize: 
+		structure = 'system-minimized'
+		minimize('system')
+	equilibrate(structure=structure,groups='system-groups')
+except KeyboardInterrupt as e: exception_handler(e,wordspace,all=True)
+except Exception as e: exception_handler(e,wordspace,all=True)
