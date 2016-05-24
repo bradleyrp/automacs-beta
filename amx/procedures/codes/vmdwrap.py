@@ -336,7 +336,6 @@ class VMDWrap:
 					shell=True,executable='/bin/bash',stdout=sys.stdout,stderr=sys.stdout,
 					cwd=self.rootdir)
 				proc.communicate(input=text)
-				import pdb;pdb.set_trace()
 			else:
 				self.call('%s vmd %s -e %s'%(self.vmd_prepend,'-dispdev text' 
 					if text else '',self.script_fn))
