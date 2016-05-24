@@ -70,13 +70,15 @@ rotate z to 180
 """,
 'align_backbone':
 """
+set all [atomselect top "all" frame 0]
 set reference [atomselect top "name CA" frame 0]
 set compare [atomselect top "name CA"]
 set num_steps [molinfo top get numframes]
 for {set frame 0} {$frame < $num_steps} {incr frame} {
 	$compare frame $frame
 	set trans_mat [measure fit $compare $reference]
-	$compare move $trans_mat
+	$all frame $frame
+	$all move $trans_mat
 }
 """
 }
