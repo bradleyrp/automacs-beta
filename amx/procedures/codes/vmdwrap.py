@@ -312,11 +312,13 @@ class VMDWrap:
 		#---let show know that there is a video ready to render
 		self.video_script_ready = True
 
-	def show(self,text=False,quit=False,render='',clean=False,prompt=False,rate=1.0,review=False): 
+	def show(self,text=False,quit=False,render='',clean=False,
+		safer=True,prompt=False,rate=1.0,review=False): 
 
 		"""
 		After preparing a script we write it and run VMD.
 		This function has options for text-only, reviewing the code, and rendering the resulting snapshots.
+		This script is messy. "Safer" uses VMD in a more reliable way.
 		"""
 
 		#---quit after the script is done
@@ -327,7 +329,17 @@ class VMDWrap:
 		if quit == False:
 			os.system('cd %s && %s vmd %s -e %s'%(self.rootdir,self.vmd_prepend,
 				'-dispdev text' if text else '',self.script_fn))
-		else: self.call('%s vmd %s -e %s'%(self.vmd_prepend,'-dispdev text' if text else '',self.script_fn))
+		else: 
+			if safer:
+				text = '\n'.join(self.script)
+				proc = subprocess.Popen('vmd -dispdev text',stdin=subprocess.PIPE,
+					shell=True,executable='/bin/bash',stdout=sys.stdout,stderr=sys.stdout,
+					cwd=self.rootdir)
+				proc.communicate(input=text)
+				import pdb;pdb.set_trace()
+			else:
+				self.call('%s vmd %s -e %s'%(self.vmd_prepend,'-dispdev text' 
+					if text else '',self.script_fn))
 		print '[STATUS] time = %.2f minutes'%((float(time.time())-self.start_time)/60.)
 
 		#---render snapshots if there is a video script
