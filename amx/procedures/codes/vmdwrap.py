@@ -158,6 +158,8 @@ class VMDWrap:
 		self.selection_order = []
 		self.video_script_ready = False
 		self.vmd_prepend = "VMDNOCUDA=1"
+		self.video_suffix = kwargs.get('video_suffix','mp4')
+		self.codec = kwargs.get('codec','mpeg4video')
 
 		"""
 		note that previous iterations of vmdwrap.py/lipidlook.py had convoluted paths
@@ -275,37 +277,33 @@ class VMDWrap:
 			trace_commands = []
 			if type(traces) != list: raise Exception('traces must be a list or None')
 			for key in traces:
-				trace_commands.append(
-					'    mol drawframes top %d $lag:$lead'%self.selection_order.index(key))
+				trace_commands.append('mol drawframes top %d $lag:$lead'%self.selection_order.index(key))
 		else: trace_commands = []
 		#---generic header for making a video
 		video_lines = [
 			'set num [molinfo top get numframes]',
 			'for {set i 0} {$i < $num} {incr i} {',
-			'    animate goto $i',
-			'    set lag [expr $i-15]',
-			'    set lead [expr $i]',
-			]
+			'animate goto $i',
+			'set lag [expr $i-15]',
+			'set lead [expr $i]']
 		video_lines.extend(trace_commands)
 		#---snapshot is the cheap/fast method otherwise we render
 		if not snapshot:
 			video_lines.extend([
-				'    set filename '+(os.path.join(os.path.basename(self.cwd),'') 
-					if self.cwd else '')+'snap.[format "%04d" $i]',
-				'    render TachyonInternal $filename.tga' if False else
-				'    render Tachyon $filename "/usr/local/lib/vmd/tachyon_LINUXAMD64"'+\
-				' -aasamples 12 %s -format TARGA -o %s.tga -res '+str(self.resx)+' '+str(self.resy),
-				'    exec convert $filename.tga $filename.png',
-				'    exec rm $filename.tga $filename',
-				'}',
-				])
+				'set filename '+(os.path.join(os.path.basename(self.cwd),'') 
+				if self.cwd else '')+'snap.[format "%04d" $i]',
+				'render TachyonInternal $filename.tga' if False else
+				'render Tachyon $filename "/usr/local/lib/vmd/tachyon_LINUXAMD64" '+\
+				'-aasamples 12 %s -format TARGA -o %s.tga -res '+str(self.resx)+' '+str(self.resy),
+				'exec convert $filename.tga $filename.png',
+				'exec rm $filename.tga $filename',
+				'}'])
 		else:
 			video_lines.extend([
-				'    set filename '+(os.path.join(os.path.basename(self.cwd),'') 
-					if self.cwd else '')+'snap.[format "%04d" $i]',
-				'    render snapshot $filename.ppm',
-				'}',
-				])
+				'set filename '+(os.path.join(os.path.basename(self.cwd),'') 
+				if self.cwd else '')+'snap.[format "%04d" $i]',
+				'render snapshot $filename.ppm',
+				'}'])
 			self.snapshot = True
 		#---write script-video.tcl which will be sourced by script-vmd.tcl
 		with open(self.rootdir+'/script-video.tcl','w') as fp:
@@ -315,7 +313,7 @@ class VMDWrap:
 		self.video_script_ready = True
 
 	def show(self,text=False,quit=False,render='',clean=False,
-		safer=True,prompt=False,rate=1.0,review=False): 
+		run_script=True,prompt=False,rate=1.0,review=False,**kwargs): 
 
 		"""
 		After preparing a script we write it and run VMD.
@@ -323,44 +321,59 @@ class VMDWrap:
 		This script is messy. "Safer" uses VMD in a more reliable way.
 		"""
 
+		#---codecs can be overridden
+		codec = kwargs.get('codec',self.codec)
+		video_suffix = kwargs.get('video_suffix',self.video_suffix)
+
 		#---quit after the script is done
 		if quit: self.script += ['quit']
 		self.write()
 		#---review the script and wait for the go-ahead if prompt
-		self.review(prompt=prompt)		
+		self.review(prompt=prompt)
+		#---open VMD for the user		
 		if quit == False:
+			#---if we are not quitting then we run vmd directly
+			#---note this might fail if the weird segfault that motivated "not run_script" happens
 			os.system('cd %s && %s vmd %s -e %s'%(self.rootdir,self.vmd_prepend,
 				'-dispdev text' if text else '',self.script_fn))
+		#---quit after running
 		else: 
-			if safer:
+			#---feed the commands directly to VMD to preclude the weird segfault errors
+			if not run_script:
 				text = '\n'.join(self.script)
 				proc = subprocess.Popen('vmd -dispdev text',stdin=subprocess.PIPE,
 					shell=True,executable='/bin/bash',stdout=sys.stdout,stderr=sys.stdout,
 					cwd=self.rootdir)
 				proc.communicate(input=text)
 			else:
+				#---call the VMD script (note that this fails sometimes on systems with a poor VMD setup)
 				self.call('%s vmd %s -e %s'%(self.vmd_prepend,'-dispdev text' 
 					if text else '',self.script_fn))
-		print '[STATUS] time = %.2f minutes'%((float(time.time())-self.start_time)/60.)
 
-		#---render snapshots if there is a video script
-		#---! figure out a default rate/speed-up factor for rendered videos
+		#---check for ffmpeg
 		has_ffmpeg = not re.search('command not found','\n'.join(
 			subprocess.Popen('ffmpeg',shell=True,executable='/bin/bash',
 			stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()))
+		
+		#---ffmpeg is the standard procedure
 		if has_ffmpeg:
 			if render != '' and not self.snapshot and self.video_script_ready:
-				self.call(r"ffmpeg -i "+self.cwd+"/snap.%04d.png -vcodec mpeg4 -q 0 "+
-				"-filter:v 'setpts=%.1f*PTS' "%rate+self.rootdir+'/'+render+".mp4")
+				self.call(r"ffmpeg -i "+self.cwd+"/snap.%04d.png "+"-vcodec %s -q 0 "%codec+
+					"-filter:v 'setpts=%.1f*PTS' "%rate+self.rootdir+'/'+render+"."+video_suffix)
 			elif render != '' and self.video_script_ready:
-				self.call(r"ffmpeg -i "+self.cwd+"snap.%04d.ppm -vcodec mpeg4 -q 0"+
-				"-filter:v 'setpts=%.1f*PTS' "%rate+
-				self.rootdir+'/'+render+".mp4")
+				self.call(r"ffmpeg -i "+self.cwd+"snap.%04d.ppm "+"-vcodec %s -q 0"%codec+
+					"-filter:v 'setpts=%.1f*PTS' "%rate+
+					self.rootdir+'/'+render+"."+video_suffix)
+
+		#---resort to avconv which is typically available when ffmpeg is not
 		else:
+			#---no codec options below
 			if render != '' and not self.snapshot and self.video_script_ready:
 				self.call(r"avconv -r %.1f -i "%(rate*4)+self.cwd+
 					"/snap.%04d.png "+self.rootdir+'/'+render+".mp4")
 			elif render != '' and self.video_script_ready:
 				self.call(r"avconv -r %.1f -i "%(rate*4)+self.cwd+
 					"/snap.%04d.png "+self.rootdir+'/'+render+".mp4")                   
+
 		if clean: shutil.rmtree(self.cwd)
+		print '[STATUS] time = %.2f minutes'%((float(time.time())-self.start_time)/60.)
