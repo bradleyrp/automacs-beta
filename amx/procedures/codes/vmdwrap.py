@@ -313,7 +313,7 @@ class VMDWrap:
 		self.video_script_ready = True
 
 	def show(self,text=False,quit=False,render='',clean=False,
-		run_script=True,prompt=False,rate=1.0,review=False,**kwargs): 
+		run_script=False,prompt=False,rate=1.0,review=False,**kwargs): 
 
 		"""
 		After preparing a script we write it and run VMD.
