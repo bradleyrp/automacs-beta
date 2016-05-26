@@ -2,7 +2,7 @@
 
 settings_cgmd_bilayer = """
 system name:        CGMD BILAYER
-lipid structures:   inputs/cgmd-inputs/cgmd-lipid-structures
+lipid structures:   inputs/cgmd-inputs
 step:               bilayer
 procedure:          cgmd,bilayer
 shape:              flat
@@ -33,8 +33,9 @@ step:               large
 procedure:          multiply
 equilibration:      npt-bilayer
 proceed:            True
-nx:                 5
-ny:                 5
+genconf gap:        0.3
+nx:                 2
+ny:                 2
 """
 
 import sys,os,shutil,subprocess

@@ -383,7 +383,7 @@ def makeface(*arglist):
 	"""
 
 	#---stray characters
-	arglist = tuple(i for i in arglist if i not in ['w','--','s'])
+	arglist = tuple(i for i in arglist if i not in ['w','--','s','ws'])
 	#---unpack arguments
 	if arglist == []: 
 		raise Exception('[ERROR] no arguments to controller')
@@ -408,6 +408,7 @@ def makeface(*arglist):
 
 	#---"command" is a protected keyword
 	if funcname != 'back' and 'command' in kwargs: kwargs.pop('command')
+	print '[CONTROLLER] calling %s with args="%s" and kwargs="%s"'%(funcname,args,kwargs)
 
 	#---call the function
 	globals()[funcname](*args,**kwargs)
