@@ -59,7 +59,7 @@ from procedures.toc import procedure_toc
 from base.metatools import *
 
 #---custom imports according to the procedure from the script that imported amx
-wordspace['script'] = os.path.abspath(os.getcwd()+'/'+sys.argv[0])
+wordspace['script'] = os.path.basename(os.path.abspath(os.getcwd()+'/'+sys.argv[0]))
 #---skip setup if we are only making docs or running a view script
 script_call = os.path.basename(wordspace['script'])
 if (not script_call in ['sphinx-build','script-vmd.py'] and 

@@ -82,7 +82,7 @@ def yamlparse(string):
 			else: unpacked[key] = val
 	return unpacked
 
-def detect_last():
+def detect_last(steplist=False):
 
 	"""
 	Find the last step number and part number (if available).
@@ -104,6 +104,8 @@ def detect_last():
 		part_num = max(map(lambda y:int(re.findall(part_regex,y)[0]),filter(
 			lambda x:re.match(part_regex,x),possible_parts)))
 	except: pass
+	#---sometimes we want a list of all step folders so this returns one, without parts
+	if steplist: return sorted(possible_steps)
 	return last_step,part_num
 
 def serial_number():
