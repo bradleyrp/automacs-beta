@@ -15,6 +15,7 @@ solvent:             spc216
 ionic strength:      0.150
 cation:              NA
 anion:               CL
+use vmd:             False
 """
 
 from amx import *
@@ -45,4 +46,3 @@ try:
 	else: write_continue_script()
 except KeyboardInterrupt as e: exception_handler(e,wordspace,all=True)
 except Exception as e: exception_handler(e,wordspace,all=True)
-else: write_wordspace(wordspace)

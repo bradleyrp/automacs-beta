@@ -116,7 +116,7 @@ def prepare_gmxpaths(machine_configuration,override=False,gmx_series=False):
 	if 'nprocs' in config and config['nprocs'] != None: gmxpaths['mdrun'] += ' -nt %d'%config['nprocs']
 	#---use mdrun_command for quirky mpi-type mdrun calls on clusters
 	if 'mdrun_command' in machine_configuration: gmxpaths['mdrun'] = machine_configuration['mdrun_command']
-	#---if any utilities are keys in config we override it and then perform uppercase substitutions from config
+	#---if any utilities are keys in config we override and then perform uppercase substitutions from config
 	utility_keys = [key for key in gmxpaths if key in config]
 	if any(utility_keys):
 		for name in utility_keys:

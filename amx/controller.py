@@ -62,10 +62,10 @@ def clean(sure=False,docs=False):
 
 	docs_dn = 'amx/docs/build'
 	for root,dirnames,filenames in os.walk('./'): break
-	remove_dirs = [i for i in dirnames if re.match('^s[0-9]+-\w+',i)]
+	remove_dirs = [i for i in dirnames if re.match('^[sv][0-9]+-\w+',i)]
 	if os.path.isdir(docs_dn): remove_dirs.append(docs_dn)
 	remove_files = [i for i in filenames if i != 'config.py' and 
-		(re.match('^script-s[0-9]+',i) or re.match('^([\w-]+)\.py$',i) or re.match('^serial',i)
+		(re.match('^script-[sv][0-9]+',i) or re.match('^([\w-]+)\.py$',i) or re.match('^serial',i)
 		or re.match('^(cluster|gmxjob)',i) or i in [
 			'wordspace.json','script-batch-submit.sh'
 			])]
@@ -196,8 +196,11 @@ def cluster(**kwargs):
 	if last_step:
 		#---code from base.functions.write_continue_script to rewrite the continue script
 		with open('amx/procedures/scripts/script-continue.sh','r') as fp: lines = fp.readlines()
+		tl = [float(j) if j else 0.0 for j in re.match('^([0-9]+)\:?([0-9]+)?\:?([0-9]+)?',
+			machine_configuration['maxhours']).groups()]
+		maxhours = tl[0]+float(tl[1])/60+float(tl[2])/60/60
 		settings = {
-			'maxhours':machine_configuration['walltime'],
+			'maxhours':maxhours,
 			'nprocs':machine_configuration['nprocs'],
 			'tpbconv':gmxpaths['tpbconv'],
 			'mdrun':gmxpaths['mdrun'],
@@ -249,7 +252,7 @@ def metarun(script=None,more=False):
 	candidates = [(i,re.findall('^(.+)\.py',os.path.basename(i))[0]) for i in valid_meta_globs]
 	if not script:
 		print "[USAGE] make metarun <script>"
-		print "[USAGE] available scripts: \n > "+'\n > '.join(candidates)
+		print "[USAGE] available scripts: \n > "+'\n > '.join(zip(*candidates)[1])
 	else:
 		try: target, = [ii for ii,i in enumerate(zip(*candidates)[1]) if re.search(script,i)]
 		except: raise Exception('[ERROR] failed to match %s with known scripts'%script)
@@ -303,18 +306,75 @@ def delstep(number,confident=False,prefix='s'):
 	assert any([re.match('^%s%02d-'%(prefix,target),i) for i in fns])
 	extra_delete = ['wordspace.json','WATCHFILE']
 	fns.extend([fn for fn in extra_delete if os.path.isfile(fn)])
-	try:
+	#---previously we cleared the associated script but this was not robust
+	if False:
 		#---try to identify the associated script and clear it too
 		script, = glob.glob('%s%02d-*/script*.py'%(prefix,target))
 		local_script = os.path.basename(script)
 		if os.path.isfile(local_script): fns.append(local_script)
-	except: pass
 	print "[STATUS] preparing to remove step %d including %s"%(target,str(fns))
 	if confident or all(re.match('^(y|Y)',raw_input('[QUESTION] %s (y/N)? '%msg))!=None
 		for msg in ['okay to remove this entire step','confirm']):
 		for fn in fns: 
 			if os.path.isfile(fn): os.remove(fn)
 			else: shutil.rmtree(fn)
+
+def back(term=None,command=None):
+
+	"""
+	Run a prepared script in the background.
+	"""
+
+	if not term and not command:
+		print '[STATUS] useage: "make back <name> or command="make metarun <key>" '+\
+			'where you supply either the name of a script or a full command'
+		return 1
+	if term:
+		if command: 
+			print '[ERROR] you can only supply a name or a command when using "make back"'
+			return 1
+		finds = [i for i in glob.glob('script-*.py') if re.search(term,i)]
+		if len(finds)!=1: print '[STATUS] useage: "make back <name>" '+\
+			'where the name is a unique search for the script you want to run in the background'
+		else: command = './'+finds[0]
+	cmd = "nohup %s > log-back 2>&1 &"%command
+	print '[STATUS] running the background via "%s"'%cmd
+	job = subprocess.Popen(cmd,shell=True,cwd='./',preexec_fn=os.setsid)
+	ask = subprocess.Popen('ps xao pid,ppid,pgid,sid,comm',
+		shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+	ret = '\n'.join(ask.communicate()).split('\n')
+	pgid = next(int(i.split()[2]) for i in ret if re.match('^\s*%d\s'%job.pid,i))
+	kill_script = 'script-stop-job.sh'
+	term_command = 'pkill -TERM -g %d'%pgid
+	with open(kill_script,'w') as fp: fp.write(term_command+'\n')
+	os.chmod(kill_script,0744)
+	print '[STATUS] if you want to terminate the job, run "%s" or "./%s"'%(term_command,kill_script)
+	job.communicate()
+
+def review(source):
+
+	"""
+	Retrieve a git repository designed for "inputs".
+	"""
+
+	try:
+		cmds = ['git init',
+			'git remote add origin %s'%source,
+			'git fetch',
+			'git checkout -t origin/master']
+		for cmd in cmds: subprocess.call(cmd,
+			cwd='./inputs',shell=True,executable='/bin/bash',stdin=subprocess.PIPE)
+		print '[STATUS] loaded inputs with %s'%source
+	except:
+		print '[ERROR] failed to clone the git repository at "%s"'%source
+		print '[USAGE] "make review <path_to_git_repo_for_inputs>"'
+
+def help_review():
+
+	print "[USAGE] make an inputs git repository via:"
+	cmds = ['git init',"git commit -m 'initial commit'",'<add,commit files>',
+		'git clone . --bare <path_to_new_bare_repo>']
+	for cmd in cmds: print '[USAGE] "%s"'%cmd
 
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
@@ -326,17 +386,21 @@ def makeface(*arglist):
 	"""
 
 	#---stray characters
-	arglist = tuple(i for i in arglist if i not in ['w','--','s'])
+	arglist = tuple(i for i in arglist if i not in ['w','--','s','ws'])
 	#---unpack arguments
 	if arglist == []: 
 		raise Exception('[ERROR] no arguments to controller')
 	args,kwargs = [],{}
 	arglist = list(arglist)
 	funcname = arglist.pop(0)
+	#---regex for kwargs. note that the makefile organizes the flags for us
+	regex_kwargs = '^(\w+)\="?([\w:\-\.\/\s]+)"?$'
 	while arglist:
 		arg = arglist.pop()
-		if re.match('^\w+\=([\w\.\/]+)',arg):
-			parname,parval = re.findall('^(\w+)\=([\w\.\/]+)$',arg)[0]
+		#---note that it is crucial that the following group contains all incoming 
+		if re.match(regex_kwargs,arg):
+			parname,parval = re.findall(regex_kwargs,arg)[0]
+			parname,parval = re.findall('^(\w+)\="?([\w:\-\.\/\s]+)"?$',arg)[0]
 			kwargs[parname] = parval
 		else:
 			argspec = inspect.getargspec(globals()[funcname])
@@ -344,6 +408,10 @@ def makeface(*arglist):
 			else: args.append(arg)
 	args = tuple(args)
 	if arglist != []: raise Exception('unprocessed arguments %s'%str(arglist))
+
+	#---"command" is a protected keyword
+	if funcname != 'back' and 'command' in kwargs: kwargs.pop('command')
+	print '[CONTROLLER] calling %s with args="%s" and kwargs="%s"'%(funcname,args,kwargs)
 
 	#---call the function
 	globals()[funcname](*args,**kwargs)

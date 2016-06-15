@@ -29,11 +29,12 @@ try:
 			' -f %s -s %s -o %s -pbc mol'%(
 			'system-input.gro','system-input.tpr','system-input.pbcmol.gro'),
 			log='trjconv-pbcmol-gro',cwd=wordspace['step'],inpipe='0\n')
-	gro = wordspace['step']+'system-input.gro'
-	tpr = wordspace['step']+'system-input.tpr'
-	xtc = wordspace['last_step']+'md.part%04d.xtc'%wordspace['last_part']
-	from amx.procedures.codes.vmdwrap import *
-	if wordspace.style == 'video':
+		gro = wordspace['step']+'system-input.gro'
+		tpr = wordspace['step']+'system-input.tpr'
+		xtc = wordspace['last_step']+'md.part%04d.xtc'%wordspace['last_part']
+		from amx.procedures.codes.vmdwrap import *
+	if 'video_script' in wordspace: execfile(wordspace.video_script)
+	elif wordspace.style == 'video':
 		#---select the right number of frames
 		import MDAnalysis
 		uni = MDAnalysis.Universe(gro,xtc)
@@ -52,7 +53,7 @@ try:
 			)
 		v.do(*'load standard bonder xview'.split())
 		v.command('scale by 2.5')
-		v.select(lipids='not resname W and not resname ION',smooth=True,
+		v.select(lipids='not resname W and not resname ION and not water and not ions',smooth=True,
 			style='Licorice 2.0 12.0 12.0',goodsell=True)
 		v.video()
 		v.show(text=True,quit=True,render='video',clean=True)
