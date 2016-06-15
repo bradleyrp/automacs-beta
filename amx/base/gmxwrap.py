@@ -171,7 +171,7 @@ def init(setting_string,proceed=False):
 	#---for convenience we automatically substitute a lone PDB file in inputs
 	#---it would be better to make this a flag in the settings block instead of hard-coding it here
 	lone_pdb_rules = [
-		('protein','start_structure'),
+		('aamd,protein','start_structure'),
 		('homology','template'),
 		]
 	#---! note that this is protein_atomistic-specific and may need to be conditional
