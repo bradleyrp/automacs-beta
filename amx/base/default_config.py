@@ -102,10 +102,10 @@ machine_configuration = {
 		cluster_header = gordon_header,
 		ppn = 16,
 		walltime = "24:00",
-		nnodes = 1,
+		nnodes = 3,
 		suffix = '_mpi',
 		mdrun_command = \
-			'$(echo "mpirun_rsh -np NPROCS -hostfile '+\
+			'$(echo "mpirun_rsh -np $NPROCS -hostfile '+\
 			'$PBS_NODEFILE GMX_ALLOW_CPT_MISMATCH=1 $(which mdrun_mpi)")',
 		submit_command = 'qsub',
 		),
