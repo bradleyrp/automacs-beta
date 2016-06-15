@@ -22,5 +22,5 @@ try:
 	write_top('system.top')
 	bilayer_sorter(structure='system',ndx='system-groups')
 	equilibrate(groups='system-groups')
-except KeyboardInterrupt as e: exception_handler(e,all=True)
-except Exception as e: exception_handler(e,all=True)
+except KeyboardInterrupt as e: exception_handler(e,wordspace,all=True)
+except Exception as e: exception_handler(e,wordspace,all=True)
