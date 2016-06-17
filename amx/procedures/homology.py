@@ -178,8 +178,13 @@ def extract_sequence_backup(filename,chain):
 	stop_residue = len(sequence)+startres
 	if 'stop_residue' in wordspace and wordspace['stop_residue']: 
 		stop_residue = wordspace['stop_residue']
-	wordspace['sequence_info'] = {chain:zip(range(start_residue,stop_residue),
-		sequence[start_residue-startres:stop_residue-startres])}
+        if wordspace['sequence_info']:
+                wordspace['sequence_info'][chain] = zip(range(start_residue,stop_residue),
+                                                        sequence[start_residue-startres:stop_residue-startres])
+        else: 
+                wordspace['sequence_info'] = {chain:zip(range(start_residue,stop_residue),
+                                                        sequence[start_residue-startres:stop_residue-startres])}
+
 	return {
 		'starting_residue':start_residue,
 		'sequence':sequence[start_residue-startres:stop_residue-startres],
@@ -278,6 +283,8 @@ def get_best_structure():
 	with open(wordspace.step+best) as fp: lines = fp.readlines()
 	atom_record_start = [ll for ll,l in enumerate(lines) if l[:4]=='ATOM'][0]-1
 	seqres = ""
+        if wordspace['other_chains']:
+                other_chain_atoms=replace_chains()
 	for chain,details in wordspace['sequence_info'].items():
 		seq = [aacodemap_1to3[i] for i in zip(*details)[1]]
 		seqlen = len(seq)
@@ -288,11 +295,31 @@ def get_best_structure():
 			additions += 'SEQRES  %-2d  %s %-4d  '%(cnum+1,chain,len(details))+' '.join(chunk)+'\n'
 		seqres += additions
 	lines.insert(atom_record_start,seqres)
+        import pdb;pdb.set_trace()        
+        if wordspace['other_chains']: lines.append(other_chain_atoms)
 	with open(wordspace.step+wordspace.target_name+'.pdb','w') as fp:
 		for line in lines: fp.write(line)
 	with open(wordspace.step+'best_structure_path','w') as fp: 
 		fp.write(wordspace.target_name+'.pdb'+'\n')
 	
+@narrate
+def replace_chains():
+        
+        """
+        Add back any chains removed during modeling.
+        May need to update to deal with more than one chain.
+        """
+        other_chain_atoms=[]
+        with open(wordspace['template']) as fp: other_chain_lines = fp.readlines()
+        for this_chain in wordspace['other_chains']:
+                sequence=extract_sequence_pdb(filename=wordspace['template'],chain=this_chain)
+                if not sequence:
+                        sequence=extract_sequence_backup(filename=wordspace['template'],chain=this_chain)
+                this_chain_atoms = [ll for ll,l in enumerate(other_chain_lines) if l[:4]=='ATOM' and l[21]==this_chain]
+                other_chain_atoms.append([other_chain_lines[line] for line in this_chain_atoms])
+        return ''.join([atom for chain in other_chain_atoms for atom in chain])
+
+
 @narrate 
 def write_view_script():
 
