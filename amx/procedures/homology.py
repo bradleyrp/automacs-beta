@@ -295,7 +295,6 @@ def get_best_structure():
 			additions += 'SEQRES  %-2d  %s %-4d  '%(cnum+1,chain,len(details))+' '.join(chunk)+'\n'
 		seqres += additions
 	lines.insert(atom_record_start,seqres)
-        import pdb;pdb.set_trace()        
         if wordspace['other_chains']: lines.append(other_chain_atoms)
 	with open(wordspace.step+wordspace.target_name+'.pdb','w') as fp:
 		for line in lines: fp.write(line)
