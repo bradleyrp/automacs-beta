@@ -307,15 +307,13 @@ def get_best_structure():
 		seqlen = len(seq)
 		nrows = seqlen/13+(0 if seqlen%13==0 else 1)
 		chunks = [seq[i*13:(i+1)*13] for i in range(nrows)]
-		additions = ""
+                additions = ""
 		for cnum,chunk in enumerate(chunks):
 			additions += 'SEQRES  %-2d  %s %-4d  '%(cnum+1,chain,len(details))+' '.join(chunk)+'\n'
 		seqres += additions
 	lines.insert(atom_record_start,seqres)
-        #! chopping block
-        #if wordspace['other_chains']: lines.append(other_chain_atoms)
-	#with open(wordspace.step+wordspace.target_name+'.pdb','w') as fp:
-	#	for line in lines: fp.write(line)
+	with open(wordspace.step+wordspace.target_name+'.pdb','w') as fp:
+		for line in lines: fp.write(line)
 	with open(wordspace.step+'best_structure_path','w') as fp: 
 		fp.write(wordspace.target_name+'.pdb'+'\n')
 	
