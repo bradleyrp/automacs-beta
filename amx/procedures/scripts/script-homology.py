@@ -7,6 +7,7 @@ modeller path:       mod9.15
 homology method:     point
 template:            inputs/STRUCTURE.pdb
 template chain:      A
+other chains:        None
 target name:         egfr_E710R
 point mutation:      E710R
 target sequence:     none
