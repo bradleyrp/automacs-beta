@@ -35,13 +35,26 @@ if wordspace.homology_method == 'point':
 			to_mutation,target_sequence[mutation_location-startres]))
 	target_sequence[mutation_location-startres] = to_mutation
 	wordspace.target_sequence = ''.join(target_sequence)
-export_modeller_settings(
-	filename=wordspace.step+'settings-homology.py',
-	template_struct=pdb_attr['filename'],
-	template_struct_chain=wordspace.template_chain,
-	target_seq=wordspace.target_name,
-	n_models=wordspace.many_models,
-        starting_residue=pdb_attr['starting_residue'])
+if not wordspace['other_chains']:
+        export_modeller_settings(
+                filename=wordspace.step+'settings-homology.py',
+                template_struct=pdb_attr['filename'],
+                template_struct_chain=wordspace.template_chain,
+                target_seq=wordspace.target_name,
+                n_models=wordspace.many_models,
+                starting_residue=pdb_attr['starting_residue'])
+if wordspace['other_chains']:
+        other_chains_info={}
+        for chain in wordspace['other_chains']:
+                other_chains_info[chain]=wordspace['other_chains_info'][chain]['starting_residue']
+        export_modeller_settings(
+                filename=wordspace.step+'settings-homology.py',
+                template_struct=pdb_attr['filename'],
+                template_struct_chain=wordspace.template_chain,
+                target_seq=wordspace.target_name,
+                n_models=wordspace.many_models,
+                starting_residue=pdb_attr['starting_residue'],
+                other_chains=other_chains_info)
 write_ali_file()
 with open(wordspace.step+'script-single.py','w') as fp: fp.write(script_single)
 bash(wordspace.modeller_path+' '+'script-single.py',cwd=wordspace.step)

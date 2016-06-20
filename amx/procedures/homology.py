@@ -28,17 +28,23 @@ import sys
 execfile('settings-homology.py')
 class mymodel(automodel):
         def special_patches(self, aln):
-                self.rename_segments(segment_ids=[template_struct_chain],
-                                     renumber_residues=[starting_residue])
+                chains=[template_struct_chain]
+                start_res=[starting_residue]
+                if other_chains:
+                        for chain in other_chains.keys(): chains.append(chain)
+                        for start in other_chains.values(): start_res.append(start)
+                self.rename_segments(segment_ids=chains,renumber_residues=start_res)
 doalign2d = True
 if doalign2d:
 	env = environ()
         env.io.hetatm = True
         env.io.water = False
 	aln = alignment(env)
+        model_string=('FIRST:'+template_struct_chain, 'LAST:'+template_struct_chain)
+        if other_chains:model_string=('FIRST:@ ', 'END:')
 	mdl = model(env,
 		file=template_struct,
-		model_segment=('FIRST:'+template_struct_chain, 'LAST:'+template_struct_chain))
+		model_segment=(model_string))
 	aln.append_model(mdl,
 		align_codes=template_struct+template_struct_chain,
 		atom_files=template_struct+'.pdb')
@@ -145,7 +151,17 @@ def write_ali_file(fasta_linelen=50):
 		chopped = [seq[j*fasta_linelen:(j+1)*fasta_linelen] 
 			for j in range(len(seq)/fasta_linelen+1)]
 		chopped = [i for i in chopped if len(i) > 0]
-		for i,seg in enumerate(chopped): fp.write(seg+('\n' if i < len(chopped)-1 else '*\n'))
+		for i,seg in enumerate(chopped): fp.write(seg+'\n')
+                if wordspace['other_chains']:
+                        fp.write('/\n')
+                        for chain in wordspace['other_chains']:
+                                seq = wordspace['other_chains_info'][chain]['sequence']
+                                chopped = [seq[j*fasta_linelen:(j+1)*fasta_linelen] 
+                                           for j in range(len(seq)/fasta_linelen+1)]
+                                chopped = [i for i in chopped if len(i) > 0]
+                                for i,seg in enumerate(chopped): 
+                                        fp.write(seg+'\n')
+                fp.write('*\n')
 
 def extract_sequence_backup(filename,chain):
   		  
@@ -261,10 +277,13 @@ def get_pdb():
 		raise Exception(
 			'\n[ERROR] unable to understand template "%s"'%wordspace.template+
 			'\n[ERROR] supply a PDB,chain or a path')
-        sequence=extract_sequence_pdb(filename=wordspace.step+template+'.pdb',chain=wordspace.template_chain)
+        sequence=extract_sequence_pdb(filename=wordspace.step+template+'.pdb',
+                                      chain=wordspace.template_chain)
         if not sequence:
                 sequence=extract_sequence_backup(
                         filename=wordspace.step+template+'.pdb',chain=wordspace.template_chain)
+        if wordspace['other_chains']:
+                get_other_chains()
         print sequence['starting_residue']
         return sequence
 
@@ -283,8 +302,6 @@ def get_best_structure():
 	with open(wordspace.step+best) as fp: lines = fp.readlines()
 	atom_record_start = [ll for ll,l in enumerate(lines) if l[:4]=='ATOM'][0]-1
 	seqres = ""
-        if wordspace['other_chains']:
-                other_chain_atoms=replace_chains()
 	for chain,details in wordspace['sequence_info'].items():
 		seq = [aacodemap_1to3[i] for i in zip(*details)[1]]
 		seqlen = len(seq)
@@ -295,29 +312,37 @@ def get_best_structure():
 			additions += 'SEQRES  %-2d  %s %-4d  '%(cnum+1,chain,len(details))+' '.join(chunk)+'\n'
 		seqres += additions
 	lines.insert(atom_record_start,seqres)
-        if wordspace['other_chains']: lines.append(other_chain_atoms)
-	with open(wordspace.step+wordspace.target_name+'.pdb','w') as fp:
-		for line in lines: fp.write(line)
+        #! chopping block
+        #if wordspace['other_chains']: lines.append(other_chain_atoms)
+	#with open(wordspace.step+wordspace.target_name+'.pdb','w') as fp:
+	#	for line in lines: fp.write(line)
 	with open(wordspace.step+'best_structure_path','w') as fp: 
 		fp.write(wordspace.target_name+'.pdb'+'\n')
 	
 @narrate
-def replace_chains():
+def get_other_chains(send_atoms=False):
         
         """
         Add back any chains removed during modeling.
         May need to update to deal with more than one chain.
         """
         other_chain_atoms=[]
+        wordspace['other_chains_info']={}
         with open(wordspace['template']) as fp: other_chain_lines = fp.readlines()
         for this_chain in wordspace['other_chains']:
                 sequence=extract_sequence_pdb(filename=wordspace['template'],chain=this_chain)
                 if not sequence:
                         sequence=extract_sequence_backup(filename=wordspace['template'],chain=this_chain)
-                this_chain_atoms = [ll for ll,l in enumerate(other_chain_lines) if l[:4]=='ATOM' and l[21]==this_chain]
+                this_chain_atoms = [ll for ll,l in enumerate(other_chain_lines) if
+                                    l[:4]=='ATOM' and l[21]==this_chain]
                 other_chain_atoms.append([other_chain_lines[line] for line in this_chain_atoms])
-        return ''.join([atom for chain in other_chain_atoms for atom in chain])
-
+                wordspace['other_chains_info'][this_chain]={'chain_name':this_chain,
+                                                            'starting_residue':
+                                                            sequence['starting_residue'],
+                                                            'sequence':sequence['sequence']}
+        if send_atoms:
+                return ''.join([atom for chain in other_chain_atoms for atom in chain])
+                
 
 @narrate 
 def write_view_script():
