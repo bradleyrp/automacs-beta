@@ -18,7 +18,6 @@ anion:               CL
 use vmd:             False
 """
 
-print settings
 from amx import *
 init(settings)
 try:
