@@ -243,7 +243,7 @@ mdpdefs = {
 				'vdw-modifier':'Potential-shift-verlet',
 				'rvdw':1.1,
 				'DispCorr':'No',
-				#---tolerance gives warnings 'verlet-buffer-tolerance':0.005,
+				'verlet-buffer-tolerance':0.005,
 				},
 			},
 		'screening':{

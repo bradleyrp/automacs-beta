@@ -64,7 +64,7 @@ def yamlparse(string):
 	"""
 	
 	unpacked = {}
-	regex = '^\s*(.*?)\s*(?:\s*:\s*)\s*(.+)'
+	regex = '^\s*([^:]+)\s*:\s*(.+)'
 	for s in string.split('\n'):
 		if re.match(regex,s):
 			key,val = re.findall(regex,s)[0]
