@@ -66,8 +66,8 @@ if (not script_call in ['sphinx-build','script-vmd.py'] and
 	not re.match('^script-vmd',script_call)):
 	with open(wordspace['script'],'r') as fp: original_script_lines = fp.readlines()
 	try: 
-		procedure = [re.findall('^procedure:\s*([\w,]+)',l)[0] 
-			for l in original_script_lines if re.match('^procedure:\s*([\w,]+)',l)]
+		procedure = [re.findall('^procedure\s*:\s*([\w,]+)',l)[0] 
+			for l in original_script_lines if re.match('^procedure\s*:\s*([\w,]+)',l)]
 		if len(procedure)!=1 and len(list(set(procedure)))>1:
 			raise Exception('[ERROR] procedure = %s'%str(procedure))
 		else: procedure = procedure[0]
