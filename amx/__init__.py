@@ -72,7 +72,7 @@ if (not script_call in ['sphinx-build','script-vmd.py'] and
 			raise Exception('[ERROR] procedure = %s'%str(procedure))
 		else: procedure = procedure[0]
 	except: raise Exception('[ERROR] could not find "procedure: <name>" in the script\n'+
-                                'script = \n'+original_script_lines)
+                                'script = \n'+''.join(original_script_lines))
 	importlib_avail = True
 	try: import importlib
 	except: 
