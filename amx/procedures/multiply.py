@@ -36,9 +36,7 @@ def multiply(nx=1,ny=1,nz=1,quirky_ions=True):
 	#---if composition is available we continue
 	wordspace['new_composition'] = [[name,count*factor] for name,count in wordspace['composition']]
 	kwargs = {}
-	if type(wordspace['genconf_gap'])!=list: gap = [wordspace.genconf_gap for i in range(3)]
-	else: gap = wordspace['genconf_gap']
-	if 'buffer' in wordspace: kwargs['flag'] = ' -dist %.2f %.2f %.2f'%tuple(gap)
+	if 'buffer' in wordspace: kwargs['flag'] = ' -dist %.2f %.2f %.2f'%tuple(wordspace['buffer'])
 	gmx('genconf',structure='system-input',gro='system-multiply',
 		nbox="%d %d %d"%(nx,ny,nz),log='genconf-multiply',**kwargs)
 	#---copy ITP files
