@@ -360,7 +360,7 @@ def review(source):
 	try:
 		cmds = ['git init',
 			'git remote add origin %s'%source,
-			'git fetch',
+			'git fetch origin',
 			'git checkout -t origin/master']
 		for cmd in cmds: subprocess.call(cmd,
 			cwd='./inputs',shell=True,executable='/bin/bash',stdin=subprocess.PIPE)
