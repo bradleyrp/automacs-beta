@@ -5,6 +5,8 @@
 
 .. _sec-concept:
 
+we recommend users first check out the :doc:`concept <concept>`
+
 Concept
 =======
 

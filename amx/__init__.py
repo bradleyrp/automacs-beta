@@ -51,17 +51,23 @@ class WordSpaceLook():
 #---always import amx into globals
 #---assume these variables make it to the global scope 
 wordspace = WordSpace()
+
 import sys,os
+
+#---custom imports according to the procedure from the script that imported amx
+wordspace['script'] = os.path.basename(os.path.abspath(os.getcwd()+'/'+sys.argv[0]))
+#---skip setup if we are only making docs or running a view script
+script_call = os.path.basename(wordspace['script'])
+
+#---sphinx requires imports for documentation so we add the right path if compiling docs
+if script_call == 'sphinx-build': sys.path.insert(0,os.path.abspath('../../../amx'))
+
 from base.functions import *
 from base.mdp import write_mdp
 from base.gmxwrap import *
 from procedures.toc import procedure_toc
 from base.metatools import *
 
-#---custom imports according to the procedure from the script that imported amx
-wordspace['script'] = os.path.basename(os.path.abspath(os.getcwd()+'/'+sys.argv[0]))
-#---skip setup if we are only making docs or running a view script
-script_call = os.path.basename(wordspace['script'])
 if (not script_call in ['sphinx-build','script-vmd.py'] and 
 	not re.match('^script-vmd',script_call)):
 	with open(wordspace['script'],'r') as fp: original_script_lines = fp.readlines()

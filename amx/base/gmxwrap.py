@@ -142,16 +142,44 @@ def checkpoint():
 def init(setting_string,proceed=False):
 
 	"""
-	Automatically load settings from the python-amx script into the wordspace for safekeeping.
-	This function also detects development status.
-	"""
+    Automatically load settings from the procedure script into the wordspace for safekeeping.
+
+    Parameters
+    ----------
+    setting_string : multiline string
+        Specify key/value pairs for settings required by the simulation procedure.
+    proceed : boolean
+        If false, halt if ``wordspace.json`` is found in the root folder. This indicates that a development 
+        run ended with an exception, and the user may want to preserve ``wordspace.json`` to debug it.
+
+    Notes
+    -----
+
+    **Development**
+
+    The try/except blocks in a typical procedure script make use of the 
+    :meth:`exception_handler <amx.base.metatools.exception_handler>`, which writes 
+    ``wordspace.json`` during an exception to record the state of the wordspace for debugging purposes.
+    Unless ``proceed`` is ``True`` in the settings block or the ``kwargs`` for this function, the program
+    will ask the user to delete the previous ``wordspace.json`` before continuing. In the case of chained 
+    simulation steps, set ``proceed`` to ``True`` in order to automatically delete ``wordspace.json`` and 
+    continue without interruption.
+
+    **Custom rules**
+
+    Since the wordspace is loaded here, we sometimes define custom rules to make it easier for other programs
+    to use automacs. For example, if ``inputs/STRUCTURE.pdb`` is found in ``settings_string``, and the user
+    is executing the atomistic protein procedure, then the wordspace will automatically detect a single 
+    ``PDB`` in the ``inputs`` folder and use that as the ``start_structure``.
+
+    """
 
 	#---sequence is important: read the settings and check for proceed, do ready_to_continue, then load json
 	settings = yamlparse(setting_string)
 	#---always perform the ready_to_continue test to see if there is a preexisting wordspace
 	#---! clusmy naming here: proceed means that this is a follow-up step
 	#---! ryan reset the default to false for development on protein_atomistic
-	#---! ...so note that the modify-parametes and multiply procedures will need to consider this
+	#---! ...so note that the modify-parameters and multiply procedures will need to consider this
 	if proceed or 'proceed' in settings and settings['proceed']:
 		sure = (settings['proceed'] or (wordspace['proceed'] if 'proceed' in wordspace else False))
 		ready_to_continue(sure=sure)

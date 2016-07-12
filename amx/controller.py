@@ -67,7 +67,7 @@ def clean(sure=False,docs=False):
 	remove_files = [i for i in filenames if i != 'config.py' and 
 		(re.match('^script-[sv][0-9]+',i) or re.match('^([\w-]+)\.py$',i) or re.match('^serial',i)
 		or re.match('^(cluster|gmxjob)',i) or i in [
-			'wordspace.json','script-batch-submit.sh'
+			'wordspace.json','script-batch-submit.sh','ERROR.log',
 			])]
 	if docs: 
 		print '[STATUS] cleaning docs only'

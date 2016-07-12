@@ -12,13 +12,14 @@ def docs(clean=False):
 	import shutil
 	import glob
 	if clean:
-		print '[STATUS] cleaning documentation'
-		shutil.rmtree(docs_dn)
+		if os.path.isdir(docs_dn):
+			print '[STATUS] cleaning documentation'
+			shutil.rmtree(docs_dn)
 	else:
 		print '[STATUS] building docs and logging to amx/docs/build/log-docs-build'
 		if not os.path.isdir(docs_dn): os.mkdir(docs_dn)
 		docslog = 'amx/docs/build/log-docs-build'
-		subprocess.call('sphinx-apidoc -F -o . ../../../amx',shell=True,cwd=docs_dn,
+		subprocess.call('sphinx-apidoc -F -o %s amx'%docs_dn,shell=True,cwd=os.getcwd(),
 			stdout=open(docslog,'w'),stderr=subprocess.PIPE)
 		shutil.copy(source_dn+'conf.py',docs_dn)
 		shutil.copy(source_dn+'style.css',docs_dn+'/_static')
