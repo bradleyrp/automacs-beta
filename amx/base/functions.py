@@ -206,10 +206,12 @@ def resume(script_settings='',add=False,read_only=False,step=None):
 	#---preserve settings in case we are doing an additional step
 	if add: new_step = wordspace['step']
 	if not step:
-		last_step_num = max(map(
-			lambda z:int(z),map(
-			lambda y:re.findall('^s([0-9]+)',y).pop(),filter(
-			lambda x:re.match('^s[0-9]+-\w+$',x),glob.glob('s*-*')))))
+		try:
+			last_step_num = max(map(
+				lambda z:int(z),map(
+				lambda y:re.findall('^s([0-9]+)',y).pop(),filter(
+				lambda x:re.match('^s[0-9]+-\w+$',x),glob.glob('s*-*')))))
+		except: raise Exception('[ERROR] could not find the last step')
 	else: last_step_num = step
 	last_step = filter(lambda x:re.match('^s%02d'%last_step_num,x),glob.glob('s*-*')).pop()
 	status('[STATUS] resuming from %s'%last_step)

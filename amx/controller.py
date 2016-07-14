@@ -269,15 +269,19 @@ def look(script='',dump=True,step=None):
 	"""
 
 	#---! this is totally clumsy
-	if not script: 
-		script = max(glob.iglob('script-*.py'),key=os.path.getctime)
-		print 'STATUS] resuming from the last step, apparently creeated by %s'%script
-	cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(script_settings=\'%s\',step=%s);%s"'%(
-		script,script,
-		'None' if not step else step,
-		"\nwith open('wordspace.json','w') as fp: json.dump(wordspace,fp);" if dump else '')
-	print '[STATUS] running: python -i -c '+cmd
-	os.system('python -i -c '+cmd)
+	try:
+		if not script: 
+			script = max(glob.iglob('script-*.py'),key=os.path.getctime)
+			print 'STATUS] resuming from the last step, apparently creeated by %s'%script
+		cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(script_settings=\'%s\',step=%s);%s"'%(
+			script,script,
+			'None' if not step else step,
+			"\nwith open('wordspace.json','w') as fp: json.dump(wordspace,fp);" if dump else '')
+		print '[STATUS] running: python -i -c '+cmd
+		os.system('python -i -c '+cmd)
+	except: 
+		raise Exception('[ERROR] nothing to look at; '+
+			'you might be missing a checkpoint for the most recent step')
 
 def watch():
 

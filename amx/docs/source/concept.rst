@@ -1,18 +1,19 @@
 
 .. title :: Concept
 
+Concept
+=======
+
 Automacs is a set of python codes which prepares molecular simulations using common tools, namely `GROMACS <http://www.gromacs.org/>`_ and `CHARMM <http://www.charmm.org/>`_. The purpose of this project is to ensure that simulations are prepared according to a standard method which also bundles simulation data with careful documentation. Automacs (hopefully) makes it possible to generate large simulation datasets with a minimum of description and so-called "manual" labor which invites mistakes and wastes time. Automacs codes are meant to be cloned once for each simulation rather than installed in a central location. This means that each simulation has a copy of the code used to create it.
 
 "Overloaded Python"
-===================
+~~~~~~~~~~~~~~~~~~~
 
-High-level programming languages often rely on functions which can accept many different kinds of input while producing a consistent result. 
+High-level programming languages often rely on functions which can accept many different kinds of input while producing a consistent result. This is called `overloading <https://en.wikipedia.org/wiki/Function_overloading>`_. The automacs codes are overloaded in two ways. First, simulation data -- files, directories, etc -- for different procedures are organized in a uniform way. These file-naming conventions are described in the :doc:`framework <framework>`. Users who follow these rules can benefit from generic functions that apply to many different simulation types. For example, performing restarts or ensemble changes in GROMACS uses a single procedure, regardless of whether you are doing atomistic or coarse-grained simulations. Second, the procedure codes are organized to reflect the consistent naming conventions so that they can be used in as many situations as possible. The simulation-specific settings are separated from the generic, modular steps required to build a simulation so that users can simulate a variety of different systems without rewriting any code. In the next section, we will describe how this separation happens.
 
-1. mention the file-naming conventions by pointing to the framework section
-2. describe how our goal is to make things simultanously generic, but also "tailored" to the task of organizing MD simulations
-
+.. _concept_procedures:
 Procedures
-==========
+~~~~~~~~~~
 
 Automacs executes simulations in two ways. Here we will describe the most basic procedures, which are built in to the codebase. In :doc:`metarun <metarun>` we will describe how these procedures can be "chained" together or extended in order to create more complex simulations. 
 
