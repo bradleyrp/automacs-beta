@@ -57,7 +57,13 @@ def program(script,flag=False):
 def clean(sure=False,docs=False):
 
 	"""
-	Erases everything to reset the project.
+	Parameters
+    ----------
+    sure : boolean
+        Delete everything without checking (twice) with the user.
+    docs : boolean
+    	Only delete the documentation. When searching for functions with `grep`, the documentation sometimes 
+    	provides many redundant results. Just delete and re-make it later using this flag. 
 	"""
 
 	docs_dn = 'amx/docs/build'
@@ -296,8 +302,18 @@ def watch():
 def delstep(number,confident=False,prefix='s'):
 
 	"""
-	Delete a step by number.
-	Be very careful.
+	Remove a step folder and all of its contents.
+
+	Parameters
+	----------
+	number : integer
+		the index for the step you wish to delete
+	confident : bool
+		delete the files without confirming with the user (be careful)
+	prefix : string
+		automacs requires a prefix e.g. ``s01-protein`` which you can change in order to delete 
+		off-pathway steps such as ``v01-snapshot``
+
 	"""
 
 	target = int(number)
@@ -323,23 +339,34 @@ def delstep(number,confident=False,prefix='s'):
 			if os.path.isfile(fn): os.remove(fn)
 			else: shutil.rmtree(fn)
 
-def back(term=None,command=None):
+def back(name=None,command=None):
 
 	"""
-	Run a prepared script in the background.
+	Run a script in the background and generate a kill switch using either a search string or the explicit
+	command.
+
+	Parameters
+	----------
+	command : string
+		A terminal command used to execute the script in the background e.g. ``./script-protein.py``
+	name : string
+		Alternately, lazy (read: efficient) users may locate the script with a search string. If a unique
+		script name matches this string, then it will be executed via ``./<script_name>.py`
 	"""
 
-	if not term and not command:
+	#---! the term/name function needs to be tested
+
+	if not name and not command:
 		print '[STATUS] useage: "make back <name> or command="make metarun <key>" '+\
 			'where you supply either the name of a script or a full command'
 		return 1
-	if term:
+	elif name:
 		if command: 
 			print '[ERROR] you can only supply a name or a command when using "make back"'
 			return 1
-		finds = [i for i in glob.glob('script-*.py') if re.search(term,i)]
-		if len(finds)!=1: print '[STATUS] useage: "make back <name>" '+\
-			'where the name is a unique search for the script you want to run in the background'
+		finds = [i for i in glob.glob('script-*.py') if re.search(name,i)]
+		if len(finds)!=1: raise Exception('[ERROR] useage: "make back <name>" '+
+			'where the name is a unique search for the script you want to run in the background')
 		else: command = './'+finds[0]
 	cmd = "nohup %s > log-back 2>&1 &"%command
 	print '[STATUS] running the background via "%s"'%cmd

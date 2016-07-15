@@ -15,7 +15,7 @@ High-level programming languages often rely on functions which can accept many d
 Procedures
 ~~~~~~~~~~
 
-Automacs executes simulations in two ways. Here we will describe the most basic procedures, which are built in to the codebase. In :doc:`metarun <metarun>` we will describe how these procedures can be "chained" together or extended in order to create more complex simulations. 
+Automacs executes simulations in two ways. Here we will describe the most basic procedures, which are built in to the codebase. In :ref:`chaining <chaining>` and :ref:`metarun <metarun>` we will describe how these procedures can be "chained" together or extended in order to create more complex simulations. 
 
 A procedure consists of two pieces of code: a script and a library. Here we will walk through the atomistic protein simulation, which serves as a useful base-case procedure.
 

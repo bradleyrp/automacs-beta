@@ -23,8 +23,8 @@ def docs(clean=False):
 			stdout=open(docslog,'w'),stderr=subprocess.PIPE)
 		shutil.copy(source_dn+'conf.py',docs_dn)
 		shutil.copy(source_dn+'style.css',docs_dn+'/_static')
-		for fn in glob.glob(source_dn+'*.png'): shutil.copy(fn,docs_dn)
-		for fn in glob.glob(source_dn+'*.rst'): shutil.copy(fn,docs_dn)
+		for suffix in ['png','rst','py']:
+			for fn in glob.glob(source_dn+'*.%s'%suffix): shutil.copy(fn,docs_dn)
 		subprocess.call('make html',shell=True,cwd=docs_dn,
 			stdout=open(docslog,'a'),stderr=subprocess.PIPE)
 		index_fn = os.path.join(os.path.abspath(os.getcwd()),'amx/docs/build/_build/html/index.html')

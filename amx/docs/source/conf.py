@@ -369,3 +369,13 @@ epub_exclude_files = ['search.html']
 
 # If false, no index is generated.
 #epub_use_index = True
+
+from sphinx.ext import autodoc
+
+class SimpleDocumenter(autodoc.MethodDocumenter):
+  objtype = "simple"
+  #---do not add a header to the docstring
+  def add_directive_header(self, sig): pass
+
+def setup(app):
+    app.add_autodocumenter(SimpleDocumenter)
