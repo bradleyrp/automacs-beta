@@ -31,8 +31,7 @@ import shlex
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.todo',
-    'sphinx.ext.viewcode',
+    'numpydoc',
 ]
 
 #---additions by rpb
@@ -56,8 +55,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'amx'
-copyright = u'2015, Ryan Bradley'
-author = u'Ryan Bradley'
+copyright = u'2015, factoryMD'
+author = u'factoryMD'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -115,10 +114,12 @@ todo_include_todos = True
 # -- Options for HTML output ----------------------------------------------
 
 #---added via: pip install sphinx-better-theme
+html_theme_options = {}
 try:
   from better import better_theme_path
   html_theme_path = [better_theme_path]
   html_theme = 'better'
+  html_theme_options['cssfiles'] = ['_static/style.css']
 except:
   print '[WARNING] docs look better with sphinx-better-theme installed via pip'
   # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -129,9 +130,7 @@ except:
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {}
 #html_theme_options = {'full_logo':False}
-html_theme_options['cssfiles'] = ['_static/style.css']
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -370,3 +369,13 @@ epub_exclude_files = ['search.html']
 
 # If false, no index is generated.
 #epub_use_index = True
+
+from sphinx.ext import autodoc
+
+class SimpleDocumenter(autodoc.MethodDocumenter):
+  objtype = "simple"
+  #---do not add a header to the docstring
+  def add_directive_header(self, sig): pass
+
+def setup(app):
+    app.add_autodocumenter(SimpleDocumenter)

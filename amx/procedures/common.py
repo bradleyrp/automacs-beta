@@ -324,7 +324,7 @@ def get_last_frame(tpr=False,cpt=False,top=False,ndx=False,itp=False):
 	"""
 
 	if 'last_step' not in wordspace or 'last_part' not in wordspace:
-		raise Exception('use detect_last to add last_step,last_part to the wordspace')
+		raise Exception('[ERROR] use detect_last to add last_step,last_part to the wordspace')
 	last_step,part_num = wordspace['last_step'],wordspace['last_part']
 	last_frame_exists = last_step+'md.part%04d.gro'%part_num
 	if os.path.isfile(last_frame_exists): 

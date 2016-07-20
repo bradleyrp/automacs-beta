@@ -51,17 +51,23 @@ class WordSpaceLook():
 #---always import amx into globals
 #---assume these variables make it to the global scope 
 wordspace = WordSpace()
+
 import sys,os
+
+#---custom imports according to the procedure from the script that imported amx
+wordspace['script'] = os.path.basename(os.path.abspath(os.getcwd()+'/'+sys.argv[0]))
+#---skip setup if we are only making docs or running a view script
+script_call = os.path.basename(wordspace['script'])
+
+#---sphinx requires imports for documentation so we add the right path if compiling docs
+if script_call == 'sphinx-build': sys.path.insert(0,os.path.abspath('../../../amx'))
+
 from base.functions import *
 from base.mdp import write_mdp
 from base.gmxwrap import *
 from procedures.toc import procedure_toc
 from base.metatools import *
 
-#---custom imports according to the procedure from the script that imported amx
-wordspace['script'] = os.path.basename(os.path.abspath(os.getcwd()+'/'+sys.argv[0]))
-#---skip setup if we are only making docs or running a view script
-script_call = os.path.basename(wordspace['script'])
 if (not script_call in ['sphinx-build','script-vmd.py'] and 
 	not re.match('^script-vmd',script_call)):
 	with open(wordspace['script'],'r') as fp: original_script_lines = fp.readlines()
@@ -78,15 +84,15 @@ if (not script_call in ['sphinx-build','script-vmd.py'] and
 		importlib_avail = False
 		report('cannot import importlib so you are on an old system and we will '+
 			'skip loading procedure codes',tag='warning')
-	if importlib_avail:
-		libfile = False
-		if procedure in procedure_toc: libfile = procedure_toc[procedure]
-		#---pass if you only find scripts without warning the user
-		elif any(glob.glob('amx/procedures/scripts/script-%s*'%procedure)): pass
-		else: raise Exception('[ERROR] unclear procedure "%s" with no corresponding scripts'%procedure)
-		if not libfile: libfile = 'common'
-		mod = importlib.import_module('amx.procedures.'+libfile)
-		globals().update(vars(mod))
+	libfile = False
+	if procedure in procedure_toc: libfile = procedure_toc[procedure]
+	#---pass if you only find scripts without warning the user
+	elif any(glob.glob('amx/procedures/scripts/script-%s*'%procedure)): pass
+	else: raise Exception('[ERROR] unclear procedure "%s" with no corresponding scripts'%procedure)
+	if not libfile: libfile = 'common'
+	if importlib_avail: mod = importlib.import_module('amx.procedures.'+libfile)
+	else: mod = __import__('amx.procedures.%s'%libfile,fromlist=['amx.procedures.%s'%libfile])
+	globals().update(vars(mod))
 	if 'command_library' in globals(): 
 		if 'command_library' not in wordspace:
 			wordspace['command_library'] = interpret_command(command_library)

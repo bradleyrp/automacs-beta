@@ -12,18 +12,19 @@ def docs(clean=False):
 	import shutil
 	import glob
 	if clean:
-		print '[STATUS] cleaning documentation'
-		shutil.rmtree(docs_dn)
+		if os.path.isdir(docs_dn):
+			print '[STATUS] cleaning documentation'
+			shutil.rmtree(docs_dn)
 	else:
 		print '[STATUS] building docs and logging to amx/docs/build/log-docs-build'
 		if not os.path.isdir(docs_dn): os.mkdir(docs_dn)
 		docslog = 'amx/docs/build/log-docs-build'
-		subprocess.call('sphinx-apidoc -F -o . ../../../amx',shell=True,cwd=docs_dn,
+		subprocess.call('sphinx-apidoc -F -o %s amx'%docs_dn,shell=True,cwd=os.getcwd(),
 			stdout=open(docslog,'w'),stderr=subprocess.PIPE)
 		shutil.copy(source_dn+'conf.py',docs_dn)
 		shutil.copy(source_dn+'style.css',docs_dn+'/_static')
-		for fn in glob.glob(source_dn+'*.png'): shutil.copy(fn,docs_dn)
-		for fn in glob.glob(source_dn+'*.rst'): shutil.copy(fn,docs_dn)
+		for suffix in ['png','rst','py']:
+			for fn in glob.glob(source_dn+'*.%s'%suffix): shutil.copy(fn,docs_dn)
 		subprocess.call('make html',shell=True,cwd=docs_dn,
 			stdout=open(docslog,'a'),stderr=subprocess.PIPE)
 		index_fn = os.path.join(os.path.abspath(os.getcwd()),'amx/docs/build/_build/html/index.html')
