@@ -57,29 +57,47 @@ def asciitree(obj,depth=0,wide=2,last=[],recursed=False):
 	else: print 'unhandled tree object'
 	if not recursed: print '\n'
 	
-def yamlparse(string):
+def yamlparse(text):
 
 	"""
 	A function which reads the settings files in yaml format.
 	"""
 	
 	unpacked = {}
-	regex = '^\s*(.*?)\s*(?:\s*:\s*)\s*(.+)'
-	for s in string.split('\n'):
-		if re.match(regex,s):
-			key,val = re.findall(regex,s)[0]
-			#---allow lists in our pseudo-yaml format
-			try: val = eval(val)
-			except: pass
-			if type(val)==list: unpacked[key] = val
-			elif type(val)==str:
-				if re.match('^(T|t)rue$',val): unpacked[key] = True
-				elif re.match('^(F|f)alse$',val): unpacked[key] = False
-				#---! may be redundant with the eval command above
-				elif re.match('^[0-9]+$',val): unpacked[key] = int(val)
-				elif re.match('^[0-9]*\.[0-9]*$',val): unpacked[key] = float(val)
-				else: unpacked[key] = val
+	#---evaluate code blocks first
+	regex_block = r"^\s*([^\n]*?)\s*(?:\s*:\s*\|)\s*([^\n]*?)\n(\s+)(.*?)\n(?!\3)"
+	regex_line = r"^\s*(.*?)\s*(?:\s*:\s*)\s*(.+)$"
+	while True:
+		blockoff = re.search(regex_block,text,re.M+re.DOTALL)
+		if not blockoff: break
+		#---collect the key, indentation for replacement, and value
+		key,indent,block = blockoff.group(1),blockoff.group(3),''.join(blockoff.groups()[1:])
+		#---remove indentations and newlines
+		compact = re.sub('\n','',re.sub(indent,'',block))
+		unpacked[re.sub(' ','_',key)] = compact
+		#---remove the block
+		text = re.sub(re.escape(text[slice(*blockoff.span())]),'',text)
+	while True:
+		line = re.search(regex_line,text,re.M)
+		if not line: break
+		key,val = line.groups()
+		assert key not in unpacked
+		unpacked[re.sub(' ','_',key)] = val
+		text = re.sub(re.escape(text[slice(*line.span())]),'',text)
+	#---evaluate rules to process the results
+	for key,val in unpacked.items():
+		#---store according to evaluation rules
+		try: val = eval(val)
+		except: pass
+		if type(val)==list: unpacked[key] = val
+		elif type(val)==str:
+			if re.match('^(T|t)rue$',val): unpacked[key] = True
+			elif re.match('^(F|f)alse$',val): unpacked[key] = False
+			#---! may be redundant with the eval command above
+			elif re.match('^[0-9]+$',val): unpacked[key] = int(val)
+			elif re.match('^[0-9]*\.[0-9]*$',val): unpacked[key] = float(val)
 			else: unpacked[key] = val
+		else: unpacked[key] = val
 	return unpacked
 
 def detect_last(steplist=False):

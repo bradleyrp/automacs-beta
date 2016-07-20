@@ -87,20 +87,22 @@ def write_mdp(param_file=None,rootdir='./',outdir='',extras=None):
 				#---if the refinement code is a dictionary, we iterate over each rule
 				else:
 					for key2,val2 in refinecode.items():
+						settings_flat = [j for k in [settings[i].keys() for i in settings] for j in k]
 						#---if the rule is in the top level of mdpdefs then it selects groups of settings
 						if key2 in mdpdefs.keys(): 
 							report('using MDP override collection: '+key2+': '+str(val2),tag='note')
 							settings[key2] = deepcopy(mdpdefs[key2][val2])
 						#---if not, then we assume the rule is meant to override a native MDP parameter
 						#---...so we check to make sure it's already in settings and then we override
-						elif key2 in [j for k in [settings[i].keys() for i in settings] for j in k]:
+						elif key2 in settings_flat:
 							report('overriding MDP parameter: '+key2+': '+str(val2),tag='note')
 							for sub in settings:
 								if key2 in settings[sub]: settings[sub][key2] = deepcopy(val2)
 						else: 
+							#---! note that GROMACS parameters might be case-insensitive
 							raise Exception(
-								'cannot comprehend one of your overrides: '+
-								str(key)+' '+str(val))
+								'cannot comprehend one of your overrides: "%r"="%r"'%(key2,val2)+
+								'\nnote that the settings list is: "%r"'%settings_flat)
 		#---completely remove some items if they are set to -1, specifically the flags for trr files
 		for key in ['nstxout','nstvout']:
 			for heading,subset in settings.items():

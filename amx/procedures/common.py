@@ -52,17 +52,20 @@ def get_box_vectors(structure,gro=None,d=0,log='checksize'):
 	with open(wordspace['step']+'log-editconf-%s'%log,'r') as fp: lines = fp.readlines()
 	box_vector_regex = '\s*box vectors\s*\:\s*([^\s]+)\s+([^\s]+)\s+([^\s]+)'
 	box_vector_new_regex = '\s*new box vectors\s*\:\s*([^\s]+)\s+([^\s]+)\s+([^\s]+)'
-	runon_regex = '^\s*([0-9]+\.?[0-9]{0,3})\s*([0-9]+\.?[0-9]{0,3})\s*([0-9]+\.?[0-9]{0,3})'
+	runon_regex = '^\s*([-]?[0-9]+\.?[0-9]{0,3})\s*([-]?[0-9]+\.?[0-9]{0,3})\s*([-]?[0-9]+\.?[0-9]{0,3})'
 	old_line = [l for l in lines if re.match(box_vector_regex,l)][0]
 	vecs_old = re.findall('\s*box vectors\s*:([^\(]+)',old_line)[0]
-	#---sometimes the numbers run together
-	try: vecs_old = [float(i) for i in vecs_old.strip(' ').split()]
-	except: vecs_old = [float(i) for i in re.findall(runon_regex,vecs_old)[0]]
-	#---repeat for new box vectors
-	new_line = [l for l in lines if re.match(box_vector_new_regex,l)][0]
-	vecs_new = re.findall('\s*box vectors\s*:([^\(]+)',new_line)[0]
-	try: vecs_new = [float(i) for i in vecs_new.strip(' ').split()]
-	except: vecs_new = [float(i) for i in re.findall(runon_regex,vecs_new)[0]]
+	try:
+		#---sometimes the numbers run together
+		try: vecs_old = [float(i) for i in vecs_old.strip(' ').split()]
+		except: vecs_old = [float(i) for i in re.findall(runon_regex,vecs_old)[0]]
+		#---repeat for new box vectors
+		new_line = [l for l in lines if re.match(box_vector_new_regex,l)][0]
+		vecs_new = re.findall('\s*box vectors\s*:([^\(]+)',new_line)[0]
+		try: vecs_new = [float(i) for i in vecs_new.strip(' ').split()]
+		except: vecs_new = [float(i) for i in re.findall(runon_regex,vecs_new)[0]]
+	except:
+		import pdb;pdb.set_trace()
 	#---no need to keep the output since it is a verbatim copy for diagnostic only
 	os.remove(wordspace['step']+gro+'.gro')
 	#import pdb;pdb.set_trace()
@@ -78,8 +81,10 @@ def count_molecules(structure,resname):
 	gmx('make_ndx',structure=structure,ndx=structure+'-count',
 		log='make-ndx-%s-check'%structure,inpipe='q\n')
 	with open(wordspace['step']+'log-make-ndx-%s-check'%structure) as fp: lines = fp.readlines()
-	residue_regex = '^\s*[0-9]+\s+%s\s+\:\s+([0-9]+)\s'%resname
-	count, = [int(re.findall(residue_regex,l)[0]) for l in lines if re.match(residue_regex,l)]
+	try:
+		residue_regex = '^\s*[0-9]+\s+%s\s+\:\s+([0-9]+)\s'%resname
+		count, = [int(re.findall(residue_regex,l)[0]) for l in lines if re.match(residue_regex,l)]
+	except: raise Exception('cannot find resname "%s" in %s'%(resname,'make-ndx-%s-check'%structure))
 	return count
 	
 @narrate
@@ -89,14 +94,14 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 	"""
 	trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None)
 	Remove waters within a certain number of Angstroms of the protein.
+	#### water and all (water and (same residue as water within 10 of not water))
 	"""
 
 	use_vmd = wordspace.get('use_vmd',False)
-	if gap != 0.0 and use_vmd:
+	if (gap != 0.0 or boxcut) and use_vmd:
 		if method == 'aamd': watersel = "water"
-		elif method == 'cgmd': watersel = "resname W"
+		elif method == 'cgmd': watersel = "resname %s"%wordspace.sol
 		else: raise Exception("\n[ERROR] unclear method %s"%method)
-		if 'sol' in wordspace: watersel = "resname %s"%wordspace.sol
 		vmdtrim = [
 			'package require pbctools',
 			'mol new %s.gro'%structure,
@@ -119,10 +124,10 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 		p.communicate()
 		with open(wordspace['bash_log'],'a') as fp:
 			fp.write(gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl &> log-script-vmd-trim\n')
-		gmx_run(gmxpaths['editconf']+' -f solvate-vmd.pdb -o solvate.gro -resnr 1',
+		gmx_run(gmxpaths['editconf']+' -f solvate-vmd.pdb -o %s.gro -resnr 1'%gro,
 			log='editconf-convert-vmd')
 	#---scipy is more reliable than VMD
-	elif gap != 0.0:
+	elif gap != 0.0 or boxcut:
 		import scipy
 		import scipy.spatial
 		import numpy as np
@@ -135,7 +140,9 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 		water_inds = np.where(is_water)[0]
 		not_water_inds = np.where(np.array(incoming['residue_names'])!=watersel)[0]
 		points = np.array(incoming['points'])
-		dists = scipy.spatial.distance.cdist(points[water_inds],points[not_water_inds])
+		try: dists = scipy.spatial.distance.cdist(points[water_inds],points[not_water_inds])
+		except:
+			import pdb;pdb.set_trace()
 		residue_indices = np.array(incoming['residue_indices'])
 		#---list of residue indices in is_water that have at least one atom with an overlap
 		excludes = np.array(incoming['residue_indices'])[is_water][
@@ -266,7 +273,7 @@ def equilibrate(groups=None,structure='system'):
 		checkpoint()
 
 @narrate
-def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='counterions'):
+def counterions(structure,top,includes=None,ff_includes=None,gro='counterions'):
 
 	"""
 	counterions(structure,top)
@@ -274,6 +281,8 @@ def counterions(structure,top,resname="SOL",includes=None,ff_includes=None,gro='
 	The resname must be understandable by "r RESNAME" in make_ndx and writes to the top file.
 	"""
 
+	#---we store the water resname in the wordspace as "sol"
+	resname = wordspace.sol
 	#---clean up the composition in case this is a restart
 	for key in ['cation','anion','sol']:
 		try: wordspace['composition'].pop(zip(*wordspace['composition'])[0].index(wordspace[key]))
@@ -385,6 +394,7 @@ def read_gro(gro,**kwargs):
 	Read a GRO file and return its XYZ coordinates and atomnames. 
 	!Note that this is highly redundant with a cgmd_bilayer.read_molecule so you might replace that one.
 	!RE-ADD NUMPY AND CENTER FOR reionize/cgmd_bilayer
+	!Note that we drop velocities which should be read separately or with a flag.
 	"""
 
 	step = kwargs.get('step',wordspace.step)
@@ -396,11 +406,16 @@ def read_gro(gro,**kwargs):
 		pts -= np.mean(pts,axis=0)
 		atom_names = np.array([i.strip('\n')[10:15].strip(' ') for i in lines[2:-1]])
 	else:
-		pts = [[float(j) for j in i.strip('\n')[20:].split()] for i in lines[2:-1]]
+		try: pts = [[float(j) for j in i.strip('\n')[20:].split()] for i in lines[2:-1]]
+		#---backup regex in case values run together
+		except: 
+			runon_regex = \
+				'^\s*([-]?[0-9]+\.?[0-9]{0,3})\s*([-]?[0-9]+\.?[0-9]{0,3})\s*([-]?[0-9]+\.?[0-9]{0,3})'
+			pts = [[float(j) for j in re.findall(runon_regex,i[20:])[0]] for i in lines[2:-1]]
 		atom_names = [i.strip('\n')[10:15].strip(' ') for i in lines[2:-1]]
 	residue_names = [i[5:10].strip() for i in lines[2:-1]]
 	residue_indices = [int(i[0:5].strip()) for i in lines[2:-1]]
-	outgoing = {'points':pts,'atom_names':atom_names,'lines':lines,
+	outgoing = {'points':[i[:3] for i in pts],'atom_names':atom_names,'lines':lines,
 		'residue_names':residue_names,'residue_indices':residue_indices}
 	return outgoing
 

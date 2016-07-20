@@ -152,7 +152,7 @@ def init(setting_string,proceed=False):
 	#---! clusmy naming here: proceed means that this is a follow-up step
 	#---! ryan reset the default to false for development on protein_atomistic
 	#---! ...so note that the modify-parametes and multiply procedures will need to consider this
-	if proceed or 'proceed' in settings and settings['proceed']:
+	if proceed or ('proceed' in settings and settings['proceed']):
 		sure = (settings['proceed'] or (wordspace['proceed'] if 'proceed' in wordspace else False))
 		ready_to_continue(sure=sure)
 	os.umask(002)
