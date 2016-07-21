@@ -449,7 +449,9 @@ def solvate_bilayer(structure='vacuum'):
 		gap=wordspace['protein_water_gap'],method=wordspace.atom_resolution,boxvecs=boxvecs)
 	structure = 'solvate'
 	nwaters = count_molecules(structure,wordspace.sol)/({'aamd':3.0,'cgmd':1.0}[wordspace.atom_resolution])
-	if round(nwaters)!=nwaters: raise Exception('[ERROR] fractional water molecules')
+	if round(nwaters)!=nwaters: 
+		import pdb;pdb.set_trace()
+		raise Exception('[ERROR] fractional water molecules')
 	else: nwaters = int(nwaters)
 	component(wordspace.sol,count=nwaters)
 	wordspace['bilayer_dimensions_solvate'] = boxvecs

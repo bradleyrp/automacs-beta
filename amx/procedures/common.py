@@ -95,6 +95,7 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 	trim_waters(structure='solvate-dense',gro='solvate',gap=3,boxvecs=None)
 	Remove waters within a certain number of Angstroms of the protein.
 	#### water and all (water and (same residue as water within 10 of not water))
+	note that we vided the solvate.gro as a default so this can be used with any output gro file
 	"""
 
 	use_vmd = wordspace.get('use_vmd',False)
@@ -102,6 +103,7 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 		if method == 'aamd': watersel = "water"
 		elif method == 'cgmd': watersel = "resname %s"%wordspace.sol
 		else: raise Exception("\n[ERROR] unclear method %s"%method)
+		#---! gap should be conditional and excluded if zero
 		vmdtrim = [
 			'package require pbctools',
 			'mol new %s.gro'%structure,
@@ -114,7 +116,7 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 			'same residue as (x>=0 and x<='+str(10*boxvecs[0])+\
 			' and y>=0 and y<= '+str(10*boxvecs[1])+\
 			' and z>=0 and z<= '+str(10*boxvecs[2])+')']
-		vmdtrim += ['"]','$sel writepdb solvate-vmd.pdb','exit',]			
+		vmdtrim += ['"]','$sel writepdb %s-vmd.pdb'%gro,'exit',]			
 		with open(wordspace['step']+'script-vmd-trim.tcl','w') as fp:
 			for line in vmdtrim: fp.write(line+'\n')
 		vmdlog = open(wordspace['step']+'log-script-vmd-trim','w')
@@ -124,7 +126,7 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 		p.communicate()
 		with open(wordspace['bash_log'],'a') as fp:
 			fp.write(gmxpaths['vmd']+' -dispdev text -e script-vmd-trim.tcl &> log-script-vmd-trim\n')
-		gmx_run(gmxpaths['editconf']+' -f solvate-vmd.pdb -o %s.gro -resnr 1'%gro,
+		gmx_run(gmxpaths['editconf']+' -f %s-vmd.pdb -o %s.gro -resnr 1'%(gro,gro),
 			log='editconf-convert-vmd')
 	#---scipy is more reliable than VMD
 	elif gap != 0.0 or boxcut:
@@ -140,27 +142,56 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 		water_inds = np.where(is_water)[0]
 		not_water_inds = np.where(np.array(incoming['residue_names'])!=watersel)[0]
 		points = np.array(incoming['points'])
-		try: dists = scipy.spatial.distance.cdist(points[water_inds],points[not_water_inds])
-		except:
-			import pdb;pdb.set_trace()
 		residue_indices = np.array(incoming['residue_indices'])
-		#---list of residue indices in is_water that have at least one atom with an overlap
-		excludes = np.array(incoming['residue_indices'])[is_water][
-			np.where(np.any(dists<=gap/10.0,axis=1))[0]]
-		#---collect waters not found in the excludes list of residues that overlap with not-water
-		#---note that this command fails on redundant residues
-		surviving_water = np.all((np.all((
-			np.tile(excludes,(len(residue_indices),1))!=np.tile(residue_indices,(len(excludes),1)).T),
-			axis=1),is_water),axis=0)
-		#---remove waters that lie outside the box
-		insiders = np.all([np.all((points[:,ii]>=0,points[:,ii]<=i),axis=0) 
-			for ii,i in enumerate(boxvecs)],axis=0)
+		if gap>0:
+			#---previous method used clumsy/slow cdist
+			if False:
+				#---! needs KDTree optimization
+				dists = scipy.spatial.distance.cdist(points[water_inds],points[not_water_inds])
+				#---list of residue indices in is_water that have at least one atom with an overlap
+				excludes = np.array(incoming['residue_indices'])[is_water][
+					np.where(np.any(dists<=gap/10.0,axis=1))[0]]
+				#---collect waters not found in the excludes list of residues that overlap with not-water
+				#---note that this command fails on redundant residues
+				#---this was deprecated because it wasn't working correctly with the new KDTree method below
+				surviving_water = np.all((np.all((
+					np.tile(excludes,(len(residue_indices),1))!=np.tile(residue_indices,(len(excludes),1)).T),
+					axis=1),is_water),axis=0)
+			#---use scipy KDTree to find atom names inside the gap
+			#---note that order matters: we wish to find waters too close to not_waters
+			close_dists,neighbors = scipy.spatial.KDTree(points[water_inds]).query(
+				points[not_water_inds],distance_upper_bound=3)
+			#---use the distances to find the residue indices for waters that are too close 
+			excludes = np.array(incoming['residue_indices'])[is_water][np.where(close_dists<=gap/10.0)[0]]
+			#---get residues that are water and in the exclude list
+			#---note that the following step might be slow
+			exclude_res = [ii for ii,i in enumerate(incoming['residue_indices']) 
+				if i in excludes and is_water[ii]]
+			#---copy the array that marks the waters
+			surviving_water = np.array(is_water)
+			#---remove waters that are on the exclude list
+			surviving_water[exclude_res] = False
+		else: 
+			excludes = np.array([])
+			surviving_water = np.ones(len(residue_indices)).astype(bool)
+		#---we must remove waters that lie outside the box if there is a boxcut
+		insiders = np.ones(len(points)).astype(bool)
+		if boxcut:
+			#---remove waters that lie outside the box
+			#---get points that are outside of the box
+			outsiders = np.all([np.all((points[:,ii]<0,points[:,ii]>i),axis=0) 
+				for ii,i in enumerate(boxvecs)],axis=0)
+			#---get residue numbers for the outsiders
+			outsiders_res = np.array(incoming['residue_indices'])[np.where(outsiders)[0]]
+			#---note that this is consonant with the close-water exclude step above (and also may be slow)
+			exclude_outsider_res = [ii for ii,i in enumerate(incoming['residue_indices']) if i in outsiders_res]
+			insiders[exclude_outsider_res] = False
 		surviving_indices = np.any((is_not_water,surviving_water,insiders),axis=0)
 		lines = incoming['lines']
 		lines = lines[:2]+list(np.array(incoming['lines'][2:-1])[surviving_indices])+lines[-1:]
 		xyzs = list(points[surviving_indices])
-		write_gro(lines=lines,xyzs=xyzs,output_file=wordspace.step+'solvate.gro')
-	else: filecopy(wordspace['step']+'solvate-dense.gro',wordspace['step']+'solvate.gro')
+		write_gro(lines=lines,xyzs=xyzs,output_file=wordspace.step+'%s.gro'%gro)
+	else: filecopy(wordspace['step']+'%s-dense.gro'%gro,wordspace['step']+'%s.gro'%gro)
 
 @narrate
 def minimize(name,method='steep'):
