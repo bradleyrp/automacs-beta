@@ -179,14 +179,15 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 		if boxcut:
 			#---remove waters that lie outside the box
 			#---get points that are outside of the box
-			outsiders = np.all([np.all((points[:,ii]<0,points[:,ii]>i),axis=0) 
+			outsiders = np.any([np.any((points[:,ii]<0,points[:,ii]>i),axis=0) 
 				for ii,i in enumerate(boxvecs)],axis=0)
 			#---get residue numbers for the outsiders
 			outsiders_res = np.array(incoming['residue_indices'])[np.where(outsiders)[0]]
 			#---note that this is consonant with the close-water exclude step above (and also may be slow)
-			exclude_outsider_res = [ii for ii,i in enumerate(incoming['residue_indices']) if i in outsiders_res]
+			exclude_outsider_res = [ii for ii,i in 
+				enumerate(incoming['residue_indices']) if i in outsiders_res]
 			insiders[exclude_outsider_res] = False
-		surviving_indices = np.any((is_not_water,surviving_water,insiders),axis=0)
+		surviving_indices = np.any((is_not_water,np.all((surviving_water,insiders),axis=0)),axis=0)
 		lines = incoming['lines']
 		lines = lines[:2]+list(np.array(incoming['lines'][2:-1])[surviving_indices])+lines[-1:]
 		xyzs = list(points[surviving_indices])

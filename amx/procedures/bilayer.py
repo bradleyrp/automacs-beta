@@ -398,60 +398,39 @@ def solvate_bilayer(structure='vacuum'):
 	#---check the size of the slab
 	incoming_structure = str(structure)
 	boxdims_old,boxdims = get_box_vectors(structure)
-
 	#---check the size of the water box
 	waterbox = wordspace.water_box
 	basedim,_ = get_box_vectors(waterbox)
 	if not all([i==basedim[0] for i in basedim]):
 		raise Exception('[ERROR] expecting water box "" to be cubic')
 	else: basedim = basedim[0]
-
 	#---make an oversized water box
 	newdims = boxdims_old[:2]+[wordspace['solvent_thickness']]
-	#---! changed solvate-empty-uncentered-untrimmed to solvate-empty-uncentered and skipping redundant trim
 	gmx('genconf',structure=waterbox,gro='solvate-empty-uncentered-untrimmed',
 		nbox=' '.join([str(int(i/basedim+1)) for i in newdims]),log='genconf')
-
-	#---trimming waters
-	if False:
-		with open(wordspace['step']+'solvate-empty-uncentered-untrimmed.gro','r') as fp:
-			lines = fp.readlines()
-		modlines = []
-		for line in lines[2:-1]:
-			coords = [float(i) for i in line[20:].split()][:3]
-			if all([coords[i]<newdims[i] for i in range(3)]): modlines.append(line)
-		with open(wordspace['step']+'solvate-empty-uncentered.gro','w') as fp:
-			fp.write(lines[0])
-			fp.write(str(len(modlines))+'\n')
-			for l in modlines: fp.write(l)
-			fp.write(lines[-1])
-	else:
-		trim_waters(structure='solvate-empty-uncentered-untrimmed',
-			gro='solvate-empty-uncentered',boxcut=True,boxvecs=newdims,
-			gap=0.0,method=wordspace.atom_resolution)
-
+	#---trim the blank water box
+	trim_waters(structure='solvate-empty-uncentered-untrimmed',
+		gro='solvate-empty-uncentered',boxcut=True,boxvecs=newdims,
+		gap=0.0,method=wordspace.atom_resolution)
 	#---update waters
 	structure='solvate-empty-uncentered'
 	component(wordspace.sol,count=count_molecules(structure,wordspace.sol))
 	#---translate the water box
 	gmx('editconf',structure=structure,gro='solvate-water-shifted',
 		flag='-translate 0 0 %f'%(wordspace['bilayer_dimensions_slab'][2]/2.),log='editconf-solvate-shift')
-
 	#---combine and trim with new box vectors
-	#---! skipping minimization?
 	structure = 'solvate-water-shifted'
 	boxdims_old,boxdims = get_box_vectors(structure)
 	boxvecs = wordspace['bilayer_dimensions_slab'][:2]+[wordspace['bilayer_dimensions_slab'][2]+boxdims[2]]
 	gro_combinator('%s.gro'%incoming_structure,structure,box=boxvecs,
 		cwd=wordspace['step'],gro='solvate-dense')
 	structure = 'solvate-dense'
+	#---trim everything so that waters are positioned in the box without steric clashes
 	trim_waters(structure=structure,gro='solvate',boxcut=False,
 		gap=wordspace['protein_water_gap'],method=wordspace.atom_resolution,boxvecs=boxvecs)
 	structure = 'solvate'
 	nwaters = count_molecules(structure,wordspace.sol)/({'aamd':3.0,'cgmd':1.0}[wordspace.atom_resolution])
-	if round(nwaters)!=nwaters: 
-		import pdb;pdb.set_trace()
-		raise Exception('[ERROR] fractional water molecules')
+	if round(nwaters)!=nwaters: raise Exception('[ERROR] fractional water molecules')
 	else: nwaters = int(nwaters)
 	component(wordspace.sol,count=nwaters)
 	wordspace['bilayer_dimensions_solvate'] = boxvecs
@@ -560,18 +539,18 @@ def bilayer_sorter(structure,ndx='system-groups'):
 		inpipe=group_selector)
 
 @narrate
-def remove_jump(structure,tpr,gro):
+def remove_jump(structure,tpr,gro,pbc='nojump'):
 
 	"""
 	Correct that thing where the bilayer crosses the PBCs and gets split.
 	"""
 
-	gmx('make_ndx',ndx=structure,structure=structure,inpipe="keep 0\nq\n",log='make-ndx-nojump')	
+	gmx('make_ndx',ndx=structure,structure=structure,inpipe="keep 0\nq\n",log='make-ndx-%s'%pbc)	
 	gmx('trjconv',ndx=structure,structure=structure,gro=gro,tpr=tpr,
-		log='trjconv-%s-nojump'%structure,flag='-pbc nojump')
-	os.remove(wordspace['step']+'log-'+'make-ndx-nojump')
+		log='trjconv-%s-%s'%(structure,pbc),flag='-pbc %s'%pbc)
+	os.remove(wordspace['step']+'log-'+'make-ndx-%s'%pbc)
 
-def vacuum_pack(structure='vacuum',name='vacuum-pack',gro='vacuum-packed'):
+def vacuum_pack(structure='vacuum',name='vacuum-pack',gro='vacuum-packed',pbc='nojump'):
 
 	"""
 	Pack the lipids in the plane, gently.
@@ -581,7 +560,9 @@ def vacuum_pack(structure='vacuum',name='vacuum-pack',gro='vacuum-packed'):
 		structure=structure,log='grompp-%s'%name,mdp='input-md-%s-eq-in'%name,
 		flag='-maxwarn 100')
 	gmx('mdrun',base='md-%s'%name,log='mdrun-%s'%name,skip=True)
-	remove_jump(structure='md-%s'%name,tpr='md-'+name,gro='md-%s-nojump'%name)
-	filecopy(wordspace['step']+'md-%s-nojump.gro'%name,wordspace['step']+'%s.gro'%gro)
+	if pbc:
+		remove_jump(structure='md-%s'%name,tpr='md-'+name,gro='md-%s-%s'%(name,pbc))
+		filecopy(wordspace['step']+'md-%s-%s.gro'%(name,pbc),wordspace['step']+'%s.gro'%gro)
+	else: filecopy(wordspace['step']+'md-%s'%gro,wordspace['step']+'%s.gro'%gro)
 	boxdims_old,boxdims = get_box_vectors(gro)
 	wordspace['bilayer_dimensions_slab'][:2] = boxdims_old[:2]
