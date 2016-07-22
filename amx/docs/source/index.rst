@@ -7,7 +7,7 @@ Automacs documentation contents
 ===============================
 
 .. toctree::
-  :maxdepth: 3
+  :maxdepth: 4
   :numbered:
 
   concept

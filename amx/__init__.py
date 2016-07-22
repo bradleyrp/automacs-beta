@@ -65,35 +65,32 @@ if script_call == 'sphinx-build': sys.path.insert(0,os.path.abspath('../../../am
 from base.functions import *
 from base.mdp import write_mdp
 from base.gmxwrap import *
-from procedures.toc import procedure_toc
 from base.metatools import *
 
 if (not script_call in ['sphinx-build','script-vmd.py'] and 
 	not re.match('^script-vmd',script_call)):
-	with open(wordspace['script'],'r') as fp: original_script_lines = fp.readlines()
-	try: 
-		procedure = [re.findall('^procedure\s*:\s*([\w,]+)',l)[0] 
-			for l in original_script_lines if re.match('^procedure\s*:\s*([\w,]+)',l)]
-		if len(procedure)!=1 and len(list(set(procedure)))>1:
-			raise Exception('[ERROR] procedure = %s'%str(procedure))
-		else: procedure = procedure[0]
-	except: raise Exception('[ERROR] could not find "procedure: <name>" in the script')
-	importlib_avail = True
-	try: import importlib
-	except: 
-		importlib_avail = False
-		report('cannot import importlib so you are on an old system and we will '+
-			'skip loading procedure codes',tag='warning')
-	libfile = False
-	if procedure in procedure_toc: libfile = procedure_toc[procedure]
-	#---pass if you only find scripts without warning the user
-	elif any(glob.glob('amx/procedures/scripts/script-%s*'%procedure)): pass
-	else: raise Exception('[ERROR] unclear procedure "%s" with no corresponding scripts'%procedure)
-	if not libfile: libfile = 'common'
-	if importlib_avail: mod = importlib.import_module('amx.procedures.'+libfile)
-	else: mod = __import__('amx.procedures.%s'%libfile,fromlist=['amx.procedures.%s'%libfile])
-	globals().update(vars(mod))
-	if 'command_library' in globals(): 
-		if 'command_library' not in wordspace:
-			wordspace['command_library'] = interpret_command(command_library)
-	if 'mdp_specs' in globals(): wordspace['mdp_specs'] = mdp_specs
+	#---instead of running the parent script we pick off the requires list
+	regex_requires = '^requires\s*:\s*([\w,]+)$'
+	#---search for procedures to import
+	with open(wordspace['script'],'r') as fp: original_script_lines = fp.read()
+	has_requires = re.search(regex_requires,original_script_lines,re.M)
+	if has_requires:
+		reqs = has_requires.group(1).split(',')
+		#---check for importlib (not available in python versions before 2.7)
+		importlib_avail = True
+		try: import importlib
+		except: 
+			importlib_avail = False
+			report('cannot import importlib so you are on an old system and we will '+
+				'skip loading procedure codes',tag='warning')
+		#---loop over required modules and import them
+		for libfile in reqs:
+			#---use old-school importing if importlib is not available
+			if importlib_avail: mod = importlib.import_module('amx.procedures.'+libfile)
+			else: mod = __import__('amx.procedures.%s'%libfile,fromlist=['amx.procedures.%s'%libfile])
+			#---WARNING functions may be redefined in subsequent requirements
+			globals().update(vars(mod))
+			#---propagate the last-read command_library and mdp_specs to the wordspace
+			if 'command_library' in globals(): 
+				wordspace['command_library'] = interpret_command(command_library)
+			if 'mdp_specs' in globals(): wordspace['mdp_specs'] = mdp_specs

@@ -1,7 +1,9 @@
 #!/usr/bin/python 
 
 """
-Table of contents for available procedures. 
+Table of contents for codes which support the procedures.
+
+
 """
 
 procedure_toc = {

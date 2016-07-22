@@ -60,7 +60,18 @@ Procedures follow a standard protocol for preparing and executing the simulation
 
 	4. POINT TO WORDSPACE.JSON
 
-Most (but not all) procedures require a specific library of functions which are automatically loaded by automacs according to a lookup table found in an internal :meth:`table of contents <amx.procedures.toc>`. This table points from a procedure name like ``aamd,protein`` to the corresponding library script e.g. ``amx/procedures/protein_atomistic.py``. The :doc:`framework <framework>` section outlines the directory structure in more detail.
+Supporting codes
+****************
+
+The parent scripts for each procedure are designed to be simple and readable. The example parent script in the :ref:`procedures <concept_procedures>` section consists of python functions that use obvious names like ``minimize`` and ``equilibrate``. These functions can be arbitrarily complex, and are stored in python modules within the ``amx/procedures`` folder. 
+
+.. warning::
+
+	link to a definition of parent script or some tutorials or something
+
+Each procedure may have a supporting cast of functions written to a dedicated file in ``amx/procedures``. Recall that python source codes can be easily imported as a module if they exist in a directory with a ``__init__.py``. When a parent script loads automacs modules via ``from amx import *``, it gets the procedure name from the settings block and uses a lookup table found in an internal :meth:`table of contents <amx.procedures>` to locate the correct module. This table points from a procedure name like ``aamd,protein`` to the corresponding module e.g. ``amx/procedures/protein_atomistic.py``. The :doc:`framework <framework>` section outlines the directory structure in more detail. Functions which are specific to a single procedure should be written to that procedure's module file. More general-use functions -- those that can be shared *between* procedures -- should be stored in the ``amx.procedures.common`` module, which is always imported.
+
+Some simulation procedures require only common functions, and hence do not load any additional modules. .....
 
 .. _sec_log:
 

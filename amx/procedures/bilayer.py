@@ -1,5 +1,17 @@
 #!/usr/bin/python
 
+"""
+BILAYER BUILDER codes
+
+under development
+"""
+
+"""
+AMX SUPPLIES: cgmd,bilayer
+AMX SUPPLIES: mycustomprocedu
+
+"""
+
 import re,os,subprocess
 from amx import wordspace
 from amx.base.journal import status
@@ -11,12 +23,6 @@ from amx.procedures.common import *
 import numpy as np
 from codes.mesh import *
 import random
-
-"""
-BILAYER BUILDER codes
-
-under development
-"""
 
 #---common command interpretations
 command_library = """

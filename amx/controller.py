@@ -407,6 +407,14 @@ def help_review():
 		'git clone . --bare <path_to_new_bare_repo>']
 	for cmd in cmds: print '[USAGE] "%s"'%cmd
 
+def locate(keyword):
+
+	"""
+	Locate the source of a python function.
+	"""
+
+	os.system('find ./ -name "*.py" | xargs grep -e --color=always "def \w*%s\w*"'%keyword)
+
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
 

@@ -1,5 +1,14 @@
 #!/usr/bin/python
 
+"""
+General simulation functions available to all procedures.
+
+In the spirit of writing DRY code (don't repeat yourself), every procedure has access to the functions
+in this module. Therefore, any simulation construction or bookkeeping function which can be used in more 
+than one simulation procedure should be written here to avoid redundant codes. 
+
+"""
+
 import re,os,subprocess
 from amx import wordspace
 from amx.base.functions import filecopy
@@ -8,10 +17,6 @@ from amx.base.gromacs import gmxpaths
 from amx.base.journal import narrate,report
 from amx.base.tools import detect_last
 import shutil,glob
-
-"""
-Common simulation construction tools.
-"""
 
 @narrate
 def component(name,count=None,top=False):
