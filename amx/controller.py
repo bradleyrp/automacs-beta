@@ -413,7 +413,7 @@ def locate(keyword):
 	Locate the source of a python function.
 	"""
 
-	os.system('find ./ -name "*.py" | xargs grep -e --color=always "def \w*%s\w*"'%keyword)
+	os.system('find ./ -name "*.py" | xargs egrep --color=always "def \w*%s\w*"'%keyword)
 
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
