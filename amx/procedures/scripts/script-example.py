@@ -7,7 +7,7 @@ An example script.
 settings = """
 step:               bilayer # folder name
 system name:        CGMD BILAYER # used by write_top
-procedure:          cgmd,bilayer # identifies the necessary codes
+requires:           bilayer # identifies necessary libraries in amx/procedures
 
 #---include files for writing topologies
 ff includes:        ['martini-v2.2','martini-v2.0-lipids','martini-v2.2-aminoacids','martini-v2.0-ions']

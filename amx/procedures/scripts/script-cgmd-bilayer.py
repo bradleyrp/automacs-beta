@@ -4,7 +4,7 @@ settings = """
 system name:        CGMD BILAYER
 lipid structures:   inputs/cgmd-inputs/
 step:               cgmd-bilayer
-procedure:          cgmd,bilayer
+requires:           cgmd_bilayer
 shape:              flat
 height:             6
 binsize:            1.0

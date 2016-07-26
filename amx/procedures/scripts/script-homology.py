@@ -2,10 +2,10 @@
 
 settings = """
 step:                homology
-procedure:           homology
+requires:            homology
 modeller path:       mod9.15
 homology method:     point
-template:            inputs/STRUCTURE.pdb
+start structure:     inputs/STRUCTURE.pdb
 template chain:      A
 other chains:        None
 target name:         egfr_E710R
@@ -17,6 +17,7 @@ number HETATMs:      0
 
 from amx import *
 init(settings)
+autodetect_start_structure()
 start(wordspace.step)
 #---template variable may be a PDB code or a path
 pdb_attr = get_pdb()

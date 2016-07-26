@@ -66,6 +66,7 @@ from base.functions import *
 from base.mdp import write_mdp
 from base.gmxwrap import *
 from base.metatools import *
+from procedures.common import *
 
 if (not script_call in ['sphinx-build','script-vmd.py'] and 
 	not re.match('^script-vmd',script_call)):
@@ -94,3 +95,4 @@ if (not script_call in ['sphinx-build','script-vmd.py'] and
 			if 'command_library' in globals(): 
 				wordspace['command_library'] = interpret_command(command_library)
 			if 'mdp_specs' in globals(): wordspace['mdp_specs'] = mdp_specs
+

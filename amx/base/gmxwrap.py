@@ -196,22 +196,4 @@ def init(setting_string,proceed=False):
 	for key,val in settings.items(): 
 		if not wordspace['under_development'] or (wordspace['under_development'] and key!='step'): 
 			wordspace[re.sub(' ','_',key)] = val
-	#---for convenience we automatically substitute a lone PDB file in inputs
-	#---it would be better to make this a flag in the settings block instead of hard-coding it here
-	lone_pdb_rules = [
-		('aamd,protein','start_structure'),
-		('homology','template'),
-		]
-	#---! note that this is protein_atomistic-specific and may need to be conditional
-	for procname,keyname in lone_pdb_rules:
-		if (wordspace['procedure']==procname and keyname in wordspace and 
-			wordspace[keyname] == 'inputs/STRUCTURE.pdb'):
-			pdbs = glob.glob('inputs/*.pdb')
-			if len(pdbs)==1: 
-				wordspace[keyname] = pdbs[0]
-				wordspace['system_name'] = re.findall('^inputs/([\w\.-]+)\.pdb$',pdbs[0])[0]
-			else: 
-				if 'watch_file' not in wordspace: wordspace['watch_file'] = 'ERROR.log'
-				report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
-			break
-	#---instead of copying a single PDB for the homology run here, we do that in the homology codes
+

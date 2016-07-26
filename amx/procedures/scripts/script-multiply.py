@@ -2,7 +2,7 @@
 
 settings = """
 step:               large
-procedure:          multiply
+requires:           multiply
 equilibration:      npt-bilayer
 proceed:            True
 minimize:           True

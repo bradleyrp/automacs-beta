@@ -512,3 +512,28 @@ def read_itp(fn):
 	atoms = map(lambda y:re.findall('^([^;]+)',y)[0].split(),records)
 	atoms_header = ['nr', 'type', 'resnr', 'residu', 'atom', 'cgnr', 'charge']
 	return {'atoms_header':atoms_header,'atoms':atoms}
+
+@narrate
+def autodetect_start_structure():
+
+	"""
+	Autodetect a lone PDB file in the inputs folder if the user has not changed the default "start_structure"
+	setting. This function is useful for starting batches of protein simulations or homology modeling in 
+	e.g. the factory codes.
+	"""
+
+	if not 'start_structure' in wordspace: 
+		raise Exception('\n[ERROR] this autodect function requires the start_structure setting\n'+
+			'[ERROR] (set start_structure to inputs/STRUCTURE.pdb to autodetect a lone pdb in inputs.')
+	if wordspace.start_structure == 'inputs/STRUCTURE.pdb':
+		pdbs = glob.glob('inputs/*.pdb')
+		if len(pdbs)==1: 
+			wordspace.start_structure = pdbs[0]
+			if wordspace.system_name == 'SYSTEM':
+				wordspace.system_name = re.findall('^inputs/([\w\.-]+)\.pdb$',pdbs[0])[0]
+		else: 
+			if 'watch_file' not in wordspace: wordspace.watch_file = 'ERROR.log'
+			report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
+	else:
+		print "OOPS"
+		import pdb;pdb.set_trace()

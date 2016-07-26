@@ -2,7 +2,6 @@
 
 settings = """
 step:               restart
-procedure:          restart
 equilibration:      None
 new mdp:            True
 regenerate tpr:     True

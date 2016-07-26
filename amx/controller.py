@@ -444,7 +444,12 @@ def makeface(*arglist):
 		else:
 			argspec = inspect.getargspec(globals()[funcname])
 			if arg in argspec.args: kwargs[arg] = True
-			else: args.append(arg)
+			else: 
+				#---before adding lone arguments from the makefile command line to the args list,
+				#---...we check the defaults to make sure we don't load the word into a boolean
+				#---! finish this!
+				if len(argspec.args)-len(argspec.defaults)>=len(args): args.append(arg)
+				else: raise Exception('[ERROR] too many arguments to %s: %r'%(funcname,str(argspec)))
 	args = tuple(args)
 	if arglist != []: raise Exception('unprocessed arguments %s'%str(arglist))
 
