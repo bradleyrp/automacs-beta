@@ -117,7 +117,7 @@ Note that the wordspace is an overloaded class, so you can access its members ei
 Chaining procedures
 ###################
 
-Automacs allows users to link procedures so that one step receives the result of another. A minimal example of this is found in the ``multiply`` procedure, which stacks small simulation boxes on top of each other to create a larger simulation. It effectively wraps the GROMACS `genconf <http://manual.gromacs.org/programs/gmx-genconf.html>`_ utility with the added advantage that it keeps track of the composition of your system so that you don't have to manually write new topology files. 
+Automacs allows users to link procedures so that one step receives the result of another. This can be done by running ``make program <next_procedure>`` after the first procedure is completed. A minimal example of this is found in the ``multiply`` procedure, which stacks small simulation boxes on top of each other to create a larger simulation. It effectively wraps the GROMACS `genconf <http://manual.gromacs.org/programs/gmx-genconf.html>`_ utility with the added advantage that it keeps track of the composition of your system so that you don't have to manually write new topology files. 
 
 The ``multiply`` step tells automacs that it is "downstream" of another step by setting ``proceed: true`` in the settings block.
 
@@ -224,8 +224,8 @@ For each simulation in the batch, the loop uses ``make program continue`` to cre
 
 Since each supercomputer may have a unique queue, software environment, and rules about runtime, you can set all of these in a central location described in the :doc:`configuration <configuration>` section so that all simulations run on a particular machine comply with the rules for that machine. The batch functionality described in this section is made possible by a simple `regex <https://docs.python.org/2/library/re.html>`_ substitution that sweeps the ``nnodes`` parameter across a number of values.
 
-Using metarun to make batches of simulations
-********************************************
+Using metarun to access external codes
+**************************************
 
 Users can access any external python functionality in between steps. The following example is used to place a protein on a coarse-grained bilayer using a set of translations and rotations implemented in an external library.
 
@@ -280,5 +280,9 @@ The following commands can be accessed via ``make <command>`` to perform a varie
 7. Write cluster queue submission headers with :meth:`cluster <amx.controller.cluster>`
 
 .. autosimple:: amx.controller.cluster
+
+7. Find a function with :meth:`locate <amx.controller.locate>`
+
+.. autosimple:: amx.controller.locate
 
 The :doc:`configuration <configuration>` section explains the file transfer and supercomputer features in more detail.
