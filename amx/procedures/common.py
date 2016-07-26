@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/Usr/bin/python
 
 """
 General simulation functions available to all procedures.
@@ -319,9 +319,9 @@ def counterions(structure,top,includes=None,ff_includes=None,gro='counterions'):
 	"""
 
 	#---we store the water resname in the wordspace as "sol"
-	resname = wordspace.sol
+	resname =  wordspace.get('sol','SOL')
 	#---clean up the composition in case this is a restart
-	for key in ['cation','anion','sol']:
+	for key in ['cation','anion',resname]:
 		try: wordspace['composition'].pop(zip(*wordspace['composition'])[0].index(wordspace[key]))
 		except: pass
 	component(resname,count=wordspace['water_without_ions'])
