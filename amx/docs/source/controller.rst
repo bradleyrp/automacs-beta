@@ -96,6 +96,8 @@ In the example log text above, you can see the typical process by which GROMACS 
 
 Each line in the log file is identified by a token e.g. ``[FUNCTION]``. Other tokens include ``[TRACEBACK]`` and ``[ERROR]``, which record Python exceptions and errors for later troubleshooting. Lastly, the ``[CHECKPOINT]`` token serves a special role. It holds the current state of  the ``wordspace`` for subsequent procedures to retrieve. If any procedure outputs, like a free bilayer or an equilibrated protein structure, are required as inputs for additional procedures, they can use the checkpoint to get key attributes of the preceding simulation. When creating a procedure script, you can use the :meth:`checkpoint() <amx.base.gmxwrap.checkpoint>` function to save the wordspace at critical junctures. If you lose track of a function, you can always find it with a :ref:`simple search <finding_functions>`.
 
+.. _looking:
+
 "Looking" at the state of your simulation
 #########################################
 
