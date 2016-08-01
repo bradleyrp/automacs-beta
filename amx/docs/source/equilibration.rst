@@ -93,7 +93,7 @@ A series of ensemble changes requires a large set of integrator parameters organ
 
 Ensembles are defined in ``amx/procedures/parameters.py`` which contains a large, nested dictionary of rules. Users who wish to design custom equilibration procedures using our custom syntax should copy this file to ``inputs/parameters.py`` which always overrides the default values. In this section, we will describe the custom syntax which we have designed to improve readability and avoid repetition. 
 
-The settings block in each parent script may contain a variable called ``mdp_specs``. This variable should consist of a pythonic dictionary. The keys represent the names of the ``mdp`` files we wish to generate. The corresponding values contain a list of constraints which modify the master dictionary of parameters defined in the ``mdpdefs`` dictionary in the ``parameters.py`` file. The ``write_mdp`` function will process each element of the ``mdp_specs`` dictionary to produce a new ``mdp`` file. Each time this happens, the entire ``mdpdefs`` dictionary must be "pruned" to produce a consistent set of parameters. Let's walk through how this happens.
+The settings block in each parent script may contain a variable called ``mdp_specs``. This variable should consist of a pythonic dictionary. The keys represent the names of the ``mdp`` files we wish to generate. The corresponding values contain a list of constraints which modify the master dictionary of parameters defined in the ``mdpdefs`` dictionary in the ``parameters.py`` file. See the :ref:`customizations <mdp_customizations>` section below for an example. The ``write_mdp`` function will process each element of the ``mdp_specs`` dictionary to produce a new ``mdp`` file. Each time this happens, the entire ``mdpdefs`` dictionary must be "pruned" to produce a consistent set of parameters. Let's walk through how this happens.
 
 A single protected key ``mdp_specs`` dictionary called ``group`` specifies the top-level sub-dictionary in ``mdpdefs`` which we will use. This key is almost always set to either ``'group':'aamd'`` or ``'group':'cgmd'`` so that the ``mdpdefs`` dictionary can hold instructions for both atomistic and coarse-grained simulations. After the ``write_mdp`` function pops the ``group`` value, we can only use parameters defined in the corresponding sub-dictionary. 
 
@@ -154,12 +154,37 @@ Each new ``mdp`` file consists of all parameter category groupings listed in the
 
 The ``write_mdp`` function processes the example above as follows. First, it removes ``'group':'aamd'`` from the mdp_specs dictionary (not shown). Then, it processes each item in ``'defaults'``. When it tries to process the ``'potential'`` key, it finds two sub-dictionaries (given by ``'original'`` and ``'verlet'``). It selects ``'verlet'`` according to the ``defaults`` dictionary. The ``'couple'`` settings require no such choice. Instead, ``'couple'`` is mapped to ``None`` in ``defaults`` and the ``couple`` sub-dictionary has one set of parameters at the top-level.
 
+.. _mdp_customizations:
+
 Customizations
 ^^^^^^^^^^^^^^
 
-Fine-tuning the input parameters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Recall that we request a set of ``mdp`` files using the ``mdp_specs`` variable in the settings block of the parent script. This variable is a dictionary of desired ``mdp`` file names mapped to lists of constraints. An empty list will create an ``mdp`` file with default values according to the rules described above. To make ``mdp`` files with variations from the default, we can add two kinds of constraints. Let's demonstrate this with an example.
+
+.. code-block :: python
+
+	mdp_specs = {
+		'group':'aamd',
+		'input-em-steep-in.mdp':['minimize'],
+		'input-em-cg-in.mdp':['minimize',{'integrator':'cg'}],
+		'input-md-vacuum-pack1-eq-in.mdp':['vacuum-packing',{'nsteps':10000}],
+		'input-md-vacuum-pack2-eq-in.mdp':['vacuum-packing',{'ref_p':'100.0 1.0'}],
+		'input-md-vacuum-pack3-eq-in.mdp':['vacuum-packing'],
+		'input-md-npt-bilayer-eq-in.mdp':['npt-bilayer-simple',],
+		'input-md-in.mdp':['npt-bilayer'],
+		}
+
+The simplest constraint is a dictionary that overrides the default parameters. For example, if you wish to set a custom number of time steps in a particular run, you can include ``{'nsteps':10000}`` to override the ``nsteps`` parameter. The GROMACS manual contains a `complete list of these parameters <http://manual.gromacs.org/online/mdp_opt.html>`_. You can populate the constraints list with as many dictionaries as you want, but be warned that they will be processed in sequence.
+
+Users may also point to custom parameter sets by including their names in the constraints list. The name should point to a dictionary that is found at the same level as ``defaults`` in ``mdpdefs``. Like the ``defaults`` dictionary, the custom dictionary can refer to groupings of parameters at the same level by name e.g. ``'potential':'verlet'``. However, they can also contain a sub-dictionary with custom overrides for a particular category. In the example ``mdp_specs`` above, a custom ``minimize`` dictionary in ``mdpdefs`` tells automacs how to prepare a parameter file for minimization procedures. If you inspect the ``parameters.py`` code, you can see how these parameters might override the defaults.
+
+.. warning ::
+
+	Look. The whole thing can be summed up as follows. Chop down the main dictionary by "group". Then for every string in the constraints list (add "defaults" if empty), take the key-value pairs for the dictionary with that name at the top level. If the value is a string, try to look it up in the main dictionary as a nested double-key. If that fails, just use the key-value pair directly in the MDP file. If the value is None, just look-up the single-key value from the top level.
+
+The example ``mdp_specs`` described above demonstrates the utility of this bookkeeping scheme. If you wish to generate many similar parameter files during an elaborate equilibration routine, you only need to add additional entries to ``mdp_specs``.
 
 Ensemble or integrator changes during production
 ------------------------------------------------
 
+While most ensemble changes occur during the construction and equilibration of a new simulation, it is often useful to change the ensemble for a completed or already-running simulation. For example, older simulations can be continued under newer versions of GROMACS by regenerating new run input files. This feature is built-in to automacs via the ``amx/procedures/scripts/script-restart.py``. Users can research from a preexisting simulation stored in ``inputs`` by running ``make program restart`` and customizing the resulting parent script found in ``script-restart.py``. This script has options for continuing a simulation from "scratch" (that is, the structure and topology onl) or from a checkpoint file, which often makes it possible to do a binary-reproducible simulation. The automacs restart procedure covers most of the functions described in the GROMACS manual entry on `continuation <http://www.gromacs.org/Documentation/How-tos/Doing_Restarts>`_.
