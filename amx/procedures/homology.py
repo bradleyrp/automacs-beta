@@ -263,19 +263,19 @@ def get_pdb():
 	"""
 
 	#---if template is a path we copy the file
-	if os.path.isfile(os.path.abspath(os.path.expanduser(wordspace.template))):
-		template = os.path.basename(wordspace.template).split('.pdb')[0]
-		shutil.copy(wordspace.template,wordspace.step)
+	if os.path.isfile(os.path.abspath(os.path.expanduser(wordspace.start_structure))):
+		template = os.path.basename(wordspace.start_structure).split('.pdb')[0]
+		shutil.copy(wordspace.start_structure,wordspace.step)
 	#---if template is a PDB code and a chain letter then we download it from the PDB
-	elif re.match('^[A-Z0-9]{4}$',wordspace.template):
+	elif re.match('^[A-Z0-9]{4}$',wordspace.start_structure):
 		import urllib2
-		template,chain = wordspace.template,wordspace.template_chain
+		template,chain = wordspace.start_structure,wordspace.template_chain
 		response = urllib2.urlopen('http://www.rcsb.org/pdb/files/'+template+'.pdb')
 		pdbfile = response.read()
 		with open(wordspace.step+template+'.pdb','w') as fp: fp.write(pdbfile)
 	else: 
 		raise Exception(
-			'\n[ERROR] unable to understand template "%s"'%wordspace.template+
+			'\n[ERROR] unable to understand template "%s"'%wordspace.start_structure+
 			'\n[ERROR] supply a PDB,chain or a path')
         sequence=extract_sequence_pdb(filename=wordspace.step+template+'.pdb',
                                       chain=wordspace.template_chain)
@@ -326,11 +326,11 @@ def get_other_chains(send_atoms=False):
         """
         other_chain_atoms=[]
         wordspace['other_chains_info']={}
-        with open(wordspace['template']) as fp: other_chain_lines = fp.readlines()
+        with open(wordspace['start_structure']) as fp: other_chain_lines = fp.readlines()
         for this_chain in wordspace['other_chains']:
-                sequence=extract_sequence_pdb(filename=wordspace['template'],chain=this_chain)
+                sequence=extract_sequence_pdb(filename=wordspace['start_structure'],chain=this_chain)
                 if not sequence:
-                        sequence=extract_sequence_backup(filename=wordspace['template'],chain=this_chain)
+                        sequence=extract_sequence_backup(filename=wordspace['start_structure'],chain=this_chain)
                 this_chain_atoms = [ll for ll,l in enumerate(other_chain_lines) if
                                     l[:4]=='ATOM' and l[21]==this_chain]
                 other_chain_atoms.append([other_chain_lines[line] for line in this_chain_atoms])

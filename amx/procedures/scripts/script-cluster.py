@@ -3,7 +3,6 @@
 settings = """
 step:               continue
 system name:        system
-procedure:          continue
 hostname:           kraken
 walltime:           24:00
 nnodes:             1

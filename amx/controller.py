@@ -410,10 +410,24 @@ def help_review():
 def locate(keyword):
 
 	"""
-	Locate the source of a python function.
+	Locate the source code for a python function which is visible to the controller.
+
+	Parameters
+	----------
+	keyword : string
+		Any part of a function name (including regular expressions)
+
+	Notes
+	-----
+	This controller script is grepped by the makefile in order to expose its python functions to the makefile
+	interface so that users can run e.g. "make program protein" in orer to access the ``program`` function
+	above. The ``makeface`` function routes makefile arguments and keyword arguments into python's functions.
+	The makefile also detects python functions from any scripts located in amx/procedures/extras.
+	The ``locate`` function is useful for finding functions which may be found in many parts of the automacs
+	directory structure.
 	"""
 
-	os.system('find ./ -name "*.py" | xargs grep -e --color=always "def \w*%s\w*"'%keyword)
+	os.system('find ./ -name "*.py" | xargs egrep --color=always "def \w*%s\w*"'%keyword)
 
 #---INTERFACE
 #-------------------------------------------------------------------------------------------------------------
@@ -445,6 +459,12 @@ def makeface(*arglist):
 			argspec = inspect.getargspec(globals()[funcname])
 			if arg in argspec.args: kwargs[arg] = True
 			else: args.append(arg)
+			if False:
+				#---before adding lone arguments from the makefile command line to the args list,
+				#---...we check the defaults to make sure we don't load the word into a boolean
+				#---! finish this!
+				if len(argspec.args)-len(argspec.defaults)>=len(args): args.append(arg)
+				else: raise Exception('[ERROR] too many arguments to %s: %r'%(funcname,str(argspec)))
 	args = tuple(args)
 	if arglist != []: raise Exception('unprocessed arguments %s'%str(arglist))
 

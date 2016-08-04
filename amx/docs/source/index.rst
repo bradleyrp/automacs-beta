@@ -13,6 +13,7 @@ Automacs documentation contents
   concept
   controller
   framework
+  equilibration
   configuration
   tutorials
 

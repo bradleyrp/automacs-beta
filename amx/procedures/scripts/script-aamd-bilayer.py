@@ -4,7 +4,7 @@ settings = """
 system name:        AAMD BILAYER
 lipid structures:   inputs/lipids/charmm36-structs/
 step:               bilayer
-procedure:          aamd,bilayer
+requires:           bilayer
 shape:              flat
 height:             6
 binsize:            1.2

@@ -2,7 +2,7 @@
 
 settings = """
 step:               reionize
-procedure:          reionize
+requires:           reionize
 equilibration:      npt
 system name:        bilayer
 sources:            ['charmm36.ff','lipids-tops']

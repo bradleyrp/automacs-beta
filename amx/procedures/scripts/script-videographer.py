@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 settings = """
-procedure:          videographer
 step:               look
 step prefix:        v
 max frames:         200

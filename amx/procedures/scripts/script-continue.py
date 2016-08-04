@@ -3,7 +3,6 @@
 settings = """
 step:               continue
 system name:        system
-procedure:          continue
 from inputs:        False
 """
 

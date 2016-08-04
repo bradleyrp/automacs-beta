@@ -3,7 +3,7 @@
 settings = """
 step:               protein
 start structure:    inputs/STRUCTURE.pdb
-procedure:          cgmd,protein
+requires:           cgmd_protein
 martinize path:     inputs/martinize.py
 """
 

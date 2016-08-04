@@ -2,7 +2,7 @@
 
 settings = """
 step:                protein
-requires:            protein_atomistic,bilayer
+requires:            protein_atomistic
 equilibration:       nvt,npt
 start structure:     inputs/STRUCTURE.pdb
 run part two:        no
@@ -20,9 +20,9 @@ use vmd:             False
 
 from amx import *
 init(settings)
-import pdb;pdb.set_trace()
 try:
 	if not wordspace['under_development']:
+		autodetect_start_structure()
 		start(wordspace['step'])
 		write_mdp()
 		dircopy('inputs/*.ff',wordspace['step'])
