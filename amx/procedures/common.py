@@ -385,9 +385,15 @@ def get_last_frame(tpr=False,cpt=False,top=False,ndx=False,itp=False):
 		#---interesting that trjconv uses fewer digits than the gro so this is not a perfect match
 		#---note that we select group zero which is always the entire system
 		#---note that we assume a like-named TPR file is available
-		gmx_run(gmxpaths['trjconv']+' -f %s -o %s -s %s.tpr -b %f -e %f'%(
-			xtc,'system-input.gro',xtc.rstrip('.xtc'),last_time,last_time),
-			log='trjconv-last-frame',inpipe='0\n')
+		try:
+			gmx_run(gmxpaths['trjconv']+' -f %s -o %s -s %s.tpr -b %f -e %f'%(
+				xtc,'system-input.gro',xtc.rstrip('.xtc'),last_time,last_time),
+				log='trjconv-last-frame',inpipe='0\n')
+		except:
+			raise Exception(''.join(['\n[ERROR] %s'%i for i in [
+				'trjconv in get_last_frame failed',
+				'if you are running a restart with an alternate version of gromacs,',
+				'you should just get the last frame manually with the original version.']]))
 	#---list of files we must retrieve
 	upstream_files = {
 		'tpr':{'from':last_step+'md.part%04d.tpr'%part_num,'to':'system-input.tpr','required':True},
@@ -419,7 +425,9 @@ def get_last_frame(tpr=False,cpt=False,top=False,ndx=False,itp=False):
 	for key,val in upstream_files.items():
 		dest = wordspace['step']+val['to']
 		if not os.path.isfile(val['from']) and not os.path.isdir(val['from']):
-			if val['required']: raise Exception('cannot find %s'%val['to'])
+			if val['required']: 
+				import pdb;pdb.set_trace()
+				raise Exception('cannot find %s'%val['to'])
 		elif not os.path.isfile(dest) and not os.path.isdir(dest): 
 			if os.path.isfile(val['from']): shutil.copyfile(val['from'],wordspace['step']+val['to'])
 			else: shutil.copytree(val['from'],wordspace['step']+val['to'])
