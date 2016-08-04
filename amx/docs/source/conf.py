@@ -114,18 +114,21 @@ todo_include_todos = True
 # -- Options for HTML output ----------------------------------------------
 
 #---added via: pip install sphinx-better-theme
-html_theme_options = {}
-try:
-  from better import better_theme_path
-  html_theme_path = [better_theme_path]
-  html_theme = 'better'
-  html_theme_options['cssfiles'] = ['_static/style.css']
-except:
-  print '[WARNING] docs look better with sphinx-better-theme installed via pip'
-  # The theme to use for HTML and HTML Help pages.  See the documentation for
-  # a list of builtin themes.
-  html_theme = 'haiku'
-  html_theme_options = {'full_logo':True}
+if False:
+	html_theme_options = {}
+	try:
+	  from better import better_theme_path
+	  html_theme_path = [better_theme_path]
+	  html_theme = 'better'
+	  html_theme_options['cssfiles'] = ['_static/style.css']
+	except:
+	  print '[WARNING] docs look better with sphinx-better-theme installed via pip'
+	  # The theme to use for HTML and HTML Help pages.  See the documentation for
+	  # a list of builtin themes.
+	  html_theme = 'haiku'
+	  html_theme_options = {'full_logo':True}
+
+html_theme = 'bizstyle'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

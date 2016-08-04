@@ -203,7 +203,7 @@ def cluster(**kwargs):
 		#---code from base.functions.write_continue_script to rewrite the continue script
 		with open('amx/procedures/scripts/script-continue.sh','r') as fp: lines = fp.readlines()
 		tl = [float(j) if j else 0.0 for j in re.match('^([0-9]+)\:?([0-9]+)?\:?([0-9]+)?',
-			machine_configuration['maxhours']).groups()]
+			machine_configuration['walltime']).groups()]
 		maxhours = tl[0]+float(tl[1])/60+float(tl[2])/60/60
 		settings = {
 			'maxhours':maxhours,

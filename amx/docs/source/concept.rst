@@ -23,8 +23,6 @@ A procedure consists of two pieces of code: a script and a library. Here we will
 
 .. literalinclude :: ../../procedures/scripts/script-protein.py
   :tab-width: 4
-  :linenos:
-  :emphasize-lines: 21-22,36
 
 The scripts are stored in ``amx/procedures/scripts`` and must all follow the same naming scheme: ``script-<name>.py``. These scripts also follow a standardized format. They must always start with a multiline string typically named ``settings``. This string must be immediately followed by the standardized import statements highlighted above, namely:
 
@@ -39,7 +37,6 @@ Automacs has a very particular import scheme that ensures that both user-defined
   :tab-width: 4
   :start-after: #!/usr/bin/python
   :end-before: from amx import *
-  :linenos:
 
 Anything defined in the settings block will be populated in the ``wordspace`` dictionary. However some key names have a special meaning. For example, ``step`` will define and index a particular simulation step, and go on to house all of the output data for a discrete simulation step. In the example, automacs would store the protein simulation in ``s01-protein``. We prefer to use two-digit step numbering, but this is not a rule. This allows the user to easily pass information to a simulation procedure, using a single point of interface (the Factory uses this feature to automatically generate forms for these input parameters). Since the wordspace is shared across the codes, it can be used directly in the procedure script. In the example above, we use ``filecopy`` to move the starting structure into the step folder. Since all naming is handled by the ``wordspace``, all of the names and parameters are set in the ``settings`` block and everything that follows is general.
 
