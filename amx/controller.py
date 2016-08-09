@@ -390,7 +390,7 @@ def review(source):
 
 	#---absolute paths required for removes
 	if not re.match('^http',source): source_abs = os.path.abspath(os.path.expanduser(source))
-	else: source = source_abs
+	else: source_abs = source
 	try:
 		cmds = ['git init',
 			'git remote add origin %s'%source_abs,
