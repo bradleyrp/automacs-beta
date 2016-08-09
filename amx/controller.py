@@ -389,7 +389,8 @@ def review(source):
 	"""
 
 	#---absolute paths required for removes
-	if not re.match('^http',source): source_abs = os.path.abspath(os.path.expanduser(source))
+	if not re.match('^http',source) and ':' not in source: 
+		source_abs = os.path.abspath(os.path.expanduser(source))
 	else: source_abs = source
 	try:
 		cmds = ['git init',
