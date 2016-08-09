@@ -48,7 +48,13 @@ The cluster header text for a particular hostname should be referred by variable
 
 Automacs will also compute the total number of processors from the ``ppn`` and ``nnodes`` settings which correspond to the number of processors per node and the number of nodes, respectively. This value is implicitly added to the settings variable ``nprocs`` which is then substituted for ``NPROCS`` in the cluster header. This particular variable also gets set as a BASH variable in the cluster script so you can use ``$NPROCS`` in your ``mdrun_command``. 
 
-The ``mdrun_command`` is interpreted by BASH inside of the cluster submission script. This allows you to use very complicated calls.
+Additionally, the ``walltime`` variable from ``machine_configuration`` to the cluster submission header, we also convert it from e.g. ``24:00:00`` into hours for the ``mdrun -maxh`` flag, which will gently stop your simulation and write a final configuration shortly before time expires. The :meth:`cluster <amx.controller.cluster>` function writes a standardized BASH script stored at ``amx/procedures/scripts/scripts-continue.sh`` with these custom values. Users may also set the total simulation time or extension time in nanoseconds by sending the ``extend`` or ``until`` settings to the :meth:`write_continue_script <amx.base.functions.write_continue_script>` function inside of their parent script.
+
+.. warning::
+
+	Fix repeated code in cluster and write_continue_script
+
+The ``mdrun_command`` is interpreted by BASH inside of the cluster submission script. This allows you to use a custom call that includes MPI settings as well as the number of processors computed from ``ppn`` and ``nnodes``.
 
 .. code-block :: bash
 
@@ -59,9 +65,16 @@ The ``mdrun_command`` is interpreted by BASH inside of the cluster submission sc
 Modules
 -------
 
-mdrun_command overrides nprocs
+If the GROMACS binaries are already available in your path, then automacs will have no trouble finding them. However, many supercomputing platforms and even individual users prefer to compile several versions of GROMACS using a program called `environment modules <http://modules.sourceforge.net/>`_. Automacs is designed to interact with the modules program to load a specific version of GROMACS for any simulation.
 
+Typically, users load software modules by running a command such as ``module load gromacs/4.6.3``. Automacs will do this for you if you populate the ``modules`` keyword in your ``machine_configuration`` with a single string or a list of strings corresponding to available modules. You can check the correct software names using ``module avail`` as long as environment modules is installed.
 
-gmx_series
+.. note::
 
+	Automacs interacts with the environment modules package by using a header file which is typically located at ``/usr/share/Modules/default/init/python.py``. If you install the modules package to a different location, you should include the path to your ``python.py`` as the ``modules_path`` variable in the ``machine_configuration``. Note that systems running python versions before ``2.7`` will attempt to load modules directly from the terminal because these versions of python lack the ``importlib`` library necessary to communicate with other packages.
 
+In addition to loading the correct modules before local execution, automacs also adds them to any cluster submission scripts that it writes. 
+
+.. note::
+
+	If you wish to use specific GROMACS versions for some simulations, we recommend customizing the ``config.py`` file which is created by running ``make config local``. This file overrides the global version at ``~/.automacs.py``.

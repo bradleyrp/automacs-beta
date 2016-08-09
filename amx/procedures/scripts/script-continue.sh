@@ -32,7 +32,14 @@ eval $cmdexec
 
 #---continue simulation
 log=$(printf mdrun-%04d $NRUN)
-cmd="$MDRUN -s $(printf md.part%04d.tpr $NRUN) -cpi $(printf md.part%04d.cpt $PRUN) -cpo $(printf md.part%04d.cpt $NRUN) -g $(printf md.part%04d.log $NRUN) -e $(printf md.part%04d.edr $NRUN) -o $(printf md.part%04d.trr $NRUN) -x $(printf md.part%04d.xtc $NRUN) -c $(printf md.part%04d.gro $NRUN) -maxh $MAXHOURS"
+cmd="$MDRUN -s $(printf md.part%04d.tpr $NRUN) \
+-cpi $(printf md.part%04d.cpt $PRUN) \
+-cpo $(printf md.part%04d.cpt $NRUN) \
+-g $(printf md.part%04d.log $NRUN) \
+-e $(printf md.part%04d.edr $NRUN) \
+-o $(printf md.part%04d.trr $NRUN) \
+-x $(printf md.part%04d.xtc $NRUN) \
+-c $(printf md.part%04d.gro $NRUN) -maxh $MAXHOURS"
 cmdexec=$cmd" &> log-$log"
 echo "[FUNCTION] gmx_run ('"$cmd"',) {'skip': False, 'log': '$log', 'inpipe': None}" >> $metalog
 eval $cmdexec
