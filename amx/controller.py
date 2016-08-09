@@ -388,9 +388,11 @@ def review(source):
 	Retrieve a git repository designed for "inputs".
 	"""
 
+	#---absolute paths required for removes
+	source_abs = os.path.abspath(os.path.expanduser(source))
 	try:
 		cmds = ['git init',
-			'git remote add origin %s'%source,
+			'git remote add origin %s'%source_abs,
 			'git fetch origin',
 			'git checkout -t origin/master']
 		for cmd in cmds: subprocess.call(cmd,
