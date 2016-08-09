@@ -68,5 +68,6 @@ def copyfile(src,dest):
 	Wrap shutil for copying files (must specify the full destination path) along with permission bits.
 	"""
 
-	shutil.copyfile(src,dest)
-	shutil.copymode(src,dest)
+	dest_full = os.path.join(dest,os.path.basename(src)) if os.path.isdir(dest) else dest
+	shutil.copyfile(src,dest_full)
+	shutil.copymode(src,dest_full)
