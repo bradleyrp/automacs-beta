@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import os,re,subprocess,sys,json
+import os,re,subprocess,sys,json,shutil
 
 #---we often require imports from inputs from the root
 if 'inputs' not in sys.path: sys.path.insert(0,'inputs')
@@ -61,3 +61,12 @@ def call(cmd,cwd='./'):
 	except: 
 		print '[STATUS] failing quietly on "%s" which must self-report its errors'%cmd
 		sys.exit(1)
+
+def copyfile(src,dest):
+
+	"""
+	Wrap shutil for copying files (must specify the full destination path) along with permission bits.
+	"""
+
+	shutil.copyfile(src,dest)
+	shutil.copymode(src,dest)

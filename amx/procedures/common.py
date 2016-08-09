@@ -18,6 +18,17 @@ from amx.base.journal import narrate,report
 from amx.base.tools import detect_last
 import shutil,glob
 
+#---default command interpretations necessary for library-free procedures
+command_library = """
+grompp -f MDP.mdp -c STRUCTURE.gro -p TOP.top -o BASE.tpr -po BASE.mdp
+mdrun -s BASE.tpr -cpo BASE.cpt -o BASE.trr -x BASE.xtc -e BASE.edr -g BASE.log -c BASE.gro -v NONE
+editconf -f STRUCTURE.gro -o GRO.gro
+genconf -f STRUCTURE.gro -nbox NBOX -o GRO.gro
+make_ndx -f STRUCTURE.gro -o NDX.ndx
+genion -s BASE.tpr -o GRO.gro -n NDX.ndx -nname ANION -pname CATION
+trjconv -f STRUCTURE.gro -n NDX.ndx -s TPR.tpr -o GRO.gro
+"""
+
 @narrate
 def component(name,count=None,top=False):
 
@@ -287,7 +298,7 @@ def equilibrate(groups=None,structure='system'):
 	"""
 
 	#---sequential equilibration stages
-	seq = wordspace['equilibration'].split(',')
+	seq = wordspace.equilibration.split(',') if wordspace.equilibration else []
 	for eqnum,name in enumerate(seq):
 		if not equilibrate_check(name):
 			gmx('grompp',base='md-%s'%name,top='system',
@@ -300,9 +311,9 @@ def equilibrate(groups=None,structure='system'):
 
 	#---first part of the equilibration/production run
 	name = 'md.part0001'
-	if not equilibrate_check(name):
+	if not equilibrate_check(name) or seq == []:
 		gmx('grompp',base=name,top='system',
-			structure='md-%s'%seq[-1],
+			structure='md-%s'%seq[-1] if seq else structure,
 			log='grompp-0001',mdp='input-md-in',
 			flag='' if not groups else '-n %s'%groups)
 		gmx('mdrun',base=name,log='mdrun-0001')

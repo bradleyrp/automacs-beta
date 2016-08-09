@@ -91,8 +91,7 @@ if (not script_call in ['sphinx-build','script-vmd.py'] and
 			else: mod = __import__('amx.procedures.%s'%libfile,fromlist=['amx.procedures.%s'%libfile])
 			#---WARNING functions may be redefined in subsequent requirements
 			globals().update(vars(mod))
-			#---propagate the last-read command_library and mdp_specs to the wordspace
-			if 'command_library' in globals(): 
-				wordspace['command_library'] = interpret_command(command_library)
-			if 'mdp_specs' in globals(): wordspace['mdp_specs'] = mdp_specs
-
+	#---propagate the last-read command_library and mdp_specs to the wordspace (even if only loaded common)
+	if 'command_library' in globals(): 
+		wordspace['command_library'] = interpret_command(command_library)
+	if 'mdp_specs' in globals(): wordspace['mdp_specs'] = mdp_specs

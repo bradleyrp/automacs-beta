@@ -61,7 +61,9 @@ def write_mdp(param_file=None,rootdir='./',outdir='',extras=None):
 	mdpdefs = mdpdefs[mdpspecs['group']] if (mdpspecs and 'group' in mdpspecs) else mdpdefs
 	mdpspecs = [] if not mdpspecs else mdpspecs
 	#---loop over each requested MDP file
-	for mdpname in [i for i in mdpspecs if re.match('.+\.mdp$',i)]:
+	target_mdps = [i for i in mdpspecs if re.match('.+\.mdp$',i)]
+	if not target_mdps: raise Exception('\n[ERROR] called write_mdp() but no valid mdp targets in mdp_specs')
+	for mdpname in target_mdps:
 		settings = {}
 		#---run through defaults and add them to our MDP file dictionary
 		#---the defaults list contains keys that name essential sections of every MDP file
