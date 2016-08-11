@@ -5,7 +5,7 @@ import os,re,subprocess,sys,json,shutil
 #---we often require imports from inputs from the root
 if 'inputs' not in sys.path: sys.path.insert(0,'inputs')
 
-def script_settings_replace(script,settings_string):
+def script_settings_replace(script,settings_string,**kwargs):
 
 	"""
 	Replace the settings string in a script. 
@@ -15,11 +15,11 @@ def script_settings_replace(script,settings_string):
 	with open(script) as fp: lines = fp.readlines()
 	cutout = [next(ii for ii,i in enumerate(lines) if re.match(regex,i)) 
 		for regex in ['^settings','^(import amx|from amx import)']]
+	strings = {'settings':settings_string}
+	strings.update(**kwargs)
 	with open(script,'w') as fp:
 		for line in lines[:cutout[0]]: fp.write(line)
-		fp.write('settings = """')
-		fp.write(settings_string)
-		fp.write('"""\n\n')
+		for key,val in strings.items(): fp.write('%s = """%s"""\n\n'%(key,val))
 		for line in lines[cutout[1]:]: fp.write(line)
 
 def write_wordspace(wordspace,outfile='wordspace.json'):

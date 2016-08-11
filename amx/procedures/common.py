@@ -175,14 +175,12 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 					axis=1),is_water),axis=0)
 			#---use scipy KDTree to find atom names inside the gap
 			#---note that order matters: we wish to find waters too close to not_waters
-			close_dists,neighbors = scipy.spatial.KDTree(points[water_inds]).query(
-				points[not_water_inds],distance_upper_bound=3)
+			close_dists,neighbors = scipy.spatial.KDTree(points[water_inds]).query(points[not_water_inds],distance_upper_bound=gap/10.0)
 			#---use the distances to find the residue indices for waters that are too close 
 			excludes = np.array(incoming['residue_indices'])[is_water][np.where(close_dists<=gap/10.0)[0]]
 			#---get residues that are water and in the exclude list
 			#---note that the following step might be slow
-			exclude_res = [ii for ii,i in enumerate(incoming['residue_indices']) 
-				if i in excludes and is_water[ii]]
+			exclude_res = [ii for ii,i in enumerate(incoming['residue_indices']) if i in excludes and is_water[ii]]
 			#---copy the array that marks the waters
 			surviving_water = np.array(is_water)
 			#---remove waters that are on the exclude list
