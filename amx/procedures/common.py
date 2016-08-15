@@ -20,6 +20,7 @@ import shutil,glob
 
 #---default command interpretations necessary for library-free procedures
 command_library = """
+pdb2gmx -f STRUCTURE -ff FF -water WATER -o GRO.gro -p system.top -i BASE-posre.itp -missing NONE -ignh NONE
 grompp -f MDP.mdp -c STRUCTURE.gro -p TOP.top -o BASE.tpr -po BASE.mdp
 mdrun -s BASE.tpr -cpo BASE.cpt -o BASE.trr -x BASE.xtc -e BASE.edr -g BASE.log -c BASE.gro -v NONE
 editconf -f STRUCTURE.gro -o GRO.gro
@@ -209,15 +210,15 @@ def trim_waters(structure='solvate-dense',gro='solvate',
 	else: filecopy(wordspace['step']+'%s-dense.gro'%gro,wordspace['step']+'%s.gro'%gro)
 
 @narrate
-def minimize(name,method='steep'):
+def minimize(name,method='steep',top=None):
 
 	"""
 	minimize(name,method='steep')
 	Standard minimization procedure.
 	"""
 
-	gmx('grompp',base='em-%s-%s'%(name,method),top=name,structure=name,
-		log='grompp-%s-%s'%(name,method),mdp='input-em-%s-in'%method,skip=True)
+	gmx('grompp',base='em-%s-%s'%(name,method),top=name if not top else re.sub('^(.+)\.top$',r'\1',top),
+		structure=name,log='grompp-%s-%s'%(name,method),mdp='input-em-%s-in'%method,skip=True)
 	assert os.path.isfile(wordspace['step']+'em-%s-%s.tpr'%(name,method))
 	gmx('mdrun',base='em-%s-%s'%(name,method),log='mdrun-%s-%s'%(name,method))
 	filecopy(wordspace['step']+'em-'+'%s-%s.gro'%(name,method),

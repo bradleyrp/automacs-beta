@@ -65,8 +65,8 @@ def extract_itp(topfile):
 			if not re.match(".+forcefield\.itp",line) and not \
 				re.match("; Include forcefield parameters",line): 
 				fp.write(line+'\n')
-	#---! needs check for itp list
-	wordspace['itp'] = ['protein.itp']
+	if 'itp' not in wordspace: wordspace['itp'] = ['protein.itp']
+	else: wordspace.itp.append('protein.itp')
 
 @narrate
 def select_minimum(*args,**kwargs):
