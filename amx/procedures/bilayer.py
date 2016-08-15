@@ -26,6 +26,7 @@ import random
 
 #---common command interpretations
 command_library = """
+pdb2gmx -f STRUCTURE -ff FF -water WATER -o GRO.gro -p system.top -i BASE-posre.itp -missing NONE -ignh NONE
 grompp -f MDP.mdp -c STRUCTURE.gro -p TOP.top -o BASE.tpr -po BASE.mdp
 mdrun -s BASE.tpr -cpo BASE.cpt -o BASE.trr -x BASE.xtc -e BASE.edr -g BASE.log -c BASE.gro -v NONE
 editconf -f STRUCTURE.gro -o GRO.gro
@@ -510,13 +511,13 @@ def bilayer_middle(structure,gro):
 		tpr='em-counterions-steep',log='trjconv-middle',inpipe="1\n0\n",flag='-center -pbc mol')
 
 @narrate
-def bilayer_sorter(structure,ndx='system-groups'):
+def bilayer_sorter(structure,ndx='system-groups',protein=True):
 
 	"""
 	Divide the system into groups.
 	"""
 
-	if 'protein_ready' in wordspace:
+	if 'protein_ready' in wordspace or protein:
 		gmx('make_ndx',structure=structure,ndx='%s-inspect'%structure,
 			log='make-ndx-%s-inspect'%structure,inpipe="q\n")
 		with open(wordspace['step']+'log-make-ndx-%s-inspect'%structure) as fp: lines = fp.readlines()
@@ -524,15 +525,18 @@ def bilayer_sorter(structure,ndx='system-groups'):
 		make_ndx_sifter = '^\s*([0-9]+)\s*Protein'
 		protein_group = int(re.findall(make_ndx_sifter,
 			next(i for i in lines if re.match(make_ndx_sifter,i)))[0])
-		group_selector = "\n".join([
-			"keep %s"%protein_group,
-			"name 0 PROTEIN",
-			#---! hacked
-			" || ".join(['r '+r for r in wordspace['lipids']+['PIP2']]),
-			"name 1 LIPIDS",
-			" || ".join(['r '+r for r in [wordspace.sol,'ION',wordspace['cation'],wordspace['anion']]]),
-			"name 2 SOLVENT",
-			"0 | 1 | 2","name 3 SYSTEM","q"])+"\n"
+		try:
+			group_selector = "\n".join([
+				"keep %s"%protein_group,
+				"name 0 PROTEIN",
+				#---! hacked (recently removed PIP2 from MARTINI below)
+				" || ".join(['r '+r for r in wordspace['lipids']+['PIP2']]),
+				"name 1 LIPIDS",
+				" || ".join(['r '+r for r in [wordspace.sol,'ION',wordspace['cation'],wordspace['anion']]]),
+				"name 2 SOLVENT",
+				"0 | 1 | 2","name 3 SYSTEM","q"])+"\n"
+		except:
+			import pdb;pdb.set_trace()
 	else:
 		group_selector = "\n".join([
 			"keep 0",
