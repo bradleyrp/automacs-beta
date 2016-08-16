@@ -528,8 +528,7 @@ def bilayer_sorter(structure,ndx='system-groups',protein=True):
 		group_selector = "\n".join([
 			"keep %s"%protein_group,
 			"name 0 PROTEIN",
-			#---! hacked
-			" || ".join(['r '+r for r in wordspace['lipids']+['PIP2']]),
+			" || ".join(['r '+r for r in wordspace['lipids']]),
 			"name 1 LIPIDS",
 			" || ".join(['r '+r for r in [wordspace.sol,'ION',wordspace['cation'],wordspace['anion']]]),
 			"name 2 SOLVENT",
