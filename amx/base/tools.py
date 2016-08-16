@@ -61,6 +61,7 @@ def yamlparse(text):
 
 	"""
 	A function which reads the settings files in yaml format.
+	DEVELOPMENT NOTE: this will ignore lines if your forget a colon. Needs better error checking.
 	"""
 	
 	unpacked = {}
