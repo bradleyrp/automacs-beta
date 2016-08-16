@@ -57,7 +57,7 @@ def asciitree(obj,depth=0,wide=2,last=[],recursed=False):
 	else: print 'unhandled tree object'
 	if not recursed: print '\n'
 	
-def yamlparse(text):
+def yamlparse(text,style=None):
 
 	"""
 	A function which reads the settings files in yaml format.
@@ -65,15 +65,22 @@ def yamlparse(text):
 	
 	unpacked = {}
 	#---evaluate code blocks first
-	regex_block = r"^\s*([^\n]*?)\s*(?:\s*:\s*\|)\s*([^\n]*?)\n(\s+)(.*?)\n(?!\3)"
+	regex_block_standard = r"^\s*([^\n]*?)\s*(?:\s*:\s*\|)\s*([^\n]*?)\n(\s+)(.*?)\n(?!\3)"
+	regex_block_tabbed = r"^\s*([^\n]*?)\s*(?:\s*:\s*\|)\s*\n(.*?)\n(?!\t)"
+	if style == 'tabbed': regex_block = regex_block_tabbed
+	else: regex_block = regex_block_standard
 	regex_line = r"^\s*(.*?)\s*(?:\s*:\s*)\s*(.+)$"
 	while True:
 		blockoff = re.search(regex_block,text,re.M+re.DOTALL)
 		if not blockoff: break
-		#---collect the key, indentation for replacement, and value
-		key,indent,block = blockoff.group(1),blockoff.group(3),''.join(blockoff.groups()[1:])
-		#---remove indentations and newlines
-		compact = re.sub('\n','',re.sub(indent,'',block))
+		if style == 'tabbed': key,block = blockoff.groups()[:2]
+		else: 
+			#---collect the key, indentation for replacement, and value
+			key,indent,block = blockoff.group(1),blockoff.group(3),''.join(blockoff.groups()[1:])
+		#---alternate style does multiline blocks with a single tab character
+		if style == 'tabbed': compact = re.sub("(\n\t)",r'\n',block.lstrip('\t'),re.M)
+		#---remove indentations and newlines (default)
+		else: compact = re.sub('\n','',re.sub(indent,'',block))
 		unpacked[re.sub(' ','_',key)] = compact
 		#---remove the block
 		text = re.sub(re.escape(text[slice(*blockoff.span())]),'',text)
