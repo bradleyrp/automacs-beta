@@ -176,3 +176,11 @@ def ready_to_continue(sure=False):
 			"confirm"]
 		if sure or ask_user(*msgs): os.remove('wordspace.json')
 		else: print '[WARNING] wordspace.json remains despite ready_to_continue check'
+
+def nospaces(text):
+
+	"""
+	Working with keys processed by yamlparse enforces a no-spaces rule.
+	"""
+
+	return re.sub(' ','_',text)
