@@ -1,0 +1,3 @@
+[submodule "amx/procedures/codes/vmdmake"]
+	path = amx/procedures/codes/vmdmake
+	url = https://github.com/bradleyrp/vmdmake
