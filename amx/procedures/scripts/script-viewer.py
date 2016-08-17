@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 settings = """
-step: v03-look
+step: v01-look
 video name: video
 input gro: system.gro
 viewbox: (800,800)
