@@ -9,24 +9,28 @@ resolution: (2400,1800)
 bonder: false
 which view: yview
 scale: scale by 2.5
-max frames: 200
-show trajectory: true
-video size: None
+max frames: 300
+show trajectory: false
+video size: 30
 use snapshot: false
 view mode: ['video','live','snapshot'][0]
-recipe_collection:|[
+recipe collection:|[
 	'video aamd atomistic bilayer protein',
 	'live aamd atomistic bilayer protein',
 	][0]
+selections:|[
+	{'basic_residues':'protein and (resname HIS or resname ARG or resname LYS)',
+	'smooth':True,'style':'licorice','goodsell':True},
+	]
 """
 
 from amx import *
 init(settings)
 try:
 	from amx.procedures.codes.vmdmake import vmdmake
-	vmdmake.yamlparse = yamlparse
 	vmdmake.bash = bash
 	vmdmake.gmxpaths = gmxpaths
+	if wordspace.view_mode=='video': wordspace.show_trajectory = True
 	#---stage 1: create trajectory with unbroken molecules
 	if not wordspace['under_development']:
 		wordspace['last_step'],wordspace['last_part'] = detect_last()
@@ -53,6 +57,7 @@ try:
 	if wordspace.bonder: view.do('bonder')
 	view.do(wordspace.which_view)
 	if wordspace['scale']: view.command(wordspace.scale)
+	for select in wordspace.selections: view.select(**select)
 	for recipe in view.recipes_collect[nospaces(wordspace.recipe_collection)]: 
 		view.recipe(nospaces(recipe))
 	#---stage 3: make snapshots if this is a video
@@ -71,6 +76,6 @@ try:
 	#---stage 4: render the video
 	if wordspace.view_mode == 'video': 
 		view.render(name=wordspace.video_name,size=wordspace.video_size)
-	wordspace.under_development = 4
+	wordspace.under_development = 4 if wordspace.view_mode == 'video' else 2
 except KeyboardInterrupt as e: exception_handler(e,wordspace,all=True)
 except Exception as e: exception_handler(e,wordspace,all=True)
