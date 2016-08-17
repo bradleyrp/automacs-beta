@@ -23,8 +23,12 @@ class WordSpace(dict):
 		Assign items as attributes.
 		"""
 
-		if key not in dict.__dict__:
+		#---always write the wordspace when we change under_development to an integer
+		if key=='under_development' and type(value)==int:
+			from amx.base.metatools import write_wordspace
+			write_wordspace(wordspace,wordspace.wordspace_location)
 			dict.__setitem__(self,key,value)
+		elif key not in dict.__dict__: dict.__setitem__(self,key,value)
 		else: raise Exception('[ERROR] cannot set the %s key in the wordspace'%key)
 
 	def __getitem__(self,key):

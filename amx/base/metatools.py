@@ -22,16 +22,17 @@ def script_settings_replace(script,settings_string,**kwargs):
 		for key,val in strings.items(): fp.write('%s = """%s"""\n\n'%(key,val))
 		for line in lines[cutout[1]:]: fp.write(line)
 
-def write_wordspace(wordspace,outfile='wordspace.json'):
+def write_wordspace(wordspace,outfile=None):
 
 	"""
 	In addition to saving checkpoints permanently in the log, we also drop the wordspace into a json file
 	for rapid development.
 	"""
 
+	outfile = 'wordspace.json' if not outfile else outfile
 	with open(outfile,'w') as fp: json.dump(wordspace,fp)
 
-def exception_handler(e,wordspace,all=False):
+def exception_handler(e,wordspace,all=False,outfile=None):
 
 	"""
 	Report an error concisely to the terminal to avoid overwhelming the user.
@@ -45,7 +46,7 @@ def exception_handler(e,wordspace,all=False):
 	if all:
 		import traceback
 		report(re.sub('\n','\n[TRACEBACK] ',traceback.format_exc()),tag='traceback')
-	write_wordspace(wordspace)
+	write_wordspace(wordspace,outfile=outfile)
 	sys.exit(1)
 
 def call(cmd,cwd='./'):
@@ -71,3 +72,4 @@ def copyfile(src,dest):
 	dest_full = os.path.join(dest,os.path.basename(src)) if os.path.isdir(dest) else dest
 	shutil.copyfile(src,dest_full)
 	shutil.copymode(src,dest_full)
+

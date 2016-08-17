@@ -184,16 +184,25 @@ def init(setting_string,proceed=False):
 		sure = (settings['proceed'] or (wordspace['proceed'] if 'proceed' in wordspace else False))
 		ready_to_continue(sure=sure)
 	os.umask(002)
+	#---default wordspace is found in root
+	regex_generic_step = '^[a-z][0-9]{2,}\-\w+'
+	if not re.match(regex_generic_step,settings['step']): wordspace_location = 'wordspace.json'
+	#---custom wordspaces can be stored in the step directory if it is specified in settings
+	else:
+		#---it is impossible to bootstrap the script-step-wordspace if the step is not explicit
+		#---...therefore a local wordspace requires a fully-explicit, unique step name
+		#---...if the step is fully explicit we assume that the user wants a local wordspace
+		wordspace_location = os.path.join(settings['step'],'wordspace.json')
 	#---in development environments we first load the previous wordspace
-	if os.path.isfile('wordspace.json'):
+	if os.path.isfile(wordspace_location):
 		if 'watch_file' in wordspace:
-			report('loading wordspace.json and setting under_development = True',tag='status')
+			report('loading %s and setting under_development = True'%wordspace_location,tag='status')
 		else: print "[WARNING] loading wordspace.json without reporting to a log (no watch_file yet)"
-		incoming_wordspace = json.load(open('wordspace.json'))
+		incoming_wordspace = json.load(open(wordspace_location))
 		wordspace.update(incoming_wordspace)
-		wordspace['under_development'] = True
+		if 'under_development' not in wordspace: wordspace.under_development = True
+	wordspace.wordspace_location = wordspace_location
 	#---load settings into wordspace
 	for key,val in settings.items(): 
 		if not wordspace['under_development'] or (wordspace['under_development'] and key!='step'): 
 			wordspace[re.sub(' ','_',key)] = val
-
