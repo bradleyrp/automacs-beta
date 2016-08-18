@@ -511,7 +511,7 @@ def bilayer_middle(structure,gro):
 		tpr='em-counterions-steep',log='trjconv-middle',inpipe="1\n0\n",flag='-center -pbc mol')
 
 @narrate
-def bilayer_sorter(structure,ndx='system-groups',protein=True):
+def bilayer_sorter(structure,ndx='system-groups',protein=False):
 
 	"""
 	Divide the system into groups.
