@@ -30,3 +30,24 @@ def docs(clean=False):
 		index_fn = os.path.join(os.path.abspath(os.getcwd()),'amx/docs/build/_build/html/index.html')
 		if not os.path.isfile(index_fn): raise Exception('\n[ERROR] failed to make docs. see "%s"'%docslog)
 		print '[STATUS] docs are ready at "file://%s"'%index_fn
+
+"""
+quickstart guide to pushing docs to github pages
+
+git init .
+
+git commit -am 'initial commit' --allow-empty
+touch .nojekyll
+git add .
+git commit -am 'added'
+git remote add origin https://github.com/bradleyrp/amxdocs.git
+git push -u origin master
+
+git branch gh-pages
+git symbolic-ref HEAD refs/heads/gh-pages  # auto-switches branches to gh-pages
+rm .git/index
+git clean -fdx
+git branch #---check that you are on gh-pages
+
+git push --set-upstream origin gh-pages
+"""
