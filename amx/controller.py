@@ -475,7 +475,6 @@ def makeface(*arglist):
 	#---"command" is a protected keyword
 	if funcname != 'back' and 'command' in kwargs: kwargs.pop('command')
 	print '[CONTROLLER] calling %s with args="%s" and kwargs="%s"'%(funcname,args,kwargs)
-
 	#---call the function
 	globals()[funcname](*args,**kwargs)
 
@@ -489,5 +488,6 @@ if __name__ == "__main__":
 		#---execute instead of importing for simplicity
 		for fn in glob.glob('./amx/procedures/extras/*.py'): execfile(fn)
 		#---assume the target is in one of the extras
-		globals()[sys.argv[1]](*[i for i in sys.argv[2:] if i not in ['w','--','s']])
-	else: makeface(*sys.argv[1:])
+		#---! removed: globals()[sys.argv[1]](*[i for i in sys.argv[2:] if i not in ['w','--','s']])
+	#---all make commands routed through the makeface to parse arguments
+	makeface(*sys.argv[1:])

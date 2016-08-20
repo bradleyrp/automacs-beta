@@ -31,9 +31,32 @@ def docs(clean=False):
 		if not os.path.isfile(index_fn): raise Exception('\n[ERROR] failed to make docs. see "%s"'%docslog)
 		print '[STATUS] docs are ready at "file://%s"'%index_fn
 
-"""
-quickstart guide to pushing docs to github pages
 
+def docs_write(to=''):
+
+	"""
+	Prepare documentation for push to github pages.
+	"""
+
+	if not to: raise Exception('send destination for documentation via the "to" argument to make')
+	dropspot = os.path.join(os.getcwd(),'amx/docs/build/_build/html','')
+	cmds = [
+		'git init .',
+		"git commit -am 'initial commit' --allow-empty",
+		"git branch gh-pages",
+		"git symbolic-ref HEAD refs/heads/gh-pages",
+		"rm .git/index",
+		"git clean -fdx",
+		"git remote add origin %s"%to,
+		"git pull",
+		"git add .",
+		"git commit -am 'added' --allow-empty",
+		"git remote add origin %s"%to,
+		"git push --set-upstream origin gh-pages",
+		]
+	for cmd in cmds: subprocess.call(cmd,cwd=dropspot,shell=True)
+
+"""
 git init .
 
 git commit -am 'initial commit' --allow-empty
