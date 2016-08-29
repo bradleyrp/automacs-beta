@@ -108,7 +108,7 @@ def upload(sure=False,part=None,bulk=False):
 	if part: 
 		part_num = int(part)
 		last_step, = [i for i in glob.glob('s%02d-*'%part_num)]
-	if not last_step and not bulk: raise Exception('\n[ERROR] no steps to upload')
+	if not last_step and not bulk: raise Exception('\n[ERROR] no steps to upload (try "bulk" instead)')
 	elif last_step and not bulk:
 		restart_fns = [last_step+'/md.part%04d.%s'%(part_num,suf) for suf in ['cpt','tpr']]
 		restart_fns += [last_step+'/script-continue.sh']
@@ -135,13 +135,13 @@ def upload(sure=False,part=None,bulk=False):
 		p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()),executable='/bin/bash')
 		log = p.communicate()
 		if not bulk: os.remove('uploads.txt')
-	if p.returncode == 0:
+	if p.returncode == 0 and last_step:
 		with open('script-%s.log'%last_step.rstrip('/'),'a') as fp:
 			destination = '%s:~/%s/%s'%(sshname,subfolder,cwd)
 			ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y.%m.%d.%H%M')
 			fp.write("[FUNCTION] upload () {'destination': '%s', 'time': '%s', 'sure': %s}\n"%(
 				destination,ts,str(sure)))
-	else: 
+	elif p.returncode != 0: 
 		print "[STATUS] upload failure (not logged)"
 		sys.exit(1)
 
