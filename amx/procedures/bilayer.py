@@ -297,7 +297,7 @@ def read_gro(gro,cwd='./'):
 	groform = {'resid':(0,5),'resname':(5,10),'name':(10,15),'index':(15,20),'xyz':(20,None)}
 	with open(cwd+'/'+gro) as fp: rawgro = fp.readlines()
 	structure,points = [],zeros((len(rawgro)-3,3))
-	for line in rawgro[2:-1]: structure.append({key:line[slice(*val)] for key,val in groform.items()})
+	for line in rawgro[2:-1]: structure.append(dict([(key,line[slice(*val)]) for key,val in groform.items()]))
 	for ii,i in enumerate(structure): points[ii] = [float(j) for j in i.pop('xyz').split()]
 	return structure,points
 
