@@ -539,7 +539,9 @@ def autodetect_start_structure():
 	setting. This function is useful for starting batches of protein simulations or homology modeling in 
 	e.g. the factory codes.
 	"""
-
+        
+        if wordspace.requires=='homology':
+                wordspace.start_structure=wordspace.template
 	if not 'start_structure' in wordspace: 
 		raise Exception('\n[ERROR] this autodect function requires the start_structure setting\n'+
 			'[ERROR] (set start_structure to inputs/STRUCTURE.pdb to autodetect a lone pdb in inputs.')

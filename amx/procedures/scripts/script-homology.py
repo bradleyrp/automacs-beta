@@ -45,7 +45,8 @@ if not wordspace['other_chains']:
                 template_struct_chain=wordspace.template_chain,
                 target_seq=wordspace.target_name,
                 n_models=wordspace.many_models,
-                starting_residue=pdb_attr['starting_residue'])
+                starting_residue=pdb_attr['starting_residue'],
+                other_chains=None)
 if wordspace['other_chains']:
         other_chains_info={}
         for chain in wordspace['other_chains']:
