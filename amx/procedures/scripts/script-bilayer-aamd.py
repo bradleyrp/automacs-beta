@@ -45,6 +45,7 @@ mdp specs:|         {
 					}
 atom resolution:    aamd
 keep continue:      True
+cluster stop:       False
 """
 
 from amx import *
@@ -57,7 +58,7 @@ try:
 		if 'protein_ready' in wordspace: add_proteins()
 		else: filecopy(wordspace['step']+'vacuum-bilayer.gro',wordspace['step']+'vacuum.gro')
 		write_top('vacuum.top')
-		raise Exception('[STATUS] stopping to move to the cluster')
+		if wordspace['cluster_stop']: raise Exception('[STATUS] stopping to move to the cluster')
 	minimize('vacuum')
 	remove_jump(structure='vacuum-minimized',tpr='em-vacuum-steep',gro='vacuum-nojump')
 	vacuum_pack(structure='vacuum-nojump',name='vacuum-pack1',gro='vacuum-packed1')
