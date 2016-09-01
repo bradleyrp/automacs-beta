@@ -5,7 +5,7 @@ step:                homology
 requires:            homology
 modeller path:       mod9.15
 homology method:     point
-start structure:     inputs/STRUCTURE.pdb
+template:            inputs/STRUCTURE.pdb
 template chain:      A
 other chains:        None
 target name:         egfr_L858R
