@@ -547,8 +547,7 @@ def autodetect_start_structure():
 		pdbs = glob.glob('inputs/*.pdb')
 		if len(pdbs)==1: 
 			wordspace.start_structure = pdbs[0]
-			if wordspace.system_name == 'SYSTEM':
-				wordspace.system_name = re.findall('^inputs/([\w\.-]+)\.pdb$',pdbs[0])[0]
+                        wordspace.system_name = re.findall('^inputs/([\w\.-]+)\.pdb$',pdbs[0])[0]
 		else: 
 			if 'watch_file' not in wordspace: wordspace.watch_file = 'ERROR.log'
 			report('multiple PDBs in inputs/ and start_structure is still default',tag='warning')
