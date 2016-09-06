@@ -10,7 +10,7 @@ template chain:      A
 other chains:        None
 target name:         egfr_L858R
 point mutation:      L858R
-target sequence:     none
+target sequence:     None
 many models:         5
 number HETATMs:      0
 """
