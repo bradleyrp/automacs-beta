@@ -248,6 +248,8 @@ def resume(script_settings='',add=False,read_only=False,step=None):
 	#---...so that start makes a new directory with the correct naming scheme. this allows us to retain
 	#---...the previous wordspace on a new step
 	if add: wordspace['step'] = new_step
+	#---! reset the under_development flag on resume (NEEDS CHECKED)
+	wordspace['under_development'] = False
 			
 def interpret_command(block):
 

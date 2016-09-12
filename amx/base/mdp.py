@@ -58,6 +58,7 @@ def write_mdp(param_file=None,rootdir='./',outdir='',extras=None):
 	mdpdefs = mdpfile['mdpdefs']
 
 	#--topkeys is the root node for our parameters in mdpdict
+	assert 'group' in mdpspecs
 	mdpdefs = mdpdefs[mdpspecs['group']] if (mdpspecs and 'group' in mdpspecs) else mdpdefs
 	mdpspecs = [] if not mdpspecs else mdpspecs
 	#---loop over each requested MDP file

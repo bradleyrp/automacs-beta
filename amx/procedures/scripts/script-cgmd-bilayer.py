@@ -1,32 +1,6 @@
 #!/usr/bin/python
 
-settings = """
-system name:        CGMD BILAYER
-lipid structures:   inputs/cgmd-inputs/
-step:               cgmd-bilayer
-requires:           cgmd_bilayer
-shape:              flat
-height:             6
-binsize:            1.0
-monolayer offset:   1.5
-monolayer top:      400
-monolayer bottom:   None
-composition top:    {'DOPC':0.8,'DOPS':0.2}
-composition bottom: None
-aspect:             1.0
-solvent thickness:  20
-protein water gap:  3
-lipid ready:        lipid-ready.gro
-force field:        martini
-cation:             NA+
-anion:              CL-
-ionic strength:     0.150
-sol:                W
-ff includes:        ['martini-v2.2','martini-v2.0-lipids','martini-v2.2-aminoacids','martini-v2.0-ions']
-files:              ['cgmd-inputs/martini-water.gro']
-sources:            ['martini.ff']
-equilibration:      npt-bilayer
-"""
+settings = ""
 
 from amx import *
 init(settings)
@@ -45,7 +19,7 @@ try:
 	write_top('solvate.top')
 	minimize('solvate')
 	remove_jump(structure='solvate-minimized',tpr='em-solvate-steep',gro='solvate-nojump')
-	counterions('solvate-nojump','solvate',resname="W")
+	counterions('solvate-nojump','solvate')
 	counterion_renamer('counterions')
 	write_top('counterions.top')
 	minimize('counterions')
