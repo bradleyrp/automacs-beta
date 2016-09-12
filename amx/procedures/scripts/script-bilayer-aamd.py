@@ -45,6 +45,7 @@ mdp specs:|         {
 					}
 atom resolution:    aamd
 keep continue:      True
+cluster stop:       False
 """
 
 from amx import *
@@ -57,11 +58,12 @@ try:
 		if 'protein_ready' in wordspace: add_proteins()
 		else: filecopy(wordspace['step']+'vacuum-bilayer.gro',wordspace['step']+'vacuum.gro')
 		write_top('vacuum.top')
-		minimize('vacuum')
-		remove_jump(structure='vacuum-minimized',tpr='em-vacuum-steep',gro='vacuum-nojump')
-		vacuum_pack(structure='vacuum-nojump',name='vacuum-pack1',gro='vacuum-packed1')
-		vacuum_pack(structure='vacuum-packed1',name='vacuum-pack2',gro='vacuum-packed2')
-		vacuum_pack(structure='vacuum-packed2',name='vacuum-pack3',gro='vacuum-packed')
+		if wordspace['cluster_stop']: raise Exception('[STATUS] stopping to move to the cluster')
+	minimize('vacuum')
+	remove_jump(structure='vacuum-minimized',tpr='em-vacuum-steep',gro='vacuum-nojump')
+	vacuum_pack(structure='vacuum-nojump',name='vacuum-pack1',gro='vacuum-packed1')
+	vacuum_pack(structure='vacuum-packed1',name='vacuum-pack2',gro='vacuum-packed2')
+	vacuum_pack(structure='vacuum-packed2',name='vacuum-pack3',gro='vacuum-packed')
 	solvate_bilayer('vacuum-packed')
 	write_top('solvate.top')
 	minimize('solvate')

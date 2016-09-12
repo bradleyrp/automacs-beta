@@ -237,6 +237,11 @@ def build_bilayer(name,random_rotation=True):
 	natoms = sum([sum(concatenate(identities)==ii)*len(lipids[i]['lpts']) 
 		for ii,i in enumerate(lipid_order)])
 
+	#---enforce a minimum z-height in case the solvent thickness is very small
+	#---! note that the solvent thickness might be incorrectly applied here
+	#---! it might be better to use a fixed thickness for building the planar bilayer anyway
+	vecs[2] = 10.0 if vecs[2]<10.0 else vecs[2]
+
 	#---write the placed lipids to a file
 	resnr = 1
 	with open(wordspace['step']+name+'.gro','w') as fp:
@@ -297,7 +302,7 @@ def read_gro(gro,cwd='./'):
 	groform = {'resid':(0,5),'resname':(5,10),'name':(10,15),'index':(15,20),'xyz':(20,None)}
 	with open(cwd+'/'+gro) as fp: rawgro = fp.readlines()
 	structure,points = [],zeros((len(rawgro)-3,3))
-	for line in rawgro[2:-1]: structure.append({key:line[slice(*val)] for key,val in groform.items()})
+	for line in rawgro[2:-1]: structure.append(dict([(key,line[slice(*val)]) for key,val in groform.items()]))
 	for ii,i in enumerate(structure): points[ii] = [float(j) for j in i.pop('xyz').split()]
 	return structure,points
 
@@ -532,7 +537,7 @@ def bilayer_sorter(structure,ndx='system-groups',protein=False):
 			"name 1 LIPIDS",
 			" || ".join(['r '+r for r in [wordspace.sol,'ION',wordspace['cation'],wordspace['anion']]]),
 			"name 2 SOLVENT",
-			"0 | 1 | 2","name 3 SYSTEM","q"])+"\n"
+			"0 | 1 | 2","name 3 SYSTEM","0 | 1","name 4 LIPIDS_PROTEIN","q"])+"\n"
 	else:
 		group_selector = "\n".join([
 			"keep 0",

@@ -108,8 +108,9 @@ def upload(sure=False,part=None,bulk=False):
 	if part: 
 		part_num = int(part)
 		last_step, = [i for i in glob.glob('s%02d-*'%part_num)]
-	if not last_step and not bulk: raise Exception('\n[ERROR] no steps to upload')
+	if not last_step and not bulk: raise Exception('\n[ERROR] no steps to upload (try "bulk" instead)')
 	elif last_step and not bulk:
+		if not part_num: raise Exception('\n[ERROR] cannot find a part number (did you mean "bulk"?)')
 		restart_fns = [last_step+'/md.part%04d.%s'%(part_num,suf) for suf in ['cpt','tpr']]
 		restart_fns += [last_step+'/script-continue.sh']
 		if not all([os.path.isfile(fn) for fn in restart_fns]):
@@ -135,13 +136,13 @@ def upload(sure=False,part=None,bulk=False):
 		p = subprocess.Popen(cmd,shell=True,cwd=os.path.abspath(os.getcwd()),executable='/bin/bash')
 		log = p.communicate()
 		if not bulk: os.remove('uploads.txt')
-	if p.returncode == 0:
+	if p.returncode == 0 and last_step:
 		with open('script-%s.log'%last_step.rstrip('/'),'a') as fp:
 			destination = '%s:~/%s/%s'%(sshname,subfolder,cwd)
 			ts = datetime.datetime.fromtimestamp(time.time()).strftime('%Y.%m.%d.%H%M')
 			fp.write("[FUNCTION] upload () {'destination': '%s', 'time': '%s', 'sure': %s}\n"%(
 				destination,ts,str(sure)))
-	else: 
+	elif p.returncode != 0: 
 		print "[STATUS] upload failure (not logged)"
 		sys.exit(1)
 
@@ -260,9 +261,14 @@ def metarun(script=None,more=False):
 		print "[USAGE] make metarun <script>"
 		print "[USAGE] available scripts: \n > "+'\n > '.join(zip(*candidates)[1])
 	else:
-		try: target, = [ii for ii,i in enumerate(zip(*candidates)[1]) if re.search(script,i)]
-		except: raise Exception('[ERROR] failed to match %s with known scripts'%script)
-		execfile(candidates[target][0])
+		targets = [ii for ii,i in enumerate(zip(*candidates)[1]) if re.search(script,i)]
+		cull = [i for i in targets if candidates[i][1]==script]
+		if len(targets)==1: which_script = candidates[targets[0]][0]
+		#---names which extend other names match multiple times in which case the match must be exact
+		elif len(targets)>1 and len(cull)==1:
+			which_script = candidates[cull[0]][0]
+		else: raise Exception('[ERROR] failed to match %s with known scripts'%script)
+		execfile(which_script)
 
 def look(script='',dump=True,step=None):
 
@@ -475,7 +481,6 @@ def makeface(*arglist):
 	#---"command" is a protected keyword
 	if funcname != 'back' and 'command' in kwargs: kwargs.pop('command')
 	print '[CONTROLLER] calling %s with args="%s" and kwargs="%s"'%(funcname,args,kwargs)
-
 	#---call the function
 	globals()[funcname](*args,**kwargs)
 
@@ -489,5 +494,6 @@ if __name__ == "__main__":
 		#---execute instead of importing for simplicity
 		for fn in glob.glob('./amx/procedures/extras/*.py'): execfile(fn)
 		#---assume the target is in one of the extras
-		globals()[sys.argv[1]](*[i for i in sys.argv[2:] if i not in ['w','--','s']])
-	else: makeface(*sys.argv[1:])
+		#---! removed: globals()[sys.argv[1]](*[i for i in sys.argv[2:] if i not in ['w','--','s']])
+	#---all make commands routed through the makeface to parse arguments
+	makeface(*sys.argv[1:])

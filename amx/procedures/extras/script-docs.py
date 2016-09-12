@@ -29,4 +29,46 @@ def docs(clean=False):
 			stdout=open(docslog,'a'),stderr=subprocess.PIPE)
 		index_fn = os.path.join(os.path.abspath(os.getcwd()),'amx/docs/build/_build/html/index.html')
 		if not os.path.isfile(index_fn): raise Exception('\n[ERROR] failed to make docs. see "%s"'%docslog)
-		print '[STATUS] docs are ready at "file://%s"'%index_fn
+		print('[STATUS] docs are ready at "file://%s"'%index_fn)
+
+
+def docs_admin(to=''):
+
+	"""
+	Prepare documentation for push to github pages. Administrator usage only.
+
+	NOTES:
+	-----
+
+	This function will clean then make the docs, and set up the repo to track the github repo.
+	The first commit to the repo was created as follows:
+
+	git init .
+	git commit -m 'initial commit' --allow-empty
+	git branch gh-pages
+	git checkout gh-pages
+	touch .nojekyll
+	git add .
+	git commit -am 'added files'
+	git remote add origin <destination>
+	git push -u origin gh-pages
+	"""
+
+	if not to: raise Exception('send destination for documentation via the "to" argument to make')
+	dropspot = os.path.join(os.getcwd(),'amx/docs/build/_build/html','')
+	docs(clean=True)
+	docs()
+	cmds = [
+		'git init .',
+		'git remote add origin %s'%to,
+		'git fetch origin gh-pages',
+		'touch .nojekyll',
+		'git add .',
+		'git pull -u origin gh-pages',
+		'git checkout gh-pages',
+		]
+	for cmd in cmds: 
+		print('[STATUS] running "%s"'%cmd)
+		subprocess.call(cmd,cwd=dropspot,shell=True)
+	print('[NOTES] tracking github pages from "%s"'%dropspot)
+	print('[NOTES] admins can push from there to publish documentation changes')
