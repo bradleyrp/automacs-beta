@@ -237,6 +237,11 @@ def build_bilayer(name,random_rotation=True):
 	natoms = sum([sum(concatenate(identities)==ii)*len(lipids[i]['lpts']) 
 		for ii,i in enumerate(lipid_order)])
 
+	#---enforce a minimum z-height in case the solvent thickness is very small
+	#---! note that the solvent thickness might be incorrectly applied here
+	#---! it might be better to use a fixed thickness for building the planar bilayer anyway
+	vecs[2] = 10.0 if vecs[2]<10.0 else vecs[2]
+
 	#---write the placed lipids to a file
 	resnr = 1
 	with open(wordspace['step']+name+'.gro','w') as fp:
