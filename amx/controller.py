@@ -285,10 +285,12 @@ def look(script='',dump=True,step=None):
 		if not script: 
 			script = max(glob.iglob('script-*.py'),key=os.path.getctime)
 			print 'STATUS] resuming from the last step, apparently creeated by %s'%script
-		cmd = '"import sys;sys.argv = [\'%s\'];from amx import *;resume(script_settings=\'%s\',step=%s);%s"'%(
-			script,script,
-			'None' if not step else step,
-			"\nwith open('wordspace.json','w') as fp: json.dump(wordspace,fp);" if dump else '')
+		cmd = '"%s"'%'\n'.join([
+			'import sys,os','sys.argv = [\'%s\']'%script,'from amx import *',
+			'resume(script_settings=\'%s\',step=%s)'%(script,'None' if not step else step),
+			"json.dump(wordspace,open('wordspace.json','w'))" if dump else 'pass',
+			'if os.path.isfile(os.environ[\'PYTHONSTARTUP\']):\n\texecfile(os.environ[\'PYTHONSTARTUP\'])'
+			][:])
 		print '[STATUS] running: python -i -c '+cmd
 		os.system('python -i -c '+cmd)
 	except: 
@@ -345,7 +347,7 @@ def delstep(number,confident=False,prefix='s'):
 			if os.path.isfile(fn): os.remove(fn)
 			else: shutil.rmtree(fn)
 
-def back(name=None,command=None):
+def back(name=None,command=None,cwd='.'):
 
 	"""
 	Run a script in the background and generate a kill switch using either a search string or the explicit
@@ -376,7 +378,7 @@ def back(name=None,command=None):
 		else: command = './'+finds[0]
 	cmd = "nohup %s > log-back 2>&1 &"%command
 	print '[STATUS] running the background via "%s"'%cmd
-	job = subprocess.Popen(cmd,shell=True,cwd='./',preexec_fn=os.setsid)
+	job = subprocess.Popen(cmd,shell=True,cwd=cwd,preexec_fn=os.setsid)
 	ask = subprocess.Popen('ps xao pid,ppid,pgid,sid,comm',
 		shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 	ret = '\n'.join(ask.communicate()).split('\n')
