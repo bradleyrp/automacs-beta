@@ -17,11 +17,12 @@ def build_cgmd_protein():
 
 	name = 'protein'
 	cwd = wordspace['step']
+	martinize_fn = os.path.expanduser(wordspace['martinize_path'])
 	#---this function is run from the step but martinize_path is relative to root
-	assert os.path.isfile(wordspace['martinize_path'])
-	cmd = 'python ../'+wordspace['martinize_path']+' -v -p backbone '
+	assert os.path.isfile(martinize_fn)
+	cmd = 'python '+martinize_fn+' -v -p backbone '
 	cmd += ' -f protein-start.pdb -o %s.top -x %s.pdb'%(name,name)
-	if 'dssp' in wordspace: cmd += ' -dssp %s'%os.path.abspath(wordspace['dssp'])
+	if 'dssp' in wordspace: cmd += ' -dssp %s'%os.path.abspath(os.path.expanduser(wordspace['dssp']))
 	if 'martinize_ff' in wordspace: cmd += ' -ff %s'%wordspace['martinize_ff']
 	if 'martinize_flags' in wordspace: cmd += ' '+wordspace['martinize_flags']
 	bash(cmd,cwd=wordspace['step'],log='martinize')
