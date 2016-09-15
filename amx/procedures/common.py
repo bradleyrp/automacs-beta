@@ -556,3 +556,25 @@ def autodetect_start_structure():
 	else:
 		print "OOPS"
 		import pdb;pdb.set_trace()
+
+def autodetect_protein_itp(single=True):
+
+	"""
+	Update the list of ITP files if you expect that gromacs has created some protein ITPs. 
+	Note that sometimes GROMACS uses different naming conventions.
+	"""
+
+	assert single,'autdetecting protein ITP only works for one protein (chain)'
+	regex_protein_itp = '^(P|p)rotein(?:_[A-Z]+)?\.itp$'
+	candidate_itp = [os.path.basename(i) for i in glob.glob(wordspace.step+'/*.itp') 
+		if re.match(regex_protein_itp,os.path.basename(i))]	
+	if not wordspace['itp']: wordspace['itp'] = []
+	wordspace.itp.extend([i for i in candidate_itp if i not in wordspace.itp])
+	if single:
+		assert len(candidate_itp)==1,'found more than 1 ITP'
+		with open(wordspace.step+candidate_itp[0]) as fp: text = fp.read()
+		#---the following regex is hasty, so check out the CGModel class in development in lib_helices
+		regex_protein_name = '^\s*\[\s*moleculetype\s*\]\s*\n(.*?)\n(.*?)\s*(\d+)\n$'
+		protein_name = re.search(regex_protein_name,text,re.M+re.DOTALL).group(2)
+		return protein_name
+		
