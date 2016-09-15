@@ -167,7 +167,7 @@ def start(name,prefix='s'):
 	#---files keyword in the settings block refers to files that should be copied from inputs
 	if 'files' in wordspace:
 		for fn in wordspace['files']: 
-			if not os.path.isfile(wordspace['step']+fn): 
+			if not os.path.isfile(wordspace['step']+os.path.basename(fn)): 
 				#---files in subfolders in the inputs folder are elevated here
 				filecopy('inputs/'+fn,wordspace['step']+os.path.basename(fn))
 	#---sources keyword in the settings block refers to directories that should be copied from inputs
