@@ -1,5 +1,5 @@
 
-<img src="https://github.com/bradleyrp/automacs/raw/master/amx/docs/source/logo.png" width="150" height="150"/>
+<img src="https://github.com/biophyscode/automacs/raw/master/amx/docs/source/logo.png" width="150" height="150"/>
 
 AUTOMACS
 ========
@@ -8,7 +8,7 @@ The "automacs" codes are designed to efficiently,
 reproducibly generate molecular dynamics simulations 
 of biophysical systems along with clear documentation
 of each simulation. This software is maintained on the
-[github](https://github.com/bradleyrp/automacs).
+[github](https://github.com/biophyscode/automacs).
 
 Requires
 --------
@@ -29,6 +29,14 @@ that the code accompanies the data.
 Modifications
 -------------
 
-Send a message to [Ryan Bradley](mailto:bradleyrp@gmail.com) if
+Send a message to [BioPhysCode](mailto:biophyscode@gmail.com) if
 you need help implementing this code or you would like to 
 add a feature.
+
+License
+-------
+
+This software is licensed under the GNU public license version 2, 
+a popular copyleft license. See ``LICENSE.md`` for more details. 
+Basically, you can do anything you want with this code except 
+make money off of it.
