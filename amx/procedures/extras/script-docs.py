@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import datetime
+
 def docs(clean=False):
 
 	"""
@@ -58,6 +60,7 @@ def docs_admin(to=''):
 	dropspot = os.path.join(os.getcwd(),'amx/docs/build/_build/html','')
 	docs(clean=True)
 	docs()
+	timestamp = '{:%Y.%m.%d.%H%M}'.format(datetime.datetime.now())
 	cmds = [
 		'git init .',
 		'git remote add origin %s'%to,
@@ -65,6 +68,7 @@ def docs_admin(to=''):
 		'touch .nojekyll',
 		'git add .',
 		'git pull -u origin gh-pages',
+		'git commit -m "refreshing docs on %s"'%timestamp,
 		'git checkout gh-pages',
 		]
 	for cmd in cmds: 
