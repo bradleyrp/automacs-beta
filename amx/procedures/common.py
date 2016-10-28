@@ -28,6 +28,7 @@ genconf -f STRUCTURE.gro -nbox NBOX -o GRO.gro
 make_ndx -f STRUCTURE.gro -o NDX.ndx
 genion -s BASE.tpr -o GRO.gro -n NDX.ndx -nname ANION -pname CATION
 trjconv -f STRUCTURE.gro -n NDX.ndx -s TPR.tpr -o GRO.gro
+genbox -cp STRUCTURE.gro -cs SOLVENT.gro -o GRO.gro
 """
 
 @narrate
